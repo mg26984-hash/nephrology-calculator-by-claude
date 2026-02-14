@@ -1181,8 +1181,12 @@ export function sledai2k(
   pleuritis: boolean,
   pericarditis: boolean,
   lowComplement: boolean,
-  elevatedDNA: boolean
+  elevatedDNA: boolean,
+  fever: boolean = false,
+  thrombocytopenia: boolean = false,
+  leukopenia: boolean = false
 ): number {
+  // SLEDAI-2K scoring per Gladman et al. (24 descriptors, max 105)
   let score = 0;
 
   if (seizures) score += 8;
@@ -1206,6 +1210,9 @@ export function sledai2k(
   if (pericarditis) score += 2;
   if (lowComplement) score += 2;
   if (elevatedDNA) score += 2;
+  if (fever) score += 1;
+  if (thrombocytopenia) score += 1;
+  if (leukopenia) score += 1;
 
   return score;
 }
@@ -1327,26 +1334,30 @@ export function slicc2012(
   antiC1q: boolean,
   directCoombs: boolean
 ): number {
+  // SLICC 2012: Each criterion counts as 1 point. SLE classification requires ≥4 criteria
+  // with at least 1 clinical and 1 immunological criterion.
   let score = 0;
 
-  if (acuteRash) score += 2;
-  if (chronicRash) score += 2;
-  if (oralUlcers) score += 2;
-  if (alopecia) score += 2;
-  if (photosensitivity) score += 2;
-  if (arthritis) score += 4;
-  if (serositis) score += 4;
-  if (renal) score += 4;
-  if (psychosis) score += 3;
-  if (seizures) score += 3;
-  if (hemolytic) score += 4;
-  if (leukopenia) score += 3;
-  if (thrombocytopenia) score += 4;
-  if (ana) score += 3;
-  if (antiDsDna) score += 3;
-  if (antiSmRnp) score += 3;
-  if (antiRoSsa) score += 3;
-  if (antiLaSSb) score += 3;
+  // Clinical criteria (items 1-13)
+  if (acuteRash) score += 1;
+  if (chronicRash) score += 1;
+  if (oralUlcers) score += 1;
+  if (alopecia) score += 1;
+  if (photosensitivity) score += 1;
+  if (arthritis) score += 1;
+  if (serositis) score += 1;
+  if (renal) score += 1;
+  if (psychosis) score += 1;
+  if (seizures) score += 1;
+  if (hemolytic) score += 1;
+  if (leukopenia) score += 1;
+  if (thrombocytopenia) score += 1;
+  // Immunological criteria (items 14-20)
+  if (ana) score += 1;
+  if (antiDsDna) score += 1;
+  if (antiSmRnp) score += 1;
+  if (antiRoSsa) score += 1;
+  if (antiLaSSb) score += 1;
   if (antiC1q) score += 1;
   if (directCoombs) score += 1;
 
@@ -1963,7 +1974,7 @@ export function fasFullAgeSpectrum(
   if (scrOverQ <= 1) {
     eGFR = 107.3 / scrOverQ;
   } else {
-    eGFR = 107.3 / scrOverQ;
+    eGFR = 107.3 / Math.pow(scrOverQ, 1.209);
   }
   
   // Age adjustment for patients ≥40 years

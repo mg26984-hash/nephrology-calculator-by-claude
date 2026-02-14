@@ -929,6 +929,8 @@ export const calculators: Calculator[] = [
     category: "Dialysis Adequacy",
     inputs: [
       { id: "spKtv", label: "Single-Pool Kt/V", type: "number", unit: "ratio", placeholder: "1.3", required: true },
+      { id: "sessionTime", label: "Session Duration", type: "number", unit: "hours", placeholder: "4", required: true },
+      { id: "sessionsPerWeek", label: "Sessions per Week", type: "number", unit: "", placeholder: "3" },
       { id: "residualKtv", label: "Residual Kidney Function Kt/V", type: "number", unit: "ratio", placeholder: "0.1" },
     ],
     resultLabel: "Standard Kt/V",
@@ -1460,6 +1462,9 @@ export const calculators: Calculator[] = [
       { id: "pericarditis", label: "Pericarditis", type: "checkbox" },
       { id: "lowComplement", label: "Low Complement (C3 or C4)", type: "checkbox" },
       { id: "elevatedDNA", label: "Elevated Anti-DNA Antibodies", type: "checkbox" },
+      { id: "fever", label: "Fever (>38°C, non-infectious)", type: "checkbox" },
+      { id: "thrombocytopenia", label: "Thrombocytopenia (<100,000/mm³)", type: "checkbox" },
+      { id: "leukopenia", label: "Leukopenia (<3,000/mm³)", type: "checkbox" },
     ],
     resultLabel: "SLEDAI-2K Score",
     resultUnit: "points",

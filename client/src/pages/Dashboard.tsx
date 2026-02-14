@@ -1062,7 +1062,8 @@ export default function Dashboard() {
         case "standard-ktv":
           calculationResult = calc.standardKtv(
             calculatorState.spKtv as number,
-            4, // Default 4-hour session for standard Kt/V calculation
+            calculatorState.sessionTime as number || 4,
+            calculatorState.sessionsPerWeek as number || 3,
             calculatorState.residualKtv as number || 0
           );
           break;
@@ -1286,7 +1287,10 @@ export default function Dashboard() {
             Boolean(calculatorState.pleuritis),
             Boolean(calculatorState.pericarditis),
             Boolean(calculatorState.lowComplement),
-            Boolean(calculatorState.elevatedDNA)
+            Boolean(calculatorState.elevatedDNA),
+            Boolean(calculatorState.fever),
+            Boolean(calculatorState.thrombocytopenia),
+            Boolean(calculatorState.leukopenia)
           );
           break;
 
