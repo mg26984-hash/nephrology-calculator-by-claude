@@ -1,0 +1,100 @@
+  {
+    id: "banff-classification",
+    name: "Banff Classification for Kidney Transplant Rejection",
+    description: "Comprehensive histological scoring for kidney transplant biopsy interpretation (Banff 2019)",
+    category: "Transplantation",
+    inputs: [
+      // Acute lesion scores
+      { id: "i", label: "i - Interstitial Inflammation", type: "select", options: [
+        { value: "0", label: "0: No inflammation (<10%)" },
+        { value: "1", label: "1: 10-25% of cortex inflamed" },
+        { value: "2", label: "2: 26-50% of cortex inflamed" },
+        { value: "3", label: "3: >50% of cortex inflamed" },
+      ], required: true },
+      { id: "t", label: "t - Tubulitis", type: "select", options: [
+        { value: "0", label: "0: No tubulitis" },
+        { value: "1", label: "1: 1-4 cells/tubular cross-section" },
+        { value: "2", label: "2: 5-10 cells/tubular cross-section" },
+        { value: "3", label: "3: >10 cells/tubular cross-section" },
+      ], required: true },
+      { id: "v", label: "v - Intimal Arteritis", type: "select", options: [
+        { value: "0", label: "0: No arteritis" },
+        { value: "1", label: "1: Mild-moderate intimal arteritis" },
+        { value: "2", label: "2: Severe (>25% luminal loss)" },
+        { value: "3", label: "3: Transmural arteritis/fibrinoid necrosis" },
+      ], required: true },
+      { id: "g", label: "g - Glomerulitis", type: "select", options: [
+        { value: "0", label: "0: No glomerulitis" },
+        { value: "1", label: "1: <25% of glomeruli" },
+        { value: "2", label: "2: 25-75% of glomeruli" },
+        { value: "3", label: "3: >75% of glomeruli" },
+      ], required: true },
+      { id: "ptc", label: "ptc - Peritubular Capillaritis", type: "select", options: [
+        { value: "0", label: "0: No PTC inflammation" },
+        { value: "1", label: "1: <10% of cortical PTCs" },
+        { value: "2", label: "2: 10-50% of cortical PTCs" },
+        { value: "3", label: "3: >50% of cortical PTCs" },
+      ], required: true },
+      // Chronic lesion scores
+      { id: "ci", label: "ci - Interstitial Fibrosis", type: "select", options: [
+        { value: "0", label: "0: ≤5% of cortex fibrosed" },
+        { value: "1", label: "1: 6-25% of cortex fibrosed" },
+        { value: "2", label: "2: 26-50% of cortex fibrosed" },
+        { value: "3", label: "3: >50% of cortex fibrosed" },
+      ], required: true },
+      { id: "ct", label: "ct - Tubular Atrophy", type: "select", options: [
+        { value: "0", label: "0: No tubular atrophy" },
+        { value: "1", label: "1: ≤25% of tubules atrophic" },
+        { value: "2", label: "2: 26-50% of tubules atrophic" },
+        { value: "3", label: "3: >50% of tubules atrophic" },
+      ], required: true },
+      { id: "cv", label: "cv - Vascular Fibrous Intimal Thickening", type: "select", options: [
+        { value: "0", label: "0: No intimal thickening" },
+        { value: "1", label: "1: ≤25% luminal narrowing" },
+        { value: "2", label: "2: 26-50% luminal narrowing" },
+        { value: "3", label: "3: >50% luminal narrowing" },
+      ], required: true },
+      { id: "cg", label: "cg - Transplant Glomerulopathy", type: "select", options: [
+        { value: "0", label: "0: No TG changes" },
+        { value: "1", label: "1: GBM double contours in 1-25%" },
+        { value: "2", label: "2: GBM double contours in 26-50%" },
+        { value: "3", label: "3: GBM double contours in >50%" },
+      ], required: true },
+      // Antibody-mediated markers
+      { id: "c4d", label: "C4d Staining (PTC)", type: "select", options: [
+        { value: "0", label: "0: Negative" },
+        { value: "1", label: "1: Minimal (<10%)" },
+        { value: "2", label: "2: Focal (10-50%)" },
+        { value: "3", label: "3: Diffuse (>50%)" },
+      ], required: true },
+      { id: "dsaPositive", label: "Donor-Specific Antibody (DSA) Positive", type: "checkbox" },
+      // Additional scores
+      { id: "mm", label: "mm - Mesangial Matrix Expansion", type: "select", options: [
+        { value: "0", label: "0: No expansion" },
+        { value: "1", label: "1: Mild expansion" },
+        { value: "2", label: "2: Moderate expansion" },
+        { value: "3", label: "3: Severe expansion" },
+      ], required: false },
+      { id: "ah", label: "ah - Arteriolar Hyalinosis", type: "select", options: [
+        { value: "0", label: "0: No hyalinosis" },
+        { value: "1", label: "1: Mild-moderate" },
+        { value: "2", label: "2: Moderate-severe" },
+        { value: "3", label: "3: Severe" },
+      ], required: false },
+    ],
+    resultLabel: "Banff Classification",
+    resultUnit: "category",
+    interpretation: (value) => {
+      // This will be handled specially in Dashboard.tsx
+      return "See detailed classification below";
+    },
+    clinicalPearls: [
+      "International gold standard for transplant biopsy interpretation",
+      "TCMR: Requires i≥2 AND t≥2, OR v>0",
+      "ABMR: Requires microvascular inflammation (g+ptc≥2) + DSA or C4d+",
+      "Borderline: i≥1 and t≥1 but not meeting TCMR criteria",
+      "Chronic active ABMR: cg>0 with evidence of active antibody interaction",
+      "Updated annually at Banff meetings",
+    ],
+    references: ["Loupy A et al. Am J Transplant. 2020;20(9):2305-2331", "Haas M et al. Am J Transplant. 2018;18(2):293-307"],
+  },

@@ -1,0 +1,58 @@
+{
+  "name": "ASNRT Nephrology Calculator",
+  "short_name": "ASNRT Calc",
+  "description": "Professional nephrology clinical calculators for healthcare providers. 74 calculators including eGFR, dialysis adequacy, electrolytes, and more.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["medical", "health", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "CKD-EPI Calculator",
+      "short_name": "CKD-EPI",
+      "description": "Calculate eGFR using CKD-EPI 2021 equation",
+      "url": "/?calc=ckd-epi-creatinine",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Compare eGFR",
+      "short_name": "Compare",
+      "description": "Compare results from multiple eGFR equations",
+      "url": "/?compare=egfr",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
