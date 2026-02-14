@@ -205,48 +205,37 @@ export function kfre(
   years: 2 | 5 = 5
 ): number {
   // KFRE 4-variable equation (Tangri et al. 2016)
-  // Reference: https://kidneyfailurerisk.com/ and https://ukidney.com/
-  // Validated: Age 60, Male, eGFR 30, ACR 300 mg/mmol = 5yr: 52.9%, 2yr: 21.4%
-  
-  // Convert ACR to mg/mmol if needed (formula uses mg/mmol internally)
-  // Conversion factors:
-  // - mg/g to mg/mmol: divide by 8.84 (1 mg/g = 0.113 mg/mmol)
-  // - mg/mg to mg/mmol: multiply by 1000 then divide by 8.84 (mg/mg = g/g * 1000 = mg/g)
-  //   Actually mg/mg is same as mg albumin per mg creatinine, which equals g/g
-  //   To convert mg/mg to mg/g: multiply by 1000 (since mg/mg = g/g, and g/g * 1000 = mg/g)
-  let acrMgMmol: number;
-  if (acrUnit === "mg/mmol") {
-    acrMgMmol = acr;
-  } else if (acrUnit === "mg/mg") {
-    // mg/mg is same as g/g ratio, convert to mg/g first (multiply by 1000), then to mg/mmol
-    acrMgMmol = (acr * 1000) / 8.84;
+  // Formula: Risk = 1 - S0^exp(risk_score) where S0 is baseline survival
+  // Reference: https://kidneyfailurerisk.com/
+
+  // Convert ACR to mg/g (formula uses mg/g internally)
+  let acrMgG: number;
+  if (acrUnit === "mg/g") {
+    acrMgG = acr;
+  } else if (acrUnit === "mg/mmol") {
+    acrMgG = acr * 8.84;
   } else {
-    // mg/g to mg/mmol
-    acrMgMmol = acr / 8.84;
+    // mg/mg = g/g, multiply by 1000 to get mg/g
+    acrMgG = acr * 1000;
   }
-  
-  // Natural log of ACR in mg/mmol
-  const lnACR = Math.log(acrMgMmol);
-  
-  // Male coefficient (1 if male, 0 if female)
+
+  const lnACR = Math.log(acrMgG);
   const male = sex === "M" ? 1 : 0;
-  
-  let risk: number;
-  
-  // 4-variable KFRE formula calibrated to match ukidney.com/kidneyfailurerisk.com
-  // Formula: Risk = 1 - exp(-exp(X))
-  // X = 0.220*age + 0.246*male - 0.451*(eGFR/5) + 0.556*ln(ACR) - constant
-  
-  if (years === 5) {
-    // 5-year prediction
-    const X = (0.220 * age) + (0.246 * male) - (0.451 * (eGFR / 5)) + (0.556 * lnACR) - 14.195;
-    risk = (1 - Math.exp(-Math.exp(X))) * 100;
-  } else {
-    // 2-year prediction
-    const X = (0.220 * age) + (0.246 * male) - (0.451 * (eGFR / 5)) + (0.556 * lnACR) - 15.335;
-    risk = (1 - Math.exp(-Math.exp(X))) * 100;
-  }
-  
+
+  // Centered regression coefficients (Tangri 2016, North American calibration)
+  // Variables are centered around population means
+  const riskScore =
+    -0.2201 * (age / 10 - 7.036) +
+    0.2467 * (male - 0.5642) +
+    -0.5567 * (eGFR / 5 - 7.222) +
+    0.4510 * (lnACR - 5.137);
+
+  // Baseline survival: North American calibration
+  // Non-North American: S0_2yr = 0.9832, S0_5yr = 0.9365
+  const S0 = years === 2 ? 0.9750 : 0.9240;
+
+  const risk = (1 - Math.pow(S0, Math.exp(riskScore))) * 100;
+
   return Math.round(risk * 10) / 10;
 }
 
@@ -565,13 +554,13 @@ export function totalBodyWaterWatson(
   age: number,
   sex: "M" | "F"
 ): number {
-  // Watson Formula for Total Body Water
-  // Male: TBW = 2.447 - 0.09156 * age + 0.1074 * height + 0.3362 * weight
+  // Watson Formula for Total Body Water (Watson et al. 1980)
+  // Male: TBW = 2.447 - 0.09516 * age + 0.1074 * height + 0.3362 * weight
   // Female: TBW = -2.097 + 0.1069 * height + 0.2466 * weight
   let tbw;
 
   if (sex === "M") {
-    tbw = 2.447 - 0.09156 * age + 0.1074 * height + 0.3362 * weight;
+    tbw = 2.447 - 0.09516 * age + 0.1074 * height + 0.3362 * weight;
   } else {
     tbw = -2.097 + 0.1069 * height + 0.2466 * weight;
   }
@@ -620,7 +609,7 @@ export function residualKfKtv(
 
 export function equilibratedKtv(
   spKtv: number,
-  sessionTime: number
+  sessionTime: number // Session time in hours (Daugirdas-Schneditz formula)
 ): number {
   const eKtv = spKtv - (0.6 * spKtv) / sessionTime + 0.03;
 
@@ -629,11 +618,24 @@ export function equilibratedKtv(
 
 export function standardKtv(
   spKtv: number,
-  sessionTime: number,
+  sessionTime: number, // Session time in hours
+  sessionsPerWeek: number = 3,
   residualKtv: number = 0
 ): number {
-  // Simplified stdKtv calculation
-  const stdKtv = spKtv + residualKtv;
+  // Standard Kt/V per Casino-Lopez (Gotch) formula
+  // Accounts for frequency, session length, and urea generation rate
+  // stdKt/V = (10080 / Tinterval) * (1 - exp(-eKtV)) / (1 - exp(-eKtV) * Tinterval/10080)
+  // Simplified Leypoldt formula for thrice-weekly HD:
+  // stdKt/V ≈ (10080 * (1 - exp(-eKtV))) / (T_interval - T_session + (10080 / (eKtV * N)) * (1 - exp(-eKtV)))
+  // Using the NKF-KDOQI recommended approximation:
+  const eKtv = spKtv - (0.6 * spKtv) / sessionTime + 0.03;
+  const tSession = sessionTime * 60; // convert hours to minutes
+  const tInterval = 10080 / sessionsPerWeek; // minutes between sessions (10080 = minutes/week)
+
+  const numerator = 10080 * (1 - Math.exp(-eKtv));
+  const denominator = tInterval - tSession + (10080 / (eKtv * sessionsPerWeek)) * (1 - Math.exp(-eKtv));
+
+  const stdKtv = (numerator / denominator) + residualKtv;
 
   return Math.round(stdKtv * 100) / 100;
 }
@@ -658,7 +660,7 @@ export function ironDeficitGanzoni(
   sex: "M" | "F" = "M"
 ): number {
   const hemoglobinDeficit = targetHemoglobin - currentHemoglobin;
-  const bodyIronStore = sex === "M" ? 500 : 300;
+  const bodyIronStore = 500; // Standard iron stores for all adults (mg)
   const ironDeficit = hemoglobinDeficit * weight * 2.4 + bodyIronStore;
 
   return Math.round(ironDeficit * 10) / 10;
@@ -865,19 +867,26 @@ export function epts(
   priorTransplant: boolean,
   yearsOnDialysis: number
 ): number {
-  // Simplified EPTS calculation
-  // Full implementation requires specific coefficients from OPTN
-  let eptsScore = 0;
+  // OPTN EPTS Raw Score Formula (Cox proportional hazards model)
+  // Reference: https://optn.transplant.hrsa.gov/media/pn1pt2bc/epts_guide.pdf
+  const dm = recipientDiabetes ? 1 : 0;
+  const prevTx = priorTransplant ? 1 : 0;
+  const ageAbove25 = Math.max(recipientAge - 25, 0);
+  const neverOnDialysis = yearsOnDialysis === 0 ? 1 : 0;
 
-  eptsScore += (recipientAge - 40) * 0.03;
-  eptsScore += recipientDiabetes ? 0.4 : 0;
-  eptsScore += priorTransplant ? 0.5 : 0;
-  eptsScore += yearsOnDialysis * 0.05;
+  const rawEPTS =
+    0.047 * ageAbove25 +
+    -0.015 * dm * ageAbove25 +
+    0.398 * prevTx +
+    -0.237 * dm * prevTx +
+    0.315 * Math.log(yearsOnDialysis + 1) +
+    -0.099 * dm * Math.log(yearsOnDialysis + 1) +
+    0.130 * neverOnDialysis +
+    -0.348 * dm * neverOnDialysis +
+    1.262 * dm;
 
-  // Convert to percentile (0-100)
-  const epts = Math.min(100, Math.max(0, eptsScore * 10));
-
-  return Math.round(epts);
+  // Returns raw EPTS score (conversion to percentile requires annual OPTN mapping table)
+  return Math.round(rawEPTS * 10000) / 10000;
 }
 
 export function tacrolimusMonitoring(
@@ -1023,7 +1032,7 @@ export function cha2ds2vasc(
   // Sc - Sex category (female = 1 point)
   if (sex === "F") score += 1;
   
-  // Annual stroke risk percentages based on score
+  // Annual stroke risk percentages (Lip et al. 2010, Friberg et al. 2012)
   const strokeRiskMap: Record<number, string> = {
     0: "0%",
     1: "1.3%",
@@ -1032,8 +1041,8 @@ export function cha2ds2vasc(
     4: "4.0%",
     5: "6.7%",
     6: "9.8%",
-    7: "9.6%",
-    8: "6.7%",
+    7: "11.2%",
+    8: "12.5%",
     9: "15.2%"
   };
   
@@ -1181,7 +1190,7 @@ export function sledai2k(
   if (organicBrainSyndrome) score += 8;
   if (visualDisorder) score += 8;
   if (cranialNerveDisorder) score += 8;
-  if (lupusHeadache) score += 1;
+  if (lupusHeadache) score += 8;
   if (cerebrovasitisAccident) score += 8;
   if (vasculitis) score += 8;
   if (arthritis) score += 4;
@@ -1193,9 +1202,9 @@ export function sledai2k(
   if (rash) score += 2;
   if (alopecia) score += 2;
   if (mucousalUlcers) score += 2;
-  if (pleuritis) score += 4;
-  if (pericarditis) score += 4;
-  if (lowComplement) score += 4;
+  if (pleuritis) score += 2;
+  if (pericarditis) score += 2;
+  if (lowComplement) score += 2;
   if (elevatedDNA) score += 2;
 
   return score;
@@ -1954,7 +1963,7 @@ export function fasFullAgeSpectrum(
   if (scrOverQ <= 1) {
     eGFR = 107.3 / scrOverQ;
   } else {
-    eGFR = 107.3 / Math.pow(scrOverQ, 1.209);
+    eGFR = 107.3 / scrOverQ;
   }
   
   // Age adjustment for patients ≥40 years
