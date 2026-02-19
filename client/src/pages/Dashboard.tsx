@@ -272,6 +272,7 @@ export default function Dashboard() {
   const [resultInterpretation, setResultInterpretation] = useState<string>("");
   const [banffResult, setBanffResult] = useState<calc.BanffResult | null>(null);
   const [kdpiResult, setKdpiResult] = useState<{ kdri: number; kdpi: number } | null>(null);
+  const [eptsResult, setEptsResult] = useState<{ rawScore: number; percentile: number } | null>(null);
   const [mehranResult, setMehranResult] = useState<{
     totalScore: number;
     riskCategory: string;
@@ -1160,14 +1161,28 @@ export default function Dashboard() {
           return;
         }
 
-        case "epts":
-          calculationResult = calc.epts(
+        case "epts": {
+          const eptsCalcResult = calc.epts(
             calculatorState.recipientAge as number,
             Boolean(calculatorState.recipientDiabetes),
             Boolean(calculatorState.priorTransplant),
             calculatorState.yearsOnDialysis as number
           );
-          break;
+          setEptsResult(eptsCalcResult);
+          setResult(eptsCalcResult.percentile);
+          let eptsInterpretation = "";
+          if (eptsCalcResult.percentile <= 20) {
+            eptsInterpretation = `EPTS ${eptsCalcResult.percentile}% — Top 20% longevity candidate. Eligible for priority allocation of KDPI ≤20% (highest quality) kidneys at local, regional, and national levels.`;
+          } else if (eptsCalcResult.percentile <= 50) {
+            eptsInterpretation = `EPTS ${eptsCalcResult.percentile}% — Above-median expected post-transplant survival. Standard allocation priority.`;
+          } else if (eptsCalcResult.percentile <= 80) {
+            eptsInterpretation = `EPTS ${eptsCalcResult.percentile}% — Below-median expected post-transplant survival. Standard allocation priority.`;
+          } else {
+            eptsInterpretation = `EPTS ${eptsCalcResult.percentile}% — Lower expected post-transplant survival. Standard allocation; may benefit from counseling on organ offer acceptance.`;
+          }
+          setResultInterpretation(eptsInterpretation);
+          return;
+        }
 
         case "tacrolimus-monitoring":
           calculationResult = calc.tacrolimusMonitoring(
@@ -2017,6 +2032,7 @@ export default function Dashboard() {
       setResultInterpretation('');
       setBanffResult(null);
       setKdpiResult(null);
+      setEptsResult(null);
       setMobileMenuOpen(false);
       // Clear saved state
       setSavedMehranState(null);
@@ -2060,6 +2076,7 @@ export default function Dashboard() {
     setResultInterpretation("");
     setBanffResult(null);
     setKdpiResult(null);
+    setEptsResult(null);
     setMobileMenuOpen(false);
     // Track recent calculator usage
     addToRecent(calcId);
@@ -3371,6 +3388,108 @@ export default function Dashboard() {
                               <p className="text-sm text-blue-600 dark:text-blue-400">
                                 <strong>Note:</strong> KDPI represents the percentage of donors in a reference population with a KDRI less than or equal to this donor's KDRI. 
                                 Higher KDPI indicates higher relative risk of graft failure. Based on OPTN 2024 mapping table.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom EPTS Result Display */}
+                    {selectedCalculator.id === 'epts' && eptsResult && (
+                      <div className="mt-4 space-y-4">
+                        {/* EPTS Percentile and Raw Score Display */}
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* EPTS Percentile Box */}
+                          <div className={`p-4 rounded-lg border-l-4 ${
+                            eptsResult.percentile <= 20
+                              ? 'bg-emerald-500/10 border-emerald-500'
+                              : eptsResult.percentile <= 50
+                                ? 'bg-green-500/10 border-green-500'
+                                : eptsResult.percentile <= 80
+                                  ? 'bg-yellow-500/10 border-yellow-500'
+                                  : 'bg-orange-500/10 border-orange-500'
+                          }`}>
+                            <p className="text-sm font-medium text-muted-foreground">EPTS Score</p>
+                            <p className={`text-3xl font-bold ${
+                              eptsResult.percentile <= 20
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : eptsResult.percentile <= 50
+                                  ? 'text-green-600 dark:text-green-400'
+                                  : eptsResult.percentile <= 80
+                                    ? 'text-yellow-600 dark:text-yellow-400'
+                                    : 'text-orange-600 dark:text-orange-400'
+                            }`}>
+                              {eptsResult.percentile}%
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Estimated Post-Transplant Survival Percentile
+                            </p>
+                          </div>
+                          {/* Raw EPTS Score Box */}
+                          <div className="p-4 rounded-lg bg-blue-500/10 border-l-4 border-blue-500">
+                            <p className="text-sm font-medium text-muted-foreground">Raw EPTS</p>
+                            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                              {eptsResult.rawScore.toFixed(4)}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Cox Model Raw Score
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Longevity Matching Status */}
+                        <div className={`p-4 rounded-lg ${
+                          eptsResult.percentile <= 20
+                            ? 'bg-emerald-500/10 border border-emerald-500/30'
+                            : 'bg-amber-500/10 border border-amber-500/30'
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            {eptsResult.percentile <= 20 ? (
+                              <Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                            ) : (
+                              <Info className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                            )}
+                            <span className={`font-semibold ${
+                              eptsResult.percentile <= 20
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-amber-600 dark:text-amber-400'
+                            }`}>
+                              {eptsResult.percentile <= 20
+                                ? 'Top 20% Longevity — Priority for KDPI ≤20% Kidneys'
+                                : 'Standard Allocation'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* EPTS Reference Ranges */}
+                        <div className="p-4 rounded-lg bg-muted/50">
+                          <p className="text-sm font-semibold mb-3">EPTS Allocation Categories</p>
+                          <div className="space-y-2">
+                            <div className={`flex items-center justify-between p-2 rounded ${
+                              eptsResult.percentile <= 20 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
+                            }`}>
+                              <span className="text-sm">Top 20% Longevity</span>
+                              <span className="text-sm font-medium">0-20%</span>
+                            </div>
+                            <div className={`flex items-center justify-between p-2 rounded ${
+                              eptsResult.percentile > 20 ? 'bg-amber-500/20 ring-2 ring-amber-500' : 'bg-muted'
+                            }`}>
+                              <span className="text-sm">Standard Allocation</span>
+                              <span className="text-sm font-medium">21-100%</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Info Note */}
+                        <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                          <div className="flex items-start gap-2">
+                            <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                            <div>
+                              <p className="text-sm text-blue-600 dark:text-blue-400">
+                                <strong>Note:</strong> EPTS represents the percentage of kidney waitlist candidates with a longer expected post-transplant survival.
+                                Lower EPTS = longer expected survival. Candidates with EPTS ≤20% receive priority for the highest quality kidneys (KDPI ≤20%) at local, regional, and national levels.
+                                Based on OPTN/SRTR reference population.
                               </p>
                             </div>
                           </div>

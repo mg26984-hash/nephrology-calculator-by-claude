@@ -54,7 +54,7 @@ const tests = [
   
   // Transplant
   { name: 'KDPI', fn: () => calc.kdpi(50, 170, 80, 'M', 'white', false, false, false, false, 1.0, 'CVA'), expected: 50, tolerance: 20 },
-  { name: 'EPTS', fn: () => calc.epts(50, 5, false, false), expected: 30, tolerance: 20 },
+  { name: 'EPTS', fn: () => calc.epts(50, true, false, 5).percentile, expected: 30, tolerance: 10 },
 ];
 
 console.log('=== Final Calculator Verification ===\n');

@@ -1054,7 +1054,7 @@ export const calculators: Calculator[] = [
   {
     id: "epts",
     name: "Estimated Post-Transplant Survival (EPTS)",
-    description: "Predicts recipient longevity after transplant",
+    description: "Predicts recipient longevity after transplant using OPTN allocation percentile",
     category: "Transplantation",
     inputs: [
       { id: "recipientAge", label: "Recipient Age", type: "number", unit: "years", placeholder: "50", required: true },
@@ -1065,16 +1065,20 @@ export const calculators: Calculator[] = [
     resultLabel: "EPTS",
     resultUnit: "%",
     interpretation: (value) => {
-      if (value <= 20) return "EPTS 0-20%: Highest longevity candidates (receive KDPI ≤20% kidneys first)";
-      return "EPTS 21-100%: Standard allocation";
+      if (value <= 20) return "EPTS 0-20%: Top 20% longevity candidate — priority for KDPI ≤20% kidneys at local, regional, and national levels";
+      if (value <= 50) return "EPTS 21-50%: Above-median expected post-transplant survival — standard allocation";
+      if (value <= 80) return "EPTS 51-80%: Below-median expected post-transplant survival — standard allocation";
+      return "EPTS 81-100%: Lower expected post-transplant survival — standard allocation";
     },
     clinicalPearls: [
-      "Matches best kidneys to longest-lived recipients",
-      "Does not measure medical urgency (unlike liver MELD)",
-      "EPTS ≤20% candidates get priority for KDPI ≤20% kidneys nationally",
-      "Important for patient counseling on accepting organ offers",
+      "EPTS is a percentile (0-100%) derived from a raw Cox regression score mapped to the OPTN waitlist reference population",
+      "Lower EPTS = longer expected post-transplant survival (0% is best, 100% is worst)",
+      "Only the 0-20% vs >20% threshold affects allocation; EPTS ≤20% get priority for KDPI ≤20% kidneys",
+      "Does not measure medical urgency (unlike liver MELD score)",
+      "EPTS changes over time as age increases and dialysis time accumulates — a patient at 19% today may exceed 20% later",
+      "Important for patient counseling on accepting organ offers and understanding allocation priority",
     ],
-    references: ["OPTN/UNOS Kidney Allocation System. Final Rule 2014"],
+    references: ["OPTN/UNOS Kidney Allocation System. Final Rule 2014", "OPTN EPTS Guide: https://optn.transplant.hrsa.gov/media/pn1pt2bc/epts_guide.pdf"],
   },
   {
     id: "banff-classification",

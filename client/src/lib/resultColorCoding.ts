@@ -1082,12 +1082,14 @@ function getURRColor(value: number): ColorResult {
 }
 
 function getEPTSColor(value: number): ColorResult {
+  // EPTS is a percentile (0-100%). Lower = better expected post-transplant survival.
+  // Only the ≤20% threshold matters for allocation (priority for KDPI ≤20% kidneys).
   if (value <= 20) {
     return {
       bgClass: 'bg-emerald-500/10',
       textClass: 'text-emerald-600 dark:text-emerald-400',
       borderClass: 'border-emerald-500',
-      label: 'Excellent Candidate',
+      label: 'Top 20% Longevity',
       severity: 'success'
     };
   }
@@ -1096,7 +1098,7 @@ function getEPTSColor(value: number): ColorResult {
       bgClass: 'bg-green-500/10',
       textClass: 'text-green-600 dark:text-green-400',
       borderClass: 'border-green-500',
-      label: 'Good Candidate',
+      label: 'Above Median Survival',
       severity: 'success'
     };
   }
@@ -1105,7 +1107,7 @@ function getEPTSColor(value: number): ColorResult {
       bgClass: 'bg-yellow-500/10',
       textClass: 'text-yellow-600 dark:text-yellow-400',
       borderClass: 'border-yellow-500',
-      label: 'Average Candidate',
+      label: 'Below Median Survival',
       severity: 'warning'
     };
   }
@@ -1113,7 +1115,7 @@ function getEPTSColor(value: number): ColorResult {
     bgClass: 'bg-orange-500/10',
     textClass: 'text-orange-600 dark:text-orange-400',
     borderClass: 'border-orange-500',
-    label: 'Higher Risk Candidate',
+    label: 'Lower Expected Survival',
     severity: 'warning'
   };
 }
