@@ -668,14 +668,14 @@ export default function Dashboard() {
 
       // Helper to get normalized value (always in conventional units)
       const getValue = (id: string) => {
-        const raw = calculatorState[id] as number;
+        const raw = Number(calculatorState[id]) || 0;
         return normalizeValue(id, raw);
       };
 
       // Helper to get BUN value in mg/dL from 4-option toggle
       // Converts from BUN/Urea in different units to BUN in mg/dL
       const getBunValue = (inputId: string) => {
-        const raw = calculatorState[inputId] as number;
+        const raw = Number(calculatorState[inputId]) || 0;
         if (raw === undefined || raw === null || isNaN(raw)) return 0;
         
         const selectedUnit = unitState[`${inputId}_bunUrea`] || "BUN (mg/dL)";
@@ -705,7 +705,7 @@ export default function Dashboard() {
         case "ckd-epi-creatinine":
           calculationResult = calc.ckdEpiCreatinine(
             getValue("creatinine"),
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             calculatorState.race as "Black" | "Other",
             "mg/dL"
@@ -715,8 +715,8 @@ export default function Dashboard() {
         case "cockcroft-gault":
           calculationResult = calc.cockcrofGault(
             getValue("creatinine"),
-            calculatorState.age as number,
-            calculatorState.weight as number,
+            Number(calculatorState.age) || 0,
+            Number(calculatorState.weight) || 0,
             calculatorState.sex as "M" | "F",
             "mg/dL"
           );
@@ -725,7 +725,7 @@ export default function Dashboard() {
         case "schwartz-pediatric":
           calculationResult = calc.schwartzPediatric(
             getValue("creatinine"),
-            calculatorState.height as number,
+            Number(calculatorState.height) || 0,
             "mg/dL"
           );
           break;
@@ -745,8 +745,8 @@ export default function Dashboard() {
         case "ckd-epi-cystatin-c":
           calculationResult = calc.ckdEpiCystatinC(
             getValue("creatinine"),
-            calculatorState.cystatinC as number,
-            calculatorState.age as number,
+            Number(calculatorState.cystatinC) || 0,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             "mg/dL"
           );
@@ -754,18 +754,18 @@ export default function Dashboard() {
 
         case "egfr-slope":
           calculationResult = calc.eGFRSlope(
-            calculatorState.eGFRBaseline as number,
-            calculatorState.eGFRFinal as number,
-            calculatorState.timeYears as number
+            Number(calculatorState.eGFRBaseline) || 0,
+            Number(calculatorState.eGFRFinal) || 0,
+            Number(calculatorState.timeYears) || 0
           );
           break;
 
         case "kfre":
           calculationResult = calc.kfre(
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
-            calculatorState.eGFR as number,
-            calculatorState.acr as number,
+            Number(calculatorState.eGFR) || 0,
+            Number(calculatorState.acr) || 0,
             (unitState.acr as "mg/g" | "mg/mmol" | "mg/mg") || "mg/g",
             (calculatorState.years as 2 | 5) || 5
           );
@@ -774,7 +774,7 @@ export default function Dashboard() {
         case "lund-malmo-revised":
           calculationResult = calc.lundMalmoRevised(
             getValue("creatinine"),
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             "mg/dL"
           );
@@ -783,7 +783,7 @@ export default function Dashboard() {
         case "bis1-elderly":
           calculationResult = calc.bis1Elderly(
             getValue("creatinine"),
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             "mg/dL"
           );
@@ -792,7 +792,7 @@ export default function Dashboard() {
         case "fas-full-age-spectrum":
           calculationResult = calc.fasFullAgeSpectrum(
             getValue("creatinine"),
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             "mg/dL"
           );
@@ -800,9 +800,9 @@ export default function Dashboard() {
 
         case "fena":
           calculationResult = calc.fena(
-            calculatorState.urineNa as number,
+            Number(calculatorState.urineNa) || 0,
             getValue("plasmaCr"),
-            calculatorState.plasmaNa as number,
+            Number(calculatorState.plasmaNa) || 0,
             getValue("urineCr"),
             "mg/dL"
           );
@@ -820,18 +820,18 @@ export default function Dashboard() {
 
         case "anion-gap":
           calculationResult = calc.anionGap(
-            calculatorState.sodium as number,
-            calculatorState.chloride as number,
-            calculatorState.bicarbonate as number
+            Number(calculatorState.sodium) || 0,
+            Number(calculatorState.chloride) || 0,
+            Number(calculatorState.bicarbonate) || 0
           );
           break;
 
         case "delta-gap":
           const deltaResult = calc.deltaGap(
-            calculatorState.measuredAG as number,
-            calculatorState.measuredHCO3 as number,
-            calculatorState.normalAG as number,
-            calculatorState.normalHCO3 as number
+            Number(calculatorState.measuredAG) || 0,
+            Number(calculatorState.measuredHCO3) || 0,
+            Number(calculatorState.normalAG) || 0,
+            Number(calculatorState.normalHCO3) || 0
           );
           calculationResult = deltaResult.ratio;
           break;
@@ -840,11 +840,11 @@ export default function Dashboard() {
           // getValue already normalizes to conventional units (mg/dL)
           // getBunValue handles BUN/Urea 4-option toggle conversion
           calculationResult = calc.osmolalGap(
-            calculatorState.measuredOsmolality as number,
-            calculatorState.sodium as number,
+            Number(calculatorState.measuredOsmolality) || 0,
+            Number(calculatorState.sodium) || 0,
             getValue("glucose"),
             getBunValue("bun"),
-            calculatorState.ethanol as number,
+            Number(calculatorState.ethanol) || 0,
             "mg/dL",
             "mg/dL"
           );
@@ -852,9 +852,9 @@ export default function Dashboard() {
 
         case "urine-anion-gap":
           calculationResult = calc.urineAnionGap(
-            calculatorState.urineNa as number,
-            calculatorState.urineK as number,
-            calculatorState.urineCl as number
+            Number(calculatorState.urineNa) || 0,
+            Number(calculatorState.urineK) || 0,
+            Number(calculatorState.urineCl) || 0
           );
           break;
 
@@ -869,25 +869,25 @@ export default function Dashboard() {
 
         case "ttkg":
           calculationResult = calc.ttkg(
-            calculatorState.urineK as number,
-            calculatorState.plasmaK as number,
-            calculatorState.urineOsm as number,
-            calculatorState.plasmaOsm as number
+            Number(calculatorState.urineK) || 0,
+            Number(calculatorState.plasmaK) || 0,
+            Number(calculatorState.urineOsm) || 0,
+            Number(calculatorState.plasmaOsm) || 0
           );
           break;
 
         case "water-deficit-hypernatremia":
           calculationResult = calc.waterDeficitHypernatremia(
-            calculatorState.currentNa as number,
-            calculatorState.targetNa as number,
-            calculatorState.totalBodyWater as number
+            Number(calculatorState.currentNa) || 0,
+            Number(calculatorState.targetNa) || 0,
+            Number(calculatorState.totalBodyWater) || 0
           );
           break;
 
         case "corrected-sodium-hyperglycemia":
           // getValue already normalizes to conventional units (mg/dL)
           calculationResult = calc.correctedSodiumHyperglycemia(
-            calculatorState.measuredNa as number,
+            Number(calculatorState.measuredNa) || 0,
             getValue("glucose"),
             "mg/dL"
           );
@@ -895,19 +895,19 @@ export default function Dashboard() {
 
         case "sodium-correction-rate":
           calculationResult = calc.sodiumCorrectionRateHyponatremia(
-            calculatorState.currentNa as number,
-            calculatorState.targetNa as number,
-            calculatorState.infusionNa as number,
-            calculatorState.totalBodyWater as number,
-            calculatorState.correctionHours as number
+            Number(calculatorState.currentNa) || 0,
+            Number(calculatorState.targetNa) || 0,
+            Number(calculatorState.infusionNa) || 0,
+            Number(calculatorState.totalBodyWater) || 0,
+            Number(calculatorState.correctionHours) || 0
           );
           break;
 
         case "sodium-deficit":
           calculationResult = calc.sodiumDeficitHyponatremia(
-            calculatorState.currentNa as number,
-            calculatorState.targetNa as number,
-            calculatorState.totalBodyWater as number
+            Number(calculatorState.currentNa) || 0,
+            Number(calculatorState.targetNa) || 0,
+            Number(calculatorState.totalBodyWater) || 0
           );
           break;
 
@@ -921,8 +921,8 @@ export default function Dashboard() {
 
         case "qtc-bazett":
           calculationResult = calc.qtcBazett(
-            calculatorState.qtInterval as number,
-            calculatorState.heartRate as number
+            Number(calculatorState.qtInterval) || 0,
+            Number(calculatorState.heartRate) || 0
           );
           break;
 
@@ -946,8 +946,8 @@ export default function Dashboard() {
 
         case "selectivity-index":
           // Selectivity Index = (Urine IgG / Plasma IgG) / (Urine Albumin / Plasma Albumin)
-          const urineIgG = calculatorState.urineIgG as number;
-          const plasmaIgG = calculatorState.plasmaIgG as number;
+          const urineIgG = Number(calculatorState.urineIgG) || 0;
+          const plasmaIgG = Number(calculatorState.plasmaIgG) || 0;
           const urineAlb = getValue("urineAlbumin");
           const plasmaAlb = getValue("plasmaAlbumin");
           calculationResult = Math.round(((urineIgG / plasmaIgG) / (urineAlb / plasmaAlb)) * 100) / 100;
@@ -955,17 +955,17 @@ export default function Dashboard() {
 
         case "24h-protein":
           calculationResult = calc.upcr(
-            calculatorState.spotProtein as number,
-            calculatorState.spotCreatinine as number
+            Number(calculatorState.spotProtein) || 0,
+            Number(calculatorState.spotCreatinine) || 0
           );
           break;
 
         case "igan-prediction":
           calculationResult = calc.iganPredictionTool(
-            calculatorState.age as number,
-            calculatorState.eGFR as number,
-            calculatorState.map as number,
-            calculatorState.proteinuria as number,
+            Number(calculatorState.age) || 0,
+            Number(calculatorState.eGFR) || 0,
+            Number(calculatorState.map) || 0,
+            Number(calculatorState.proteinuria) || 0,
             parseInt(calculatorState.years as string) as 2 | 5 | 7
           );
           break;
@@ -1038,57 +1038,57 @@ export default function Dashboard() {
           calculationResult = calc.ktv(
             getBunValue("preBUN"),
             getBunValue("postBUN"),
-            calculatorState.postWeight as number,
-            calculatorState.sessionTime as number,
-            calculatorState.ultrafiltration as number || 0,
+            Number(calculatorState.postWeight) || 0,
+            Number(calculatorState.sessionTime) || 0,
+            Number(calculatorState.ultrafiltration) || 0,
             "mg/dL" // Always mg/dL since getBunValue converts to BUN mg/dL
           );
           break;
 
         case "hd-session-duration":
           calculationResult = calc.hemodialysisSessionDuration(
-            calculatorState.targetKtV as number,
-            calculatorState.dialyzerClearance as number,
-            calculatorState.totalBodyWater as number
+            Number(calculatorState.targetKtV) || 0,
+            Number(calculatorState.dialyzerClearance) || 0,
+            Number(calculatorState.totalBodyWater) || 0
           );
           break;
 
         case "pd-weekly-ktv":
           calculationResult = calc.pdWeeklyKtv(
-            calculatorState.dailyDialysateUrea as number,
-            calculatorState.plasmaUrea as number,
-            calculatorState.dialysateVolume as number,
-            calculatorState.totalBodyWater as number,
-            calculatorState.residualKtv as number || 0
+            Number(calculatorState.dailyDialysateUrea) || 0,
+            Number(calculatorState.plasmaUrea) || 0,
+            Number(calculatorState.dialysateVolume) || 0,
+            Number(calculatorState.totalBodyWater) || 0,
+            Number(calculatorState.residualKtv) || 0
           );
           break;
 
         case "residual-rkf-ktv":
           calculationResult = calc.residualKfKtv(
-            calculatorState.ureaUrineClearance as number,
-            calculatorState.totalBodyWater as number
+            Number(calculatorState.ureaUrineClearance) || 0,
+            Number(calculatorState.totalBodyWater) || 0
           );
           break;
 
         case "equilibrated-ktv":
           calculationResult = calc.equilibratedKtv(
-            calculatorState.spKtv as number,
-            calculatorState.sessionTime as number
+            Number(calculatorState.spKtv) || 0,
+            Number(calculatorState.sessionTime) || 0
           );
           break;
 
         case "standard-ktv":
           calculationResult = calc.standardKtv(
-            calculatorState.spKtv as number,
-            calculatorState.sessionTime as number || 4,
-            calculatorState.sessionsPerWeek as number || 3,
-            calculatorState.residualKtv as number || 0
+            Number(calculatorState.spKtv) || 0,
+            Number(calculatorState.sessionTime) || 4,
+            Number(calculatorState.sessionsPerWeek) || 3,
+            Number(calculatorState.residualKtv) || 0
           );
           break;
 
         case "devine-ibw":
           calculationResult = calc.devineIdealBodyWeight(
-            calculatorState.height as number,
+            Number(calculatorState.height) || 0,
             calculatorState.sex as "M" | "F",
             (calculatorState.heightUnit as "cm" | "in") || "cm"
           );
@@ -1099,19 +1099,19 @@ export default function Dashboard() {
           calculationResult = calc.ktv(
             getBunValue("preBUN"),
             getBunValue("postBUN"),
-            calculatorState.postWeight as number,
-            calculatorState.sessionTime as number,
-            calculatorState.ultrafiltration as number || 0,
+            Number(calculatorState.postWeight) || 0,
+            Number(calculatorState.sessionTime) || 0,
+            Number(calculatorState.ultrafiltration) || 0,
             "mg/dL"
           );
           break;
 
         case "kt-v-peritoneal":
           calculationResult = calc.pdWeeklyKtv(
-            calculatorState.dialysateUrea as number,
+            Number(calculatorState.dialysateUrea) || 0,
             getValue("plasmaUrea"),
-            calculatorState.dialysateVolume as number,
-            calculatorState.bodyWeight as number
+            Number(calculatorState.dialysateVolume) || 0,
+            Number(calculatorState.bodyWeight) || 0
           );
           break;
 
@@ -1119,16 +1119,16 @@ export default function Dashboard() {
           // Simplified PD creatinine clearance calculation
           const dialysateCr = getValue("dialysateCreatinine");
           const plasmaCr = getValue("plasmaCreatinine");
-          const dialVol = calculatorState.dialysateVolume as number;
-          const bodyWt = calculatorState.bodyWeight as number;
+          const dialVol = Number(calculatorState.dialysateVolume) || 0;
+          const bodyWt = Number(calculatorState.bodyWeight) || 0;
           calculationResult = Math.round((dialysateCr / plasmaCr) * (dialVol / bodyWt) * 100) / 100;
           break;
 
         case "total-body-water":
           calculationResult = calc.totalBodyWaterWatson(
-            calculatorState.weight as number,
-            calculatorState.height as number,
-            calculatorState.age as number,
+            Number(calculatorState.weight) || 0,
+            Number(calculatorState.height) || 0,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F"
           );
           break;
@@ -1146,16 +1146,16 @@ export default function Dashboard() {
           calculationResult = calc.ironDeficitGanzoni(
             getValue("targetHemoglobin"),
             getValue("currentHemoglobin"),
-            calculatorState.weight as number,
+            Number(calculatorState.weight) || 0,
             calculatorState.sex as "M" | "F"
           );
           break;
 
         case "kdpi": {
           const kdpiCalcResult = calc.kdpi(
-            calculatorState.donorAge as number,
-            calculatorState.donorHeight as number,
-            calculatorState.donorWeight as number,
+            Number(calculatorState.donorAge) || 0,
+            Number(calculatorState.donorHeight) || 0,
+            Number(calculatorState.donorWeight) || 0,
             getValue("donorCreatinine"),
             (calculatorState.hypertensionDuration as "NO" | "0-5" | "6-10" | ">10") || "NO",
             (calculatorState.diabetesDuration as "NO" | "0-5" | "6-10" | ">10") || "NO",
@@ -1180,27 +1180,27 @@ export default function Dashboard() {
 
         case "epts":
           calculationResult = calc.epts(
-            calculatorState.recipientAge as number,
+            Number(calculatorState.recipientAge) || 0,
             Boolean(calculatorState.recipientDiabetes),
             Boolean(calculatorState.priorTransplant),
-            calculatorState.yearsOnDialysis as number
+            Number(calculatorState.yearsOnDialysis) || 0
           );
           break;
 
         case "tacrolimus-monitoring":
           calculationResult = calc.tacrolimusMonitoring(
-            calculatorState.dailyDose as number,
-            calculatorState.troughLevel as number
+            Number(calculatorState.dailyDose) || 0,
+            Number(calculatorState.troughLevel) || 0
           );
           break;
 
         case "ascvd-risk":
           calculationResult = calc.ascvdRisk(
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             getValue("totalCholesterol"),
             getValue("hdl"),
-            calculatorState.systolicBP as number,
+            Number(calculatorState.systolicBP) || 0,
             Boolean(calculatorState.treated),
             Boolean(calculatorState.diabetes),
             Boolean(calculatorState.smoker),
@@ -1212,7 +1212,7 @@ export default function Dashboard() {
           const cha2Result = calc.cha2ds2vasc(
             calculatorState.chf === "1",
             calculatorState.hypertension === "1",
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.diabetes === "1",
             calculatorState.strokeTia === "1",
             calculatorState.vascularDisease === "1",
@@ -1228,31 +1228,31 @@ export default function Dashboard() {
 
         case "bmi":
           calculationResult = calc.bmi(
-            calculatorState.weight as number,
-            calculatorState.height as number,
+            Number(calculatorState.weight) || 0,
+            Number(calculatorState.height) || 0,
             "cm"
           );
           break;
 
         case "bsa-dubois":
           calculationResult = calc.bsaDuBois(
-            calculatorState.weight as number,
-            calculatorState.height as number,
+            Number(calculatorState.weight) || 0,
+            Number(calculatorState.height) || 0,
             "cm"
           );
           break;
 
         case "bsa-mosteller":
           calculationResult = calc.bsaMosteller(
-            calculatorState.weight as number,
-            calculatorState.height as number,
+            Number(calculatorState.weight) || 0,
+            Number(calculatorState.height) || 0,
             "cm"
           );
           break;
 
         case "ideal-body-weight":
           calculationResult = calc.devineIdealBodyWeight(
-            calculatorState.height as number,
+            Number(calculatorState.height) || 0,
             calculatorState.sex as "M" | "F",
             "cm"
           );
@@ -1260,8 +1260,8 @@ export default function Dashboard() {
 
         case "lean-body-weight":
           calculationResult = calc.leanBodyWeight(
-            calculatorState.weight as number,
-            calculatorState.height as number,
+            Number(calculatorState.weight) || 0,
+            Number(calculatorState.height) || 0,
             calculatorState.sex as "M" | "F",
             "cm"
           );
@@ -1269,8 +1269,8 @@ export default function Dashboard() {
 
         case "adjusted-body-weight":
           calculationResult = calc.adjustedBodyWeight(
-            calculatorState.actualWeight as number,
-            calculatorState.idealWeight as number
+            Number(calculatorState.actualWeight) || 0,
+            Number(calculatorState.idealWeight) || 0
           );
           break;
 
@@ -1339,18 +1339,18 @@ export default function Dashboard() {
           calculationResult = calc.curb65(
             Boolean(calculatorState.confusion),
             getBunValue("urineaNitrogen"),
-            calculatorState.respiratoryRate as number,
-            calculatorState.bloodPressureSystolic as number,
-            calculatorState.bloodPressureDiastolic as number,
-            calculatorState.age as number,
+            Number(calculatorState.respiratoryRate) || 0,
+            Number(calculatorState.bloodPressureSystolic) || 0,
+            Number(calculatorState.bloodPressureDiastolic) || 0,
+            Number(calculatorState.age) || 0,
             "mg/dL"
           );
           break;
 
         case "roks":
           calculationResult = calc.roks(
-            calculatorState.age as number,
-            calculatorState.bmi as number,
+            Number(calculatorState.age) || 0,
+            Number(calculatorState.bmi) || 0,
             Boolean(calculatorState.maleGender),
             Boolean(calculatorState.previousStone),
             Boolean(calculatorState.familyHistory)
@@ -1384,10 +1384,10 @@ export default function Dashboard() {
 
         case "frax-simplified": {
           const fraxCalcResult = calc.fraxSimplified(
-            calculatorState.age as number,
+            Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
-            calculatorState.weight as number,
-            calculatorState.height as number,
+            Number(calculatorState.weight) || 0,
+            Number(calculatorState.height) || 0,
             Boolean(calculatorState.previousFracture),
             Boolean(calculatorState.parentHipFracture),
             Boolean(calculatorState.currentSmoking),
@@ -1395,7 +1395,7 @@ export default function Dashboard() {
             Boolean(calculatorState.rheumatoidArthritis),
             Boolean(calculatorState.secondaryOsteoporosis),
             Boolean(calculatorState.alcoholIntake),
-            calculatorState.bmdTScore as number | undefined
+            calculatorState.bmdTScore ? Number(calculatorState.bmdTScore) : undefined
           );
           setFraxResult(fraxCalcResult);
           setResult(fraxCalcResult.majorFracture);
@@ -1452,7 +1452,7 @@ export default function Dashboard() {
           m2Score += presentationPoints;
           
           // 2. eGFR: 0/1/4 points
-          const m2Egfr = calculatorState.egfr as number;
+          const m2Egfr = Number(calculatorState.egfr) || 0;
           let m2EgfrPoints = 0;
           let m2EgfrLabel = '';
           if (m2Egfr < 30) {
@@ -1468,7 +1468,7 @@ export default function Dashboard() {
           m2Score += m2EgfrPoints;
           
           // 3. LVEF: 0/2 points
-          const m2Lvef = calculatorState.lvef as number;
+          const m2Lvef = Number(calculatorState.lvef) || 0;
           const m2LvefPoints = m2Lvef < 40 ? 2 : 0;
           m2breakdown.push({ factor: `LVEF ${m2Lvef < 40 ? '<40%' : '≥40%'} (${m2Lvef}%)`, points: m2LvefPoints, present: m2LvefPoints > 0 });
           m2Score += m2LvefPoints;
@@ -1483,7 +1483,7 @@ export default function Dashboard() {
           m2Score += m2DiabetesPoints;
           
           // 5. Hemoglobin: 0/1 points (convert from g/L if needed)
-          let m2Hb = calculatorState.hemoglobin as number;
+          let m2Hb = Number(calculatorState.hemoglobin) || 0;
           const m2HbUnit = unitState.hemoglobin || 'g/dL';
           if (m2HbUnit === 'g/L') { m2Hb = m2Hb / 10; }
           const m2HbPoints = m2Hb < 11 ? 1 : 0;
@@ -1491,7 +1491,7 @@ export default function Dashboard() {
           m2Score += m2HbPoints;
           
           // 6. Basal Glucose: 0/1 points (convert from mmol/L if needed)
-          let m2Glucose = calculatorState.glucose as number;
+          let m2Glucose = Number(calculatorState.glucose) || 0;
           const m2GlucoseUnit = unitState.glucose || 'mg/dL';
           if (m2GlucoseUnit === 'mmol/L') { m2Glucose = m2Glucose * 18.0182; }
           const m2GlucosePoints = m2Glucose >= 150 ? 1 : 0;
@@ -1573,18 +1573,18 @@ export default function Dashboard() {
           if (origHasDiabetes) origMehranScore += 3;
           
           // Contrast volume: 1 point per 100cc
-          const origContrastVol = calculatorState.contrastVolume as number || 0;
+          const origContrastVol = Number(calculatorState.contrastVolume) || 0;
           const origContrastPoints = Math.floor(origContrastVol / 100);
           origBreakdown.push({ factor: `Contrast volume (${origContrastVol} mL = ${origContrastPoints} pts)`, points: origContrastPoints, present: origContrastPoints > 0 });
           origMehranScore += origContrastPoints;
           
           // eGFR points: 2 points if 40-60, 4 points if 20-40, 6 points if <20
-          let origCreatinine = calculatorState.creatinine as number || 1.0;
+          let origCreatinine = Number(calculatorState.creatinine) || 1.0;
           // Handle unit conversion for creatinine
           if (unitState['creatinine'] === 'μmol/L') {
             origCreatinine = origCreatinine / 88.4;
           }
-          const origCinEgfr = calculatorState.egfr as number || 60;
+          const origCinEgfr = Number(calculatorState.egfr) || 60;
           let origEgfrPoints = 0;
           let origEgfrLabel = '';
           if (origCinEgfr < 20) {
@@ -1647,9 +1647,9 @@ export default function Dashboard() {
         // ============================================================================
         case "qsofa": {
           const qsofaResult = calc.qsofa(
-            calculatorState.respiratoryRate as number,
-            calculatorState.systolicBP as number,
-            calculatorState.gcs as number
+            Number(calculatorState.respiratoryRate) || 0,
+            Number(calculatorState.systolicBP) || 0,
+            Number(calculatorState.gcs) || 0
           );
           calculationResult = qsofaResult.score;
           setResultInterpretation(
@@ -1660,12 +1660,12 @@ export default function Dashboard() {
 
         case "news2": {
           const news2Result = calc.news2(
-            calculatorState.respiratoryRate as number,
-            calculatorState.spo2 as number,
+            Number(calculatorState.respiratoryRate) || 0,
+            Number(calculatorState.spo2) || 0,
             calculatorState.supplementalO2 === 'yes',
-            calculatorState.systolicBP as number,
-            calculatorState.heartRate as number,
-            calculatorState.temperature as number,
+            Number(calculatorState.systolicBP) || 0,
+            Number(calculatorState.heartRate) || 0,
+            Number(calculatorState.temperature) || 0,
             calculatorState.consciousness as 'A' | 'C' | 'V' | 'P' | 'U'
           );
           calculationResult = news2Result.score;
@@ -1677,17 +1677,17 @@ export default function Dashboard() {
 
         case "sofa": {
           const sofaResult = calc.sofa(
-            calculatorState.pao2 as number,
-            calculatorState.fio2 as number,
-            calculatorState.platelets as number,
-            calculatorState.bilirubin as number,
+            Number(calculatorState.pao2) || 0,
+            Number(calculatorState.fio2) || 0,
+            Number(calculatorState.platelets) || 0,
+            Number(calculatorState.bilirubin) || 0,
             (unitState.bilirubin || 'μmol/L') as 'μmol/L' | 'mg/dL',
-            calculatorState.map as number,
+            Number(calculatorState.map) || 0,
             calculatorState.vasopressor as 'none' | 'dopa_low' | 'dopa_mid' | 'dopa_high',
-            calculatorState.gcs as number,
-            calculatorState.creatinine as number,
+            Number(calculatorState.gcs) || 0,
+            Number(calculatorState.creatinine) || 0,
             (unitState.creatinine || 'mg/dL') as 'μmol/L' | 'mg/dL',
-            calculatorState.urineOutput as number
+            Number(calculatorState.urineOutput) || 0
           );
           calculationResult = sofaResult.score;
           setResultInterpretation(

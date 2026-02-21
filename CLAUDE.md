@@ -21,10 +21,28 @@ Defined in `unitOptions` (Dashboard.tsx):
 - Glucose: mg/dL ↔ mmol/L (factor: 18.0182)
 - Calcium: mg/dL ↔ mmol/L (factor: 4.0)
 
+## Yes/No Select Defaults (CRITICAL)
+
+All calculator inputs with Yes/No options MUST:
+
+1. **Default to "No"** — when a calculator is first loaded, all yes/no selects must initialize to the "No" value. This is handled by `getYesNoValue(input, false)` in Dashboard.tsx.
+
+2. **"No" option listed first** — in the options array, the "No" option must come before "Yes" so it's the natural default: `options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }]`
+
+3. **Never default to "Yes"** — no clinical scoring input should assume a positive finding by default.
+
+## Safe Value Passing in handleCalculate (CRITICAL)
+
+When passing numeric values from `calculatorState` to calculator functions:
+
+1. **Unit-converted inputs** — use `getValue(id)` which auto-converts SI→conventional via `normalizeValue`
+2. **BUN/Urea inputs** — use `getBunValue(id)` which handles 4-way unit conversion
+3. **Plain numeric inputs** (age, weight, height, time, sodium, etc.) — use `Number(calculatorState.X) || 0`, NEVER `calculatorState.X as number` (which passes empty strings and causes NaN)
+
 ## Stack
 - React 19 + TypeScript + Tailwind + shadcn/ui
-- Vercel deployment (auto-deploys from GitHub push)
-- Domain: nephrocalc.xyz
+- GitHub Pages deployment (gh-pages branch of nephrology_calculator_dashboard repo)
+- Domain: nephrocalcs.xyz
 
 ## KDPI Calculator (CRITICAL)
 - Uses exact OPTN 2024 Refit formula (8 factors, no race/HCV)
