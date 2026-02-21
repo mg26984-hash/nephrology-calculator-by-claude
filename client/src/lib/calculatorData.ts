@@ -154,6 +154,7 @@ export const calculators: Calculator[] = [
       { id: "timeInterval", label: "Time Between Cr\u2081 and Cr\u2082", type: "number", unit: "hours", placeholder: "24", required: true },
       { id: "age", label: "Age", type: "number", unit: "years", placeholder: "60", required: true },
       { id: "sex", label: "Sex", type: "select", options: [{ value: "M", label: "Male" }, { value: "F", label: "Female" }], required: true },
+      { id: "isBlack", label: "Black Race", type: "select", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }], required: true },
     ],
     resultLabel: "Kinetic eGFR",
     resultUnit: "mL/min/1.73m²",
@@ -166,6 +167,7 @@ export const calculators: Calculator[] = [
       return "Kidney failure (CKD G5 equivalent)";
     },
     clinicalPearls: [
+      "Uses 4-variable MDRD for baseline eGFR estimation (matches MDCalc)",
       "Use when creatinine is rapidly changing (AKI, recovery, post-transplant)",
       "Steady-state eGFR underestimates true GFR when creatinine is rising",
       "Baseline creatinine should reflect the patient's stable pre-AKI level",
@@ -173,6 +175,7 @@ export const calculators: Calculator[] = [
     ],
     references: [
       "Chen S. Retooling the creatinine clearance equation to estimate kinetic GFR. Am J Kidney Dis. 2013;62(6):1171-1172",
+      "Levey AS et al. A more accurate method to estimate glomerular filtration rate from serum creatinine. Ann Intern Med. 2006;145(4):247-254 (MDRD)",
     ],
   },
   {

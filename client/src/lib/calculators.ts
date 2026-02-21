@@ -128,29 +128,25 @@ export function kineticEgfr(
   cr2: number,
   timeIntervalHours: number,
   age: number,
-  sex: "M" | "F"
+  sex: "M" | "F",
+  isBlack: boolean = false
 ): number {
-  // Chen 2013 Kinetic eGFR (KeGFR) formula
-  // Reference: MDCalc, Chen S. Am J Kidney Dis. 2013;62(6):1171-1172
+  // Chen 2013 Kinetic eGFR (KeGFR) formula — MDCalc implementation
+  // Reference: Chen S. Am J Kidney Dis. 2013;62(6):1171-1172
   //
   // keGFR = baselineEGFR × (Cr_baseline / Cr_mean) × kineticFactor
-  // kineticFactor = 1 - (24 × ΔCr) / (Δt × 1.5), clamped to [0, 1]
+  // kineticFactor = 1 - (24 × ΔCr) / (Δt × MaxΔCr), clamped to [0, 1]
+  // MaxΔCr = 1.5 mg/dL/day (assumed maximal daily creatinine production at zero GFR)
   //
-  // 1.5 mg/dL/day = assumed maximal daily creatinine rise with zero GFR
+  // Baseline eGFR uses 4-variable MDRD (matches MDCalc):
+  // eGFR = 175 × SCr^(-1.154) × Age^(-0.203) × 0.742 (if female) × 1.212 (if Black)
 
   if (baselineCreatinine <= 0 || cr1 <= 0 || cr2 <= 0 || age <= 0 || timeIntervalHours <= 0) return 0;
 
-  // Step 1: Calculate baseline eGFR using CKD-EPI 2021 (race-free)
-  let baselineEgfr: number;
-  if (sex === "F") {
-    const kappa = 0.7;
-    const alpha = baselineCreatinine <= kappa ? -0.241 : -1.200;
-    baselineEgfr = 142 * Math.pow(baselineCreatinine / kappa, alpha) * Math.pow(0.9938, age) * 1.012;
-  } else {
-    const kappa = 0.9;
-    const alpha = baselineCreatinine <= kappa ? -0.302 : -1.200;
-    baselineEgfr = 142 * Math.pow(baselineCreatinine / kappa, alpha) * Math.pow(0.9938, age);
-  }
+  // Step 1: Calculate baseline eGFR using 4-variable MDRD
+  let baselineEgfr = 175 * Math.pow(baselineCreatinine, -1.154) * Math.pow(age, -0.203);
+  if (sex === "F") baselineEgfr *= 0.742;
+  if (isBlack) baselineEgfr *= 1.212;
 
   // Step 2: Mean creatinine
   const crMean = (cr1 + cr2) / 2;

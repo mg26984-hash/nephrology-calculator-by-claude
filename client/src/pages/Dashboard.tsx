@@ -735,9 +735,10 @@ export default function Dashboard() {
             getValue("baselineCreatinine"),
             getValue("creatinine1"),
             getValue("creatinine2"),
-            calculatorState.timeInterval as number,
-            calculatorState.age as number,
-            calculatorState.sex as "M" | "F"
+            Number(calculatorState.timeInterval) || 0,
+            Number(calculatorState.age) || 0,
+            calculatorState.sex as "M" | "F",
+            calculatorState.isBlack === "yes"
           );
           break;
 
