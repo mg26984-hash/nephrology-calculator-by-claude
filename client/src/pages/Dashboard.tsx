@@ -1260,13 +1260,6 @@ export default function Dashboard() {
           );
           break;
 
-        case "tacrolimus-monitoring":
-          calculationResult = calc.tacrolimusMonitoring(
-            Number(calculatorState.dailyDose) || 0,
-            Number(calculatorState.troughLevel) || 0
-          );
-          break;
-
         case "ascvd-risk":
           calculationResult = calc.ascvdRisk(
             Number(calculatorState.age) || 0,

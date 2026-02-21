@@ -1139,30 +1139,6 @@ export const calculators: Calculator[] = [
     ],
     references: ["Loupy A et al. Am J Transplant. 2020;20(9):2305-2331", "Haas M et al. Am J Transplant. 2018;18(2):293-307", "Banff 2022 Classification"],
   },
-  {
-    id: "tacrolimus-monitoring",
-    name: "Tacrolimus Therapeutic Monitoring",
-    description: "Assesses tacrolimus metabolism and adherence",
-    category: "Transplantation",
-    inputs: [
-      { id: "dailyDose", label: "Daily Tacrolimus Dose", type: "number", unit: "mg", placeholder: "4", required: true },
-      { id: "troughLevel", label: "Trough Level", type: "number", unit: "ng/mL", placeholder: "8", required: true },
-    ],
-    resultLabel: "Dose-to-Trough Ratio",
-    resultUnit: "ratio",
-    interpretation: (value) => {
-      if (value > 2.5) return "Fast metabolizer (CYP3A5 expresser) - may need higher doses or BID dosing";
-      if (value >= 1.0) return "Normal metabolism - typical dose-to-trough ratio";
-      return "Slow metabolizer - risk of toxicity, consider dose reduction";
-    },
-    clinicalPearls: [
-      "Typical range: 1.6-2.4",
-      "Identifies metabolism phenotype (genetic or drug interaction)",
-      "Assesses adherence (high ratio with low level = missed doses)",
-      "CYP3A5 expressers more common in African Americans (~50% vs. 10-20% other populations)",
-    ],
-    references: ["Thölking G et al. Sci Rep. 2016;6:32273"],
-  },
   // ============================================================================
   // CARDIOVASCULAR RISK
   // ============================================================================

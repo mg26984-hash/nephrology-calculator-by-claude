@@ -910,15 +910,6 @@ export function epts(
   return Math.round(rawEPTS * 10000) / 10000;
 }
 
-export function tacrolimusMonitoring(
-  dailyDose: number,
-  troughLevel: number
-): number {
-  const ratio = dailyDose / troughLevel;
-
-  return Math.round(ratio * 100) / 100;
-}
-
 // ============================================================================
 // 7. CARDIOVASCULAR RISK CALCULATORS
 // ============================================================================
