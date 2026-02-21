@@ -159,6 +159,22 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   creatinineValue: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0884 },
   // Critical Care - SOFA inputs
   bilirubin: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 17.1 },
+  // 24h Urine creatinine
+  urineCreatinine24h: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  // Height
+  height: { conventional: "cm", si: "in", conversionFactor: 0.3937 },
+  // Magnesium (1 mg/dL = 0.4114 mmol/L)
+  urineMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
+  plasmaMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
+  // Uric acid (1 mg/dL = 59.48 μmol/L)
+  urineUricAcid: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 59.48 },
+  plasmaUricAcid: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 59.48 },
+  // Phosphate (additional IDs — same factor as phosphate: 0.3229)
+  serumPhosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
+  urinePhosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
+  plasmaPhosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
+  // Urine glucose
+  urineGlucose: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0555 },
 };
 
 // Inputs that default to SI units (mg/mmol) instead of conventional
@@ -516,13 +532,20 @@ export default function Dashboard() {
   }, []);
 
   const handleUnitChange = useCallback((inputId: string, unit: string) => {
-    // Link related creatinine inputs so they toggle together
+    // Link related inputs of the same measurement type so they toggle together
+    const allCreatinineIds = ["creatinine", "baselineCreatinine", "currentCreatinine", "creatinine1", "creatinine2", "preCreatinine", "postCreatinine", "plasmaCr", "urineCr", "urineCreatinine24h", "donorCreatinine"];
+    const allPhosphateIds = ["phosphate", "serumPhosphate", "urinePhosphate", "plasmaPhosphate"];
+    const allMagnesiumIds = ["urineMagnesium", "plasmaMagnesium"];
+    const allUricAcidIds = ["urineUricAcid", "plasmaUricAcid"];
     const creatinineGroups: Record<string, string[]> = {
-      baselineCreatinine: ["baselineCreatinine", "creatinine1", "creatinine2"],
-      creatinine1: ["baselineCreatinine", "creatinine1", "creatinine2"],
-      creatinine2: ["baselineCreatinine", "creatinine1", "creatinine2"],
-      preCreatinine: ["preCreatinine", "postCreatinine"],
-      postCreatinine: ["preCreatinine", "postCreatinine"],
+      // All creatinine inputs (factor 88.4)
+      ...Object.fromEntries(allCreatinineIds.map(id => [id, allCreatinineIds])),
+      // All phosphate inputs (factor 0.3229)
+      ...Object.fromEntries(allPhosphateIds.map(id => [id, allPhosphateIds])),
+      // Magnesium inputs (factor 0.4114)
+      ...Object.fromEntries(allMagnesiumIds.map(id => [id, allMagnesiumIds])),
+      // Uric acid inputs (factor 59.48)
+      ...Object.fromEntries(allUricAcidIds.map(id => [id, allUricAcidIds])),
     };
     const linked = creatinineGroups[inputId];
     if (linked) {
@@ -617,6 +640,22 @@ export default function Dashboard() {
       pcr: { conventional: "0.5", si: "57" },
       // Ratio value: 0.5 mg/mg = 56.6 mg/mmol (mild)
       ratioValue: { conventional: "0.5", si: "57" },
+      // Urine Creatinine (24h): 80 mg/dL = 7072 μmol/L
+      urineCreatinine24h: { conventional: "80", si: "7072" },
+      // Height: 170 cm = 67 in
+      height: { conventional: "170", si: "67" },
+      // Magnesium: urine 4.0 mg/dL = 1.6 mmol/L, plasma 1.8 mg/dL = 0.74 mmol/L
+      urineMagnesium: { conventional: "4.0", si: "1.6" },
+      plasmaMagnesium: { conventional: "1.8", si: "0.74" },
+      // Uric acid: urine 20 mg/dL = 1190 μmol/L, plasma 4.5 mg/dL = 268 μmol/L
+      urineUricAcid: { conventional: "20", si: "1190" },
+      plasmaUricAcid: { conventional: "4.5", si: "268" },
+      // Phosphate (additional IDs): serum 1.8 = 0.58, urine 40 = 12.9, plasma 3.0 = 0.97
+      serumPhosphate: { conventional: "1.8", si: "0.58" },
+      urinePhosphate: { conventional: "40", si: "12.9" },
+      plasmaPhosphate: { conventional: "3.0", si: "0.97" },
+      // Urine glucose
+      urineGlucose: { conventional: "0", si: "0" },
     };
     
     const typicalValue = typicalValues[input.id];
@@ -733,7 +772,7 @@ export default function Dashboard() {
         case "schwartz-pediatric":
           calculationResult = calc.schwartzPediatric(
             getValue("creatinine"),
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             "mg/dL"
           );
           break;
@@ -1096,9 +1135,9 @@ export default function Dashboard() {
 
         case "devine-ibw":
           calculationResult = calc.devineIdealBodyWeight(
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             calculatorState.sex as "M" | "F",
-            (calculatorState.heightUnit as "cm" | "in") || "cm"
+            "cm"
           );
           break;
 
@@ -1135,7 +1174,7 @@ export default function Dashboard() {
         case "total-body-water":
           calculationResult = calc.totalBodyWaterWatson(
             Number(calculatorState.weight) || 0,
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F"
           );
@@ -1237,7 +1276,7 @@ export default function Dashboard() {
         case "bmi":
           calculationResult = calc.bmi(
             Number(calculatorState.weight) || 0,
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             "cm"
           );
           break;
@@ -1245,7 +1284,7 @@ export default function Dashboard() {
         case "bsa-dubois":
           calculationResult = calc.bsaDuBois(
             Number(calculatorState.weight) || 0,
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             "cm"
           );
           break;
@@ -1253,14 +1292,14 @@ export default function Dashboard() {
         case "bsa-mosteller":
           calculationResult = calc.bsaMosteller(
             Number(calculatorState.weight) || 0,
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             "cm"
           );
           break;
 
         case "ideal-body-weight":
           calculationResult = calc.devineIdealBodyWeight(
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             calculatorState.sex as "M" | "F",
             "cm"
           );
@@ -1269,7 +1308,7 @@ export default function Dashboard() {
         case "lean-body-weight":
           calculationResult = calc.leanBodyWeight(
             Number(calculatorState.weight) || 0,
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             calculatorState.sex as "M" | "F",
             "cm"
           );
@@ -1395,7 +1434,7 @@ export default function Dashboard() {
             Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             Number(calculatorState.weight) || 0,
-            Number(calculatorState.height) || 0,
+            getValue("height"),
             Boolean(calculatorState.previousFracture),
             Boolean(calculatorState.parentHipFracture),
             Boolean(calculatorState.currentSmoking),
@@ -1956,7 +1995,7 @@ export default function Dashboard() {
         case "plasma-exchange": {
           const plexResult = calc.plasmaExchangeDosing(
             parseFloat(String(calculatorState.weight)) || 70,
-            parseFloat(String(calculatorState.height)) || 170,
+            getValue("height") || 170,
             parseFloat(String(calculatorState.hematocrit)) || 40,
             (String(calculatorState.sex) || 'M') as 'M' | 'F',
             parseFloat(String(calculatorState.exchangeVolumes)) || 1,
