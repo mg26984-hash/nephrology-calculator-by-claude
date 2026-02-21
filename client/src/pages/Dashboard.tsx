@@ -161,6 +161,9 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   bilirubin: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 17.1 },
 };
 
+// Inputs that default to SI units (mg/mmol) instead of conventional
+const siDefaultInputs = new Set(["acr", "pcr", "ratioValue"]);
+
 // BUN/Urea inputs that need 4-option toggle
 const bunUreaInputIds = ["bun", "preBUN", "postBUN", "plasmaUrea", "urineUrea", "urineaNitrogen", "bunValue"];
 
@@ -536,6 +539,9 @@ export default function Dashboard() {
   // Get the current unit for an input (default to conventional)
   const getInputUnit = useCallback((inputId: string): string => {
     if (unitOptions[inputId]) {
+      if (siDefaultInputs.has(inputId)) {
+        return unitState[inputId] || "si";
+      }
       return unitState[inputId] || "conventional";
     }
     return "conventional";
@@ -555,7 +561,7 @@ export default function Dashboard() {
   const getDynamicPlaceholder = useCallback((input: CalculatorInput): string => {
     // Handle ACR multi-unit placeholders for KFRE calculator
     if (selectedCalculatorId === "kfre" && input.id === "acr") {
-      const currentAcrUnit = unitState.acr || "mg/g";
+      const currentAcrUnit = unitState.acr || "mg/mmol";
       // Typical moderately elevated ACR values for each unit
       // 300 mg/g = 33.9 mg/mmol = 0.3 mg/mg (A3 category)
       switch (currentAcrUnit) {
@@ -609,6 +615,8 @@ export default function Dashboard() {
       acr: { conventional: "30", si: "3.4" },
       // PCR: 0.5 g/g = 56.5 mg/mmol (mild proteinuria)
       pcr: { conventional: "0.5", si: "57" },
+      // Ratio value: 0.5 mg/mg = 56.6 mg/mmol (mild)
+      ratioValue: { conventional: "0.5", si: "57" },
     };
     
     const typicalValue = typicalValues[input.id];
@@ -766,7 +774,7 @@ export default function Dashboard() {
             calculatorState.sex as "M" | "F",
             Number(calculatorState.eGFR) || 0,
             Number(calculatorState.acr) || 0,
-            (unitState.acr as "mg/g" | "mg/mmol" | "mg/mg") || "mg/g",
+            (unitState.acr as "mg/g" | "mg/mmol" | "mg/mg") || "mg/mmol",
             (calculatorState.years as 2 | 5) || 5
           );
           break;
@@ -986,7 +994,7 @@ export default function Dashboard() {
           if (inputMode === "ratio") {
             // Get ratio value and convert to mg/mg base unit
             const rawRatio = parseFloat(String(calculatorState.ratioValue)) || 0;
-            const ratioUnit = unitState.ratioValue || "mg/mg";
+            const ratioUnit = unitState.ratioValue || "mg/mmol";
             
             // Convert to mg/mg (base unit)
             if (ratioUnit === "mg/mg") {
@@ -1957,6 +1965,186 @@ export default function Dashboard() {
           setPlasmaExchangeResult(plexResult);
           calculationResult = plexResult.totalPlasmaVolume;
           setResultInterpretation(`Plasma volume: ${plexResult.totalPlasmaVolume} mL (${plexResult.plasmaVolumePerKg} mL/kg). Exchange volume: ${plexResult.exchangeVolume} mL. See detailed protocol below.`);
+          break;
+        }
+
+        // RESTORED CALCULATORS (18 previously missing)
+        case "albumin-corrected-ag": {
+          const agResult = calc.albuminCorrectedAnionGap(
+            Number(calculatorState.sodium) || 0,
+            Number(calculatorState.chloride) || 0,
+            Number(calculatorState.bicarbonate) || 0,
+            getValue("albumin")
+          );
+          calculationResult = agResult.correctedAG;
+          setResultInterpretation(
+            `Uncorrected AG: ${agResult.ag} mEq/L | Corrected AG: ${agResult.correctedAG} mEq/L. ` +
+            selectedCalculator.interpretation(agResult.correctedAG)
+          );
+          break;
+        }
+
+        case "bicarbonate-deficit":
+          calculationResult = calc.bicarbonateDeficit(
+            Number(calculatorState.weight) || 0,
+            Number(calculatorState.bicarbonate) || 0
+          );
+          break;
+
+        case "calculated-osmolality":
+          calculationResult = calc.calculatedOsmolality(
+            Number(calculatorState.sodium) || 0,
+            getValue("glucose"),
+            getBunValue("bun")
+          );
+          break;
+
+        case "creatinine-clearance-24h":
+          calculationResult = calc.creatinineClearance24h(
+            getValue("urineCreatinine24h"),
+            Number(calculatorState.urineVolume24h) || 0,
+            getValue("plasmaCr")
+          );
+          break;
+
+        case "ekfc-creatinine":
+          calculationResult = calc.ekfcCreatinine(
+            getValue("creatinine"),
+            Number(calculatorState.age) || 0,
+            calculatorState.sex as "M" | "F",
+            "mg/dL"
+          );
+          break;
+
+        case "electrolyte-free-water-clearance":
+          calculationResult = calc.electrolyteFreeWaterClearance(
+            Number(calculatorState.urineOutput) || 0,
+            Number(calculatorState.urineNa) || 0,
+            Number(calculatorState.urineK) || 0,
+            Number(calculatorState.plasmaNa) || 0
+          );
+          break;
+
+        case "fe-magnesium":
+          calculationResult = calc.feMagnesium(
+            getValue("urineMagnesium"),
+            getValue("plasmaMagnesium"),
+            getValue("urineCr"),
+            getValue("plasmaCr")
+          );
+          break;
+
+        case "fe-uric-acid":
+          calculationResult = calc.feUricAcid(
+            getValue("urineUricAcid"),
+            getValue("plasmaUricAcid"),
+            getValue("urineCr"),
+            getValue("plasmaCr")
+          );
+          break;
+
+        case "free-water-clearance":
+          calculationResult = calc.freeWaterClearance(
+            Number(calculatorState.urineOutput) || 0,
+            Number(calculatorState.urineOsm) || 0,
+            Number(calculatorState.plasmaOsm) || 0
+          );
+          break;
+
+        case "henderson-hasselbalch":
+          calculationResult = calc.hendersonHasselbalch(
+            Number(calculatorState.bicarbonate) || 0,
+            Number(calculatorState.pCO2) || 0
+          );
+          break;
+
+        case "kdigo-aki-staging":
+          calculationResult = calc.kdigoAkiStaging(
+            getValue("baselineCreatinine"),
+            getValue("currentCreatinine")
+          );
+          break;
+
+        case "mdrd":
+          calculationResult = calc.mdrdGfr(
+            getValue("creatinine"),
+            Number(calculatorState.age) || 0,
+            calculatorState.sex as "M" | "F",
+            calculatorState.race as "Black" | "Other",
+            "mg/dL"
+          );
+          break;
+
+        case "phosphate-repletion": {
+          const phosResult = calc.phosphateRepletion(
+            getValue("serumPhosphate"),
+            Number(calculatorState.weight) || 0
+          );
+          calculationResult = phosResult.dose;
+          if (phosResult.severity !== "normal") {
+            setResultInterpretation(
+              `${phosResult.severity.charAt(0).toUpperCase() + phosResult.severity.slice(1)} hypophosphatemia — ` +
+              `recommended IV phosphate dose: ${phosResult.dose} mmol. ` +
+              selectedCalculator.interpretation(phosResult.dose)
+            );
+          }
+          break;
+        }
+
+        case "potassium-repletion": {
+          const kResult = calc.potassiumRepletion(
+            Number(calculatorState.serumPotassium) || 0,
+            Number(calculatorState.targetPotassium) || 4.0
+          );
+          calculationResult = kResult.deficit;
+          if (kResult.severity !== "normal") {
+            setResultInterpretation(
+              `${kResult.severity.charAt(0).toUpperCase() + kResult.severity.slice(1)} hypokalemia — ` +
+              `estimated total body deficit: ~${kResult.deficit} mEq. ` +
+              selectedCalculator.interpretation(kResult.deficit)
+            );
+          }
+          break;
+        }
+
+        case "stool-osmolar-gap":
+          calculationResult = calc.stoolOsmolarGap(
+            Number(calculatorState.stoolNa) || 0,
+            Number(calculatorState.stoolK) || 0,
+            Number(calculatorState.stoolOsmolality) || 290
+          );
+          break;
+
+        case "trp-tmp-gfr": {
+          const trpResult = calc.trpTmpGfr(
+            getValue("urinePhosphate"),
+            getValue("plasmaPhosphate"),
+            getValue("urineCr"),
+            getValue("plasmaCr")
+          );
+          calculationResult = trpResult.tmpGfr;
+          setResultInterpretation(
+            `TRP: ${(trpResult.trp * 100).toFixed(1)}% | TmP/GFR: ${trpResult.tmpGfr} mg/dL. ` +
+            selectedCalculator.interpretation(trpResult.tmpGfr)
+          );
+          break;
+        }
+
+        case "urine-osmolal-gap":
+          calculationResult = calc.urineOsmolalGap(
+            Number(calculatorState.measuredUrineOsm) || 0,
+            Number(calculatorState.urineNa) || 0,
+            Number(calculatorState.urineK) || 0,
+            getBunValue("urineUrea"),
+            getValue("urineGlucose") || 0
+          );
+          break;
+
+        case "winters-formula": {
+          const wintersResult = calc.wintersFormula(
+            Number(calculatorState.bicarbonate) || 0
+          );
+          calculationResult = wintersResult.expectedPCO2;
           break;
         }
 

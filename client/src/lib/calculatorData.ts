@@ -235,7 +235,7 @@ export const calculators: Calculator[] = [
       { id: "age", label: "Age", type: "number", unit: "years", placeholder: "55", required: true },
       { id: "sex", label: "Sex", type: "select", options: [{ value: "M", label: "Male" }, { value: "F", label: "Female" }], required: true },
       { id: "eGFR", label: "eGFR", type: "number", unit: "mL/min/1.73m²", placeholder: "35", required: true },
-      { id: "acr", label: "Albumin-Creatinine Ratio", type: "number", unit: "mg/g", placeholder: "150", required: true, unitToggle: { units: ["mg/g", "mg/mmol", "mg/mg"], conversionFactor: 1 } },
+      { id: "acr", label: "Albumin-Creatinine Ratio", type: "number", unit: "mg/mmol", placeholder: "34", required: true, unitToggle: { units: ["mg/mmol", "mg/g", "mg/mg"], conversionFactor: 1 } },
       { id: "years", label: "Prediction Timeframe", type: "select", options: [{ value: "2", label: "2-year risk" }, { value: "5", label: "5-year risk" }], required: true },
     ],
     resultLabel: "Kidney Failure Risk",
@@ -681,7 +681,7 @@ export const calculators: Calculator[] = [
     description: "Estimates albumin-creatinine ratio from total protein",
     category: "Proteinuria & Glomerular Disease",
     inputs: [
-      { id: "pcr", label: "Urine Protein-Creatinine Ratio", type: "number", unit: "g/g", placeholder: "1.5", required: true },
+      { id: "pcr", label: "Urine Protein-Creatinine Ratio", type: "number", unit: "mg/mmol", placeholder: "170", required: true },
     ],
     resultLabel: "Estimated ACR",
     resultUnit: "mg/g",
@@ -705,7 +705,7 @@ export const calculators: Calculator[] = [
     inputs: [
       { id: "testType", label: "Test Type", type: "select", options: [{ value: "pcr", label: "Protein/Creatinine Ratio (PCR)" }, { value: "acr", label: "Albumin/Creatinine Ratio (ACR)" }], required: true },
       { id: "inputMode", label: "Input Method", type: "select", options: [{ value: "ratio", label: "I have the ratio value" }, { value: "raw", label: "I have protein/albumin and creatinine values" }], required: true },
-      { id: "ratioValue", label: "Ratio Value", type: "number", unit: "mg/mg", placeholder: "0.5", required: false },
+      { id: "ratioValue", label: "Ratio Value", type: "number", unit: "mg/mmol", placeholder: "57", required: false },
       { id: "proteinValue", label: "Urine Protein/Albumin Concentration", type: "number", unit: "mg/dL", placeholder: "50", required: false },
       { id: "creatinineValue", label: "Urine Creatinine Concentration", type: "number", unit: "mg/dL", placeholder: "100", required: false },
     ],
@@ -2651,6 +2651,605 @@ export const calculators: Calculator[] = [
       "Padmanabhan A et al. J Clin Apher. 2019;34(3):171-354",
       "Kaplan AA. UpToDate. Therapeutic apheresis (plasma exchange or cytapheresis): Indications and technology.",
     ],
+  },
+  // ============================================================================
+  // RESTORED CALCULATORS (18 previously missing)
+  // ============================================================================
+  {
+    id: "albumin-corrected-ag",
+    name: "Albumin-Corrected Anion Gap",
+    description: "Anion gap corrected for hypoalbuminemia (more accurate)",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "sodium", label: "Serum Sodium", type: "number", unit: "mEq/L", placeholder: "140", required: true },
+      { id: "chloride", label: "Serum Chloride", type: "number", unit: "mEq/L", placeholder: "104", required: true },
+      { id: "bicarbonate", label: "Serum Bicarbonate", type: "number", unit: "mEq/L", placeholder: "24", required: true },
+      { id: "albumin", label: "Serum Albumin", type: "number", unit: "g/dL or g/L", placeholder: "2.5", required: true },
+    ],
+    resultLabel: "Corrected AG",
+    resultUnit: "mEq/L",
+    interpretation: (value) => {
+      if (value <= 12) return "Normal corrected anion gap (≤12 mEq/L)";
+      if (value <= 20) return "Mildly elevated corrected AG — possible early HAGMA";
+      return "Elevated corrected AG (>20) — high anion gap metabolic acidosis (HAGMA)";
+    },
+    referenceRanges: [
+      { label: "Normal", min: 4, max: 12, unit: "mEq/L" },
+      { label: "Mildly elevated", min: 12, max: 20, unit: "mEq/L" },
+      { label: "Elevated", min: 20, unit: "mEq/L", note: "HAGMA" },
+    ],
+    clinicalPearls: [
+      "Correction: AG + 2.5 × (4.0 - albumin) — adds ~2.5 mEq/L per g/dL albumin deficit",
+      "Critical in ICU/nephrotic patients where albumin is often low",
+      "An uncorrected AG may appear normal despite significant acidosis",
+      "Example: AG=10, albumin=2.0 → corrected AG = 10 + 2.5×2 = 15 (HAGMA missed if uncorrected!)",
+      "Use corrected AG to calculate delta-delta for mixed acid-base disorders",
+    ],
+    references: [
+      "Figge J et al. Crit Care Med. 1998;26(11):1807-1810",
+      "Kraut JA, Madias NE. Clin J Am Soc Nephrol. 2007;2(1):162-174",
+    ],
+  },
+  {
+    id: "bicarbonate-deficit",
+    name: "Bicarbonate Deficit",
+    description: "Estimated HCO₃⁻ deficit for metabolic acidosis correction",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "weight", label: "Body Weight", type: "number", unit: "kg", placeholder: "70", required: true, min: 1 },
+      { id: "bicarbonate", label: "Measured Bicarbonate", type: "number", unit: "mEq/L", placeholder: "14", required: true, min: 0, max: 40 },
+    ],
+    resultLabel: "Bicarbonate Deficit",
+    resultUnit: "mEq",
+    interpretation: (value) => {
+      if (value <= 0) return "No bicarbonate deficit — HCO₃ ≥ 24 mEq/L";
+      if (value <= 100) return "Mild deficit — consider oral bicarbonate supplementation";
+      if (value <= 300) return "Moderate deficit — IV NaHCO₃ may be needed";
+      return "Severe deficit — IV NaHCO₃ required, monitor closely";
+    },
+    clinicalPearls: [
+      "Formula uses 0.5 × weight as bicarbonate distribution volume",
+      "In severe acidosis (pH <7.1), distribution volume may approach 1.0 × weight",
+      "Replace only 50% of deficit over first 12-24h and reassess",
+      "Goal is not to normalize HCO₃ — aim for ~15-18 mEq/L initially",
+      "Caution with NaHCO₃: sodium load, volume overload, overshoot alkalosis",
+      "Not recommended for lactic acidosis or DKA (treat underlying cause instead)",
+    ],
+    references: [
+      "Adrogué HJ, Madias NE. N Engl J Med. 1998;338(1):26-34",
+      "Kraut JA, Madias NE. Nat Rev Nephrol. 2012;8(10):589-601",
+    ],
+  },
+  {
+    id: "calculated-osmolality",
+    name: "Calculated Serum Osmolality",
+    description: "Estimated serum osmolality from sodium, glucose, and BUN",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "sodium", label: "Serum Sodium", type: "number", unit: "mEq/L", placeholder: "140", required: true },
+      { id: "glucose", label: "Serum Glucose", type: "number", unit: "mg/dL or mmol/L", placeholder: "100", required: true },
+      { id: "bun", label: "BUN / Urea", type: "number", unit: "mg/dL or mmol/L", placeholder: "15", required: true },
+    ],
+    resultLabel: "Calculated Osmolality",
+    resultUnit: "mOsm/kg",
+    interpretation: (value) => {
+      if (value < 275) return "Low calculated osmolality — hypo-osmolar state";
+      if (value <= 295) return "Normal calculated osmolality (275-295 mOsm/kg)";
+      return "Elevated calculated osmolality — hyperosmolar state";
+    },
+    referenceRanges: [
+      { label: "Low", max: 275, unit: "mOsm/kg" },
+      { label: "Normal", min: 275, max: 295, unit: "mOsm/kg" },
+      { label: "High", min: 295, unit: "mOsm/kg" },
+    ],
+    clinicalPearls: [
+      "Formula: 2×Na + Glucose/18 + BUN/2.8",
+      "Compare with measured osmolality to calculate osmolal gap",
+      "Osmolal gap >10 suggests unmeasured osmoles (methanol, ethylene glycol, etc.)",
+      "BUN contributes to measured but not 'effective' osmolality (freely crosses membranes)",
+      "Effective osmolality (tonicity) = 2×Na + Glucose/18 (excludes BUN)",
+    ],
+    references: [
+      "Purssell RA et al. BMJ. 2001;322(7289):683",
+      "Fazekas AS et al. Eur J Emerg Med. 2013;20(2):100-105",
+    ],
+  },
+  {
+    id: "creatinine-clearance-24h",
+    name: "Creatinine Clearance (24h Urine)",
+    description: "Measured creatinine clearance from 24-hour urine collection",
+    category: "Kidney Function & CKD Risk",
+    inputs: [
+      { id: "urineCreatinine24h", label: "Urine Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "80", required: true },
+      { id: "urineVolume24h", label: "24-Hour Urine Volume", type: "number", unit: "mL", placeholder: "1500", required: true, min: 100 },
+      { id: "plasmaCr", label: "Serum Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.2", required: true },
+    ],
+    resultLabel: "CrCl",
+    resultUnit: "mL/min",
+    interpretation: (value) => {
+      if (value >= 90) return "Normal creatinine clearance";
+      if (value >= 60) return "Mildly decreased clearance";
+      if (value >= 30) return "Moderately decreased clearance";
+      if (value >= 15) return "Severely decreased clearance";
+      return "Kidney failure range";
+    },
+    referenceRanges: [
+      { label: "Normal", min: 90, max: 140, unit: "mL/min" },
+      { label: "Mildly decreased", min: 60, max: 89, unit: "mL/min" },
+      { label: "Moderately decreased", min: 30, max: 59, unit: "mL/min" },
+      { label: "Severely decreased", min: 15, max: 29, unit: "mL/min" },
+      { label: "Kidney failure", max: 15, unit: "mL/min" },
+    ],
+    clinicalPearls: [
+      "Gold standard for GFR measurement (vs estimation equations)",
+      "Overestimates true GFR due to tubular creatinine secretion",
+      "Verify adequacy: 24h urine creatinine should be 15-20 mg/kg (male) or 10-15 mg/kg (female)",
+      "Under-collection is the most common source of error",
+      "Useful when eGFR equations are unreliable (extremes of body size, amputees, pregnancy)",
+    ],
+    references: [
+      "Levey AS et al. J Am Soc Nephrol. 1993;4(5):1159-1166",
+      "KDIGO CKD Clinical Practice Guideline. Kidney Int Suppl. 2013;3(1):1-150",
+    ],
+  },
+  {
+    id: "ekfc-creatinine",
+    name: "EKFC (European Kidney Function Consortium)",
+    description: "Advanced full age spectrum eGFR with population-specific Q values and smooth polynomial transitions",
+    category: "Kidney Function & CKD Risk",
+    inputs: [
+      { id: "creatinine", label: "Serum Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.0", required: true },
+      { id: "age", label: "Age", type: "number", unit: "years", placeholder: "45", required: true, min: 2, max: 120 },
+      { id: "sex", label: "Sex", type: "select", options: [{ value: "M", label: "Male" }, { value: "F", label: "Female" }], required: true },
+    ],
+    resultLabel: "eGFR (EKFC)",
+    resultUnit: "mL/min/1.73m²",
+    interpretation: (value, inputs) => {
+      const age = inputs?.age as number || 45;
+      let stageInfo = "";
+      if (value >= 90) stageInfo = "Normal kidney function (CKD Stage 1)";
+      else if (value >= 60) stageInfo = "Mild decrease in kidney function (CKD Stage 2)";
+      else if (value >= 45) stageInfo = "Mild to moderate decrease (CKD Stage 3a)";
+      else if (value >= 30) stageInfo = "Moderate to severe decrease (CKD Stage 3b)";
+      else if (value >= 15) stageInfo = "Severe decrease in kidney function (CKD Stage 4)";
+      else stageInfo = "Kidney failure (CKD Stage 5)";
+      if (age < 18) {
+        return stageInfo + "\n\n*Note: EKFC uses smooth polynomial Q values for pediatric ages, providing continuous transitions.*";
+      }
+      return stageInfo;
+    },
+    referenceRanges: [
+      { label: "Normal (Stage 1)", min: 90, unit: "mL/min/1.73m²", note: "Normal or high GFR" },
+      { label: "Mild decrease (Stage 2)", min: 60, max: 89, unit: "mL/min/1.73m²" },
+      { label: "Mild-moderate (Stage 3a)", min: 45, max: 59, unit: "mL/min/1.73m²" },
+      { label: "Moderate-severe (Stage 3b)", min: 30, max: 44, unit: "mL/min/1.73m²" },
+      { label: "Severe (Stage 4)", min: 15, max: 29, unit: "mL/min/1.73m²" },
+      { label: "Kidney failure (Stage 5)", max: 14, unit: "mL/min/1.73m²" },
+    ],
+    clinicalPearls: [
+      "Modified FAS equation developed by the European Kidney Function Consortium (Pottel et al. 2021)",
+      "Valid for ages 2 to 90+ years with smooth polynomial Q values for children/adolescents",
+      "Race-free: does not include race as a variable",
+      "Uses population-normalized creatinine (SCr/Q) approach with distinct exponents above and below Q",
+      "Q values for children (≤25 yr) are calculated via a continuous polynomial rather than lookup tables",
+      "Age decline factor of 0.990 per year applied after age 40",
+      "Better accuracy than CKD-EPI in European populations and across the full age spectrum",
+    ],
+    references: [
+      "Pottel H, Björk J, Courbebaisse M, et al. Ann Intern Med. 2021;174:183-192",
+      "Pottel H, Björk J, Rule AD, et al. N Engl J Med. 2023;388:333-343",
+    ],
+  },
+  {
+    id: "electrolyte-free-water-clearance",
+    name: "Electrolyte-Free Water Clearance",
+    description: "EFWC: more accurate than osmolar free water clearance for dysnatremia",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "urineOutput", label: "Urine Output", type: "number", unit: "mL/hr", placeholder: "60", required: true, min: 0 },
+      { id: "urineNa", label: "Urine Sodium", type: "number", unit: "mEq/L", placeholder: "60", required: true, min: 0 },
+      { id: "urineK", label: "Urine Potassium", type: "number", unit: "mEq/L", placeholder: "30", required: true, min: 0 },
+      { id: "plasmaNa", label: "Plasma Sodium", type: "number", unit: "mEq/L", placeholder: "140", required: true, min: 100 },
+    ],
+    resultLabel: "Electrolyte-Free Water Clearance",
+    resultUnit: "mL/hr",
+    interpretation: (value) => {
+      if (value > 10) return "Positive EFWC — kidney excreting electrolyte-free water. Expect serum Na to rise if not replaced.";
+      if (value > -10) return "Near zero EFWC — no net electrolyte-free water gain or loss.";
+      return "Negative EFWC — kidney retaining electrolyte-free water. Expect serum Na to fall.";
+    },
+    clinicalPearls: [
+      "EFWC considers only electrolytes (Na+K) vs plasma Na — ignores urea and glucose",
+      "More physiologically accurate than CH₂O for predicting Na changes",
+      "Key formula: EFWC = V × [1 - (UNa + UK)/PNa]",
+      "If (UNa+UK) > PNa → negative EFWC → hyponatremia worsens",
+      "If (UNa+UK) < PNa → positive EFWC → hyponatremia improves",
+    ],
+    references: [
+      "Nguyen MK, Kurtz I. Clin Exp Nephrol. 2005;9(4):272-280",
+      "Berl T. J Am Soc Nephrol. 2008;19(6):1076-1078",
+    ],
+  },
+  {
+    id: "fe-magnesium",
+    name: "Fractional Excretion of Magnesium",
+    description: "FEMg: differentiates renal vs extrarenal magnesium wasting",
+    category: "Acute Kidney Injury (AKI) Workup",
+    inputs: [
+      { id: "urineMagnesium", label: "Urine Magnesium", type: "number", unit: "mg/dL or mmol/L", placeholder: "4.0", required: true },
+      { id: "plasmaMagnesium", label: "Serum Magnesium", type: "number", unit: "mg/dL or mmol/L", placeholder: "1.8", required: true },
+      { id: "urineCr", label: "Urine Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "100", required: true },
+      { id: "plasmaCr", label: "Serum Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.0", required: true },
+    ],
+    resultLabel: "FEMg",
+    resultUnit: "%",
+    interpretation: (value) => {
+      if (value < 2) return "Low FEMg (<2%) — appropriate renal conservation. Extrarenal magnesium loss (GI, poor intake).";
+      if (value <= 4) return "Normal FEMg (2-4%)";
+      return "Elevated FEMg (>4%) — renal magnesium wasting. Consider medications, tubular damage, or metabolic causes.";
+    },
+    referenceRanges: [
+      { label: "Low (conservation)", max: 2, unit: "%", note: "Extrarenal loss" },
+      { label: "Normal", min: 2, max: 4, unit: "%" },
+      { label: "Elevated (renal wasting)", min: 4, unit: "%", note: "Renal cause" },
+    ],
+    clinicalPearls: [
+      "Formula includes 0.7 factor — only 70% of serum Mg is freely filtered",
+      "FEMg >4% in hypomagnesemia = renal wasting",
+      "Common renal causes: PPIs, diuretics, aminoglycosides, cisplatin, CNIs, amphotericin B",
+      "Gitelman/Bartter syndromes cause persistent renal Mg wasting",
+      "Low serum Mg causes refractory hypokalemia and hypocalcemia",
+    ],
+    references: [
+      "Elisaf M et al. Miner Electrolyte Metab. 1997;23(2):66-72",
+      "Agus ZS. N Engl J Med. 1999;340(15):1177-1187",
+    ],
+  },
+  {
+    id: "fe-uric-acid",
+    name: "Fractional Excretion of Uric Acid",
+    description: "FEUA: key test for differentiating SIADH from cerebral salt wasting",
+    category: "Acute Kidney Injury (AKI) Workup",
+    inputs: [
+      { id: "urineUricAcid", label: "Urine Uric Acid", type: "number", unit: "mg/dL or μmol/L", placeholder: "20", required: true },
+      { id: "plasmaUricAcid", label: "Serum Uric Acid", type: "number", unit: "mg/dL or μmol/L", placeholder: "4.5", required: true },
+      { id: "urineCr", label: "Urine Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "100", required: true },
+      { id: "plasmaCr", label: "Serum Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.0", required: true },
+    ],
+    resultLabel: "FEUA",
+    resultUnit: "%",
+    interpretation: (value) => {
+      if (value < 4) return "Low FEUA (<4%) — suggests pre-renal state, volume depletion, or uric acid underexcretion";
+      if (value <= 11) return "Normal FEUA (4-11%) — normal uric acid handling";
+      if (value <= 20) return "Elevated FEUA (>11%) — consistent with SIADH (resolves with correction) or salt wasting";
+      return "High FEUA (>20%) — suggests renal salt wasting or medication effect (e.g., losartan)";
+    },
+    referenceRanges: [
+      { label: "Low", max: 4, unit: "%", note: "Pre-renal, volume depletion" },
+      { label: "Normal", min: 4, max: 11, unit: "%" },
+      { label: "Elevated", min: 11, max: 20, unit: "%", note: "SIADH, CSW" },
+      { label: "High", min: 20, unit: "%", note: "Renal wasting" },
+    ],
+    clinicalPearls: [
+      "Key differentiator: FEUA >11% in hyponatremia points to SIADH or CSW",
+      "In SIADH, FEUA normalizes (<11%) after volume correction with 3% saline",
+      "In CSW, FEUA remains elevated (>11%) even after correction",
+      "Collect before saline administration for accurate interpretation",
+      "Low uric acid + high FEUA pattern strongly suggests SIADH",
+    ],
+    references: [
+      "Steinhauslin F, Burnier M. Am J Kidney Dis. 1995;25(3):407-410",
+      "Maesaka JK et al. Clin J Am Soc Nephrol. 2009;4(7):1218-1226",
+    ],
+  },
+  {
+    id: "free-water-clearance",
+    name: "Free Water Clearance (CH₂O)",
+    description: "Renal free water clearance for assessing water handling",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "urineOutput", label: "Urine Output", type: "number", unit: "mL/hr", placeholder: "60", required: true, min: 0 },
+      { id: "urineOsm", label: "Urine Osmolality", type: "number", unit: "mOsm/kg", placeholder: "300", required: true, min: 50 },
+      { id: "plasmaOsm", label: "Plasma Osmolality", type: "number", unit: "mOsm/kg", placeholder: "285", required: true, min: 200 },
+    ],
+    resultLabel: "Free Water Clearance",
+    resultUnit: "mL/hr",
+    interpretation: (value) => {
+      if (value > 10) return "Positive CH₂O — kidney excreting free water (dilute urine). Seen in water diuresis, diabetes insipidus.";
+      if (value > -10) return "Near zero CH₂O — urine is approximately iso-osmolar to plasma.";
+      return "Negative CH₂O — kidney retaining free water (concentrated urine). Normal ADH response or SIADH.";
+    },
+    clinicalPearls: [
+      "Positive CH₂O means the kidney is excreting solute-free water",
+      "Negative CH₂O (= free water reabsorption) concentrates urine",
+      "Useful in differentiating causes of hypo- and hypernatremia",
+      "Electrolyte-free water clearance (EFWC) is more accurate for dysnatremia management",
+    ],
+    references: [
+      "Rose BD, Post TW. Clinical Physiology of Acid-Base and Electrolyte Disorders. 5th ed. McGraw-Hill; 2001.",
+      "Halperin ML, Goldstein MB. Fluid, Electrolyte and Acid-Base Physiology. 4th ed.",
+    ],
+  },
+  {
+    id: "henderson-hasselbalch",
+    name: "Henderson-Hasselbalch Equation",
+    description: "Calculates blood pH from bicarbonate and pCO2",
+    category: "Acute Kidney Injury (AKI) Workup",
+    inputs: [
+      { id: "bicarbonate", label: "Serum Bicarbonate (HCO3)", type: "number", unit: "mEq/L", placeholder: "24", required: true },
+      { id: "pCO2", label: "Arterial pCO2", type: "number", unit: "mmHg", placeholder: "40", required: true },
+    ],
+    resultLabel: "Calculated pH",
+    resultUnit: "",
+    interpretation: (value) => {
+      if (value <= 0) return "Invalid — check inputs";
+      if (value < 7.35) return "Acidemia";
+      if (value <= 7.45) return "Normal pH";
+      return "Alkalemia";
+    },
+    clinicalPearls: [
+      "Formula: pH = 6.1 + log₁₀([HCO3] / (0.03 × pCO2))",
+      "Normal arterial pH: 7.35–7.45",
+      "Useful for verifying ABG internal consistency",
+      "pKa of carbonic acid = 6.1; CO2 solubility coefficient = 0.03",
+    ],
+    references: ["Henderson LJ. Am J Physiol. 1908;21:427-448", "Hasselbalch KA. Biochem Z. 1917;78:112-144"],
+  },
+  {
+    id: "kdigo-aki-staging",
+    name: "KDIGO AKI Staging",
+    description: "Creatinine-based AKI staging per KDIGO 2012 criteria",
+    category: "Acute Kidney Injury (AKI) Workup",
+    inputs: [
+      { id: "baselineCreatinine", label: "Baseline Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.0", required: true },
+      { id: "currentCreatinine", label: "Current Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "2.5", required: true },
+    ],
+    resultLabel: "AKI Stage",
+    resultUnit: "",
+    interpretation: (value) => {
+      if (value === 0) return "No AKI — creatinine <1.5× baseline and <0.3 mg/dL rise";
+      if (value === 1) return "Stage 1 — SCr 1.5-1.9× baseline OR ≥0.3 mg/dL increase";
+      if (value === 2) return "Stage 2 — SCr 2.0-2.9× baseline";
+      return "Stage 3 — SCr ≥3.0× baseline OR ≥4.0 mg/dL OR dialysis initiated";
+    },
+    referenceRanges: [
+      { label: "No AKI", max: 0, unit: "" },
+      { label: "Stage 1", min: 1, max: 1, unit: "", note: "1.5-1.9× baseline" },
+      { label: "Stage 2", min: 2, max: 2, unit: "", note: "2.0-2.9× baseline" },
+      { label: "Stage 3", min: 3, max: 3, unit: "", note: "≥3.0× or ≥4.0 mg/dL" },
+    ],
+    clinicalPearls: [
+      "KDIGO also uses urine output criteria (not captured by this calculator)",
+      "Stage 1 includes ≥0.3 mg/dL rise within 48h — even if ratio <1.5×",
+      "Stage 3 also applies if creatinine ≥4.0 mg/dL with acute rise ≥0.5 mg/dL",
+      "If baseline unknown, can estimate using back-calculation from CKD-EPI assuming eGFR 75",
+      "AKI staging guides management: nephrology consult, fluid strategy, RRT consideration",
+    ],
+    references: [
+      "KDIGO AKI Clinical Practice Guideline. Kidney Int Suppl. 2012;2(1):1-138",
+      "Kellum JA et al. Lancet. 2021;398(10302):786-798",
+    ],
+  },
+  {
+    id: "mdrd",
+    name: "MDRD eGFR (4-Variable)",
+    description: "Modification of Diet in Renal Disease study equation for eGFR",
+    category: "Kidney Function & CKD Risk",
+    inputs: [
+      { id: "creatinine", label: "Serum Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.2", required: true },
+      { id: "age", label: "Age", type: "number", unit: "years", placeholder: "55", required: true, min: 18, max: 120 },
+      { id: "sex", label: "Sex", type: "select", options: [{ value: "M", label: "Male" }, { value: "F", label: "Female" }], required: true },
+      { id: "race", label: "Race", type: "select", options: [{ value: "Other", label: "Non-Black" }, { value: "Black", label: "Black" }], required: true },
+    ],
+    resultLabel: "eGFR",
+    resultUnit: "mL/min/1.73m²",
+    interpretation: (value) => {
+      if (value >= 90) return "Normal or high GFR (G1)";
+      if (value >= 60) return "Mildly decreased GFR (G2)";
+      if (value >= 45) return "Mildly to moderately decreased (G3a)";
+      if (value >= 30) return "Moderately to severely decreased (G3b)";
+      if (value >= 15) return "Severely decreased GFR (G4)";
+      return "Kidney failure (G5)";
+    },
+    referenceRanges: [
+      { label: "G1", min: 90, unit: "mL/min/1.73m²", note: "Normal or high" },
+      { label: "G2", min: 60, max: 89, unit: "mL/min/1.73m²", note: "Mildly decreased" },
+      { label: "G3a", min: 45, max: 59, unit: "mL/min/1.73m²" },
+      { label: "G3b", min: 30, max: 44, unit: "mL/min/1.73m²" },
+      { label: "G4", min: 15, max: 29, unit: "mL/min/1.73m²" },
+      { label: "G5", max: 15, unit: "mL/min/1.73m²", note: "Kidney failure" },
+    ],
+    clinicalPearls: [
+      "MDRD is less accurate than CKD-EPI 2021, especially at higher GFR values",
+      "Not validated for GFR >60 — tends to underestimate in healthy individuals",
+      "Race coefficient is controversial and being phased out",
+      "Prefer CKD-EPI 2021 for routine clinical use",
+      "Still used in some drug dosing guidelines and older studies",
+    ],
+    references: [
+      "Levey AS et al. Ann Intern Med. 2006;145(4):247-254",
+      "KDIGO CKD Clinical Practice Guideline. Kidney Int Suppl. 2013;3(1):1-150",
+    ],
+  },
+  {
+    id: "phosphate-repletion",
+    name: "Phosphate Repletion Calculator",
+    description: "Weight-based IV phosphate dosing for hypophosphatemia",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "serumPhosphate", label: "Serum Phosphate", type: "number", unit: "mg/dL or mmol/L", placeholder: "1.8", required: true },
+      { id: "weight", label: "Body Weight", type: "number", unit: "kg", placeholder: "70", required: true, min: 1 },
+    ],
+    resultLabel: "IV Phosphate Dose",
+    resultUnit: "mmol",
+    interpretation: (value) => {
+      if (value <= 0) return "Phosphate ≥2.3 mg/dL — repletion likely not needed";
+      if (value <= 20) return "Mild hypophosphatemia — consider oral phosphate first";
+      if (value <= 40) return "Moderate hypophosphatemia — IV phosphate recommended";
+      return "Severe hypophosphatemia — urgent IV phosphate required. Monitor calcium.";
+    },
+    clinicalPearls: [
+      "IV options: Sodium phosphate (Na₃PO₄) or Potassium phosphate (K₃PO₄)",
+      "Use K-phos if K+ <4.0; use Na-phos if K+ >4.5",
+      "Max IV rate: 7 mmol/hr for peripheral, 15 mmol/hr for central line",
+      "Recheck phosphate 2-6h after repletion",
+      "Oral repletion: Neutra-Phos 250-500 mg (8-16 mmol) PO TID for mild cases",
+      "Caution in renal failure — risk of hyperphosphatemia and metastatic calcification",
+    ],
+    references: [
+      "Brown KA et al. Ann Pharmacother. 2006;40(7-8):1227-1230",
+      "Clark CL et al. Ann Pharmacother. 2007;41(10):1646-1651",
+    ],
+  },
+  {
+    id: "potassium-repletion",
+    name: "Potassium Repletion Estimation",
+    description: "Estimates total body potassium deficit and repletion needs",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "serumPotassium", label: "Serum Potassium", type: "number", unit: "mEq/L", placeholder: "3.2", required: true, min: 1, max: 7 },
+      { id: "targetPotassium", label: "Target Potassium", type: "number", unit: "mEq/L", placeholder: "4.0", required: false, min: 3.5, max: 5.0 },
+    ],
+    resultLabel: "Estimated K⁺ Deficit",
+    resultUnit: "mEq",
+    interpretation: (value) => {
+      if (value <= 0) return "K⁺ at or above target — no repletion needed";
+      if (value <= 200) return "Mild deficit (~100-200 mEq) — oral KCl 40-80 mEq should suffice";
+      if (value <= 400) return "Moderate deficit (~200-400 mEq) — oral + IV repletion recommended";
+      return "Severe deficit (>400 mEq) — aggressive IV repletion needed with cardiac monitoring";
+    },
+    clinicalPearls: [
+      "Rough rule: each 0.27 mEq/L drop ≈ 100 mEq total body deficit",
+      "Actual deficit varies widely — may underestimate in chronic depletion",
+      "Max IV rate: 10-20 mEq/hr peripherally, 40 mEq/hr centrally (with monitoring)",
+      "Max concentration: 40 mEq/L peripheral, 80 mEq/L central",
+      "Correct concurrent hypomagnesemia (Mg <1.8) — K repletion will fail otherwise",
+      "Recheck K⁺ after each 40-60 mEq given",
+      "Oral KCl 40 mEq raises serum K by ~0.3-0.5 mEq/L in most patients",
+    ],
+    references: [
+      "Sterns RH et al. Am J Med. 1981;71(5):811-818",
+      "Gennari FJ. N Engl J Med. 1998;339(7):451-458",
+    ],
+  },
+  {
+    id: "stool-osmolar-gap",
+    name: "Stool Osmolar Gap",
+    description: "Differentiates osmotic vs. secretory diarrhea",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "stoolNa", label: "Stool Sodium", type: "number", unit: "mEq/L", placeholder: "30", required: true },
+      { id: "stoolK", label: "Stool Potassium", type: "number", unit: "mEq/L", placeholder: "60", required: true },
+      { id: "stoolOsmolality", label: "Stool Osmolality", type: "number", unit: "mOsm/kg", placeholder: "290" },
+    ],
+    resultLabel: "Stool Osmolar Gap",
+    resultUnit: "mOsm/kg",
+    interpretation: (value) => {
+      if (value > 125) return "Osmotic diarrhea — poorly absorbed solute (lactulose, Mg, sorbitol)";
+      if (value >= 50) return "Mixed pattern — consider both osmotic and secretory causes";
+      return "Secretory diarrhea — VIPoma, carcinoid, bile acid malabsorption, laxative abuse";
+    },
+    clinicalPearls: [
+      "Formula: Stool Osmolality − 2 × (Stool Na + Stool K)",
+      "Gap > 125: osmotic diarrhea; Gap < 50: secretory diarrhea",
+      "Stool osmolality normally ≈ 290 mOsm/kg (isotonic with plasma)",
+      "If measured stool osmolality > 350, suspect sample contamination or urine",
+    ],
+    references: ["Eherer AJ, Fordtran JS. Gastroenterology. 1992;103(2):545-551"],
+  },
+  {
+    id: "trp-tmp-gfr",
+    name: "TRP & TmP/GFR (Phosphate)",
+    description: "Tubular reabsorption of phosphate and renal phosphate threshold",
+    category: "Acute Kidney Injury (AKI) Workup",
+    inputs: [
+      { id: "urinePhosphate", label: "Urine Phosphate", type: "number", unit: "mg/dL or mmol/L", placeholder: "40", required: true },
+      { id: "plasmaPhosphate", label: "Serum Phosphate", type: "number", unit: "mg/dL or mmol/L", placeholder: "3.0", required: true },
+      { id: "urineCr", label: "Urine Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "100", required: true },
+      { id: "plasmaCr", label: "Serum Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.0", required: true },
+    ],
+    resultLabel: "TmP/GFR",
+    resultUnit: "mg/dL",
+    interpretation: (value) => {
+      if (value < 2.0) return "Low TmP/GFR — renal phosphate wasting. Consider FGF23 excess, Fanconi, hyperparathyroidism.";
+      if (value <= 4.4) return "Normal TmP/GFR (2.0-4.4 mg/dL) — appropriate renal phosphate handling.";
+      return "High TmP/GFR — reduced phosphate excretion. Seen in hypoparathyroidism, low phosphate intake.";
+    },
+    referenceRanges: [
+      { label: "Low", max: 2.0, unit: "mg/dL", note: "Phosphate wasting" },
+      { label: "Normal", min: 2.0, max: 4.4, unit: "mg/dL" },
+      { label: "High", min: 4.4, unit: "mg/dL", note: "Reduced excretion" },
+    ],
+    clinicalPearls: [
+      "TRP = 1 - FEPhos; normal TRP is 85-95%",
+      "TmP/GFR is the renal phosphate threshold — independent of GFR and phosphate load",
+      "Low TmP/GFR: hyperparathyroidism, FGF23-mediated disorders, Fanconi syndrome",
+      "High TmP/GFR: hypoparathyroidism, tumor calcinosis, acromegaly",
+      "Use fasting morning samples for best accuracy",
+    ],
+    references: [
+      "Walton RJ, Bijvoet OL. Lancet. 1975;2(7929):309-310",
+      "Payne RB. Ann Clin Biochem. 1998;35(Pt 2):201-206",
+    ],
+  },
+  {
+    id: "urine-osmolal-gap",
+    name: "Urine Osmolal Gap",
+    description: "Estimates urine ammonium excretion for metabolic acidosis workup",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "measuredUrineOsm", label: "Measured Urine Osmolality", type: "number", unit: "mOsm/kg", placeholder: "500", required: true },
+      { id: "urineNa", label: "Urine Sodium", type: "number", unit: "mEq/L", placeholder: "60", required: true },
+      { id: "urineK", label: "Urine Potassium", type: "number", unit: "mEq/L", placeholder: "30", required: true },
+      { id: "urineUrea", label: "Urine Urea / BUN", type: "number", unit: "mg/dL or mmol/L", placeholder: "500", required: true },
+      { id: "urineGlucose", label: "Urine Glucose (optional)", type: "number", unit: "mg/dL or mmol/L", placeholder: "0", required: false },
+    ],
+    resultLabel: "Urine Osmolal Gap",
+    resultUnit: "mOsm/kg",
+    interpretation: (value) => {
+      if (value < 100) return "Low UOG (<100) — low urine NH₄⁺. Suggests renal cause of acidosis (RTA, CKD).";
+      if (value <= 400) return "Normal/elevated UOG (100-400) — appropriate renal NH₄⁺ excretion. GI or extrarenal cause.";
+      return "Very high UOG (>400) — very high NH₄⁺ excretion. Appropriate renal response to acid load.";
+    },
+    referenceRanges: [
+      { label: "Low (renal acidosis)", max: 100, unit: "mOsm/kg", note: "RTA or CKD" },
+      { label: "Adequate", min: 100, max: 400, unit: "mOsm/kg", note: "Extrarenal cause" },
+      { label: "High", min: 400, unit: "mOsm/kg", note: "High NH₄⁺ excretion" },
+    ],
+    clinicalPearls: [
+      "UOG/2 ≈ urine ammonium concentration (each NH₄⁺ paired with an anion)",
+      "More reliable than urine anion gap — especially when unmeasured anions present",
+      "Low UOG in non-AG acidosis = distal RTA, type 4 RTA, or CKD",
+      "High UOG in non-AG acidosis = diarrhea, proximal RTA, or exogenous acid",
+      "Calculated Uosm = 2×(UNa+UK) + UUN/2.8 + UGlc/18",
+    ],
+    references: [
+      "Kamel KS, Halperin ML. Clin J Am Soc Nephrol. 2012;7(4):674-678",
+      "Batlle D et al. Kidney Int. 2006;70(3):391-406",
+    ],
+  },
+  {
+    id: "winters-formula",
+    name: "Winters' Formula (Expected pCO2)",
+    description: "Predicts expected respiratory compensation in metabolic acidosis",
+    category: "Acute Kidney Injury (AKI) Workup",
+    inputs: [
+      { id: "bicarbonate", label: "Serum Bicarbonate (HCO3)", type: "number", unit: "mEq/L", placeholder: "15", required: true },
+      { id: "actualPCO2", label: "Actual pCO2 (for comparison)", type: "number", unit: "mmHg", placeholder: "30" },
+    ],
+    resultLabel: "Expected pCO2",
+    resultUnit: "mmHg",
+    interpretation: (value) => {
+      if (value <= 0) return "Invalid — check inputs";
+      return `Expected pCO2 range: ${(value - 2).toFixed(1)} – ${(value + 2).toFixed(1)} mmHg`;
+    },
+    clinicalPearls: [
+      "Formula: Expected pCO2 = 1.5 × [HCO3] + 8 (± 2)",
+      "If actual pCO2 > expected → superimposed respiratory acidosis",
+      "If actual pCO2 < expected → superimposed respiratory alkalosis",
+      "Only valid in primary metabolic acidosis (not mixed disorders)",
+    ],
+    references: ["Albert MS, Dell RB, Winters RW. Ann Intern Med. 1967;66(2):312-322"],
   },
 ];
 export function getCalculatorsByCategory(category: string): Calculator[] {

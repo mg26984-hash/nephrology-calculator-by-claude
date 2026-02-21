@@ -3661,3 +3661,314 @@ export function plasmaExchangeDosing(
     sessionsForTarget
   };
 }
+
+// ============================================================================
+// RESTORED CALCULATORS (18 previously missing)
+// ============================================================================
+
+/**
+ * Albumin-Corrected Anion Gap
+ * Corrected AG = AG + 2.5 × (4.0 - albumin)
+ * Reference: Figge J et al. Crit Care Med. 1998;26(11):1807-1810
+ */
+export function albuminCorrectedAnionGap(
+  sodium: number,
+  chloride: number,
+  bicarbonate: number,
+  albumin: number
+): { ag: number; correctedAG: number } {
+  const ag = sodium - chloride - bicarbonate;
+  const correctedAG = ag + 2.5 * (4.0 - albumin);
+  return {
+    ag: Math.round(ag * 10) / 10,
+    correctedAG: Math.round(correctedAG * 10) / 10,
+  };
+}
+
+/**
+ * Bicarbonate Deficit
+ * HCO3 deficit (mEq) = 0.5 × weight(kg) × (24 - measured HCO3)
+ * Reference: Adrogué HJ, Madias NE. N Engl J Med. 1998;338(1):26-34
+ */
+export function bicarbonateDeficit(
+  weight: number,
+  bicarbonate: number
+): number {
+  const deficit = 0.5 * weight * (24 - bicarbonate);
+  return Math.round(deficit * 10) / 10;
+}
+
+/**
+ * Calculated Serum Osmolality
+ * Osm = 2×Na + Glucose/18 + BUN/2.8
+ * Reference: Purssell RA et al. BMJ. 2001;322(7289):683
+ */
+export function calculatedOsmolality(
+  sodium: number,
+  glucose: number,
+  bun: number
+): number {
+  const osm = 2 * sodium + glucose / 18 + bun / 2.8;
+  return Math.round(osm * 10) / 10;
+}
+
+/**
+ * Creatinine Clearance from 24-Hour Urine
+ * CrCl = (UCr × V) / (PCr × 1440)
+ */
+export function creatinineClearance24h(
+  urineCreatinine: number,
+  urineVolume: number,
+  plasmaCreatinine: number
+): number {
+  if (plasmaCreatinine <= 0) return 0;
+  const crCl = (urineCreatinine * urineVolume) / (plasmaCreatinine * 1440);
+  return Math.round(crCl * 10) / 10;
+}
+
+/**
+ * Get EKFC Q value (median serum creatinine for healthy population) in μmol/L
+ */
+function getEkfcQValue(age: number, sex: "M" | "F"): number {
+  if (age <= 25) {
+    if (sex === "M") {
+      return Math.exp(
+        3.200 + 0.259 * age - 0.543 * Math.log(age) - 0.00763 * age * age + 0.0000790 * age * age * age
+      );
+    } else {
+      return Math.exp(
+        3.080 + 0.177 * age - 0.223 * Math.log(age) - 0.00596 * age * age + 0.0000686 * age * age * age
+      );
+    }
+  } else {
+    return sex === "M" ? 80 : 62;
+  }
+}
+
+/**
+ * EKFC (European Kidney Function Consortium) eGFR
+ * Reference: Pottel H, Björk J, Courbebaisse M, et al. Ann Intern Med. 2021;174:183-192
+ */
+export function ekfcCreatinine(
+  creatinine: number,
+  age: number,
+  sex: "M" | "F",
+  creatinineUnit: "mg/dL" | "μmol/L" = "mg/dL"
+): number {
+  const scrUmol = creatinineUnit === "mg/dL" ? creatinine * 88.4 : creatinine;
+  const Q = getEkfcQValue(age, sex);
+  const ratio = scrUmol / Q;
+  const alpha = ratio < 1 ? -0.322 : -1.132;
+  let eGFR = 107.3 * Math.pow(ratio, alpha);
+  if (age > 40) {
+    eGFR *= Math.pow(0.990, age - 40);
+  }
+  return Math.round(eGFR);
+}
+
+/**
+ * Electrolyte-Free Water Clearance (EFWC)
+ * EFWC = V × (1 - (UNa + UK) / PNa)
+ * Reference: Nguyen MK, Kurtz I. Clin Exp Nephrol. 2005;9(4):272-280
+ */
+export function electrolyteFreeWaterClearance(
+  urineOutput: number,
+  urineNa: number,
+  urineK: number,
+  plasmaNa: number
+): number {
+  if (plasmaNa <= 0) return 0;
+  const efwc = urineOutput * (1 - (urineNa + urineK) / plasmaNa);
+  return Math.round(efwc * 10) / 10;
+}
+
+/**
+ * Fractional Excretion of Magnesium (FEMg)
+ * FEMg (%) = (UMg × PCr) / (0.7 × PMg × UCr) × 100
+ * Reference: Elisaf M et al. Miner Electrolyte Metab. 1997;23(2):66-72
+ */
+export function feMagnesium(
+  urineMagnesium: number,
+  plasmaMagnesium: number,
+  urineCreatinine: number,
+  plasmaCreatinine: number
+): number {
+  if (plasmaMagnesium <= 0 || urineCreatinine <= 0) return 0;
+  const feMg = (urineMagnesium * plasmaCreatinine) / (0.7 * plasmaMagnesium * urineCreatinine) * 100;
+  return Math.round(feMg * 10) / 10;
+}
+
+/**
+ * Fractional Excretion of Uric Acid (FEUA)
+ * FEUA (%) = (UUA × PCr) / (PUA × UCr) × 100
+ * Reference: Steinhauslin F, Burnier M. Am J Kidney Dis. 1995;25(3):407-410
+ */
+export function feUricAcid(
+  urineUricAcid: number,
+  plasmaUricAcid: number,
+  urineCreatinine: number,
+  plasmaCreatinine: number
+): number {
+  if (plasmaUricAcid <= 0 || urineCreatinine <= 0) return 0;
+  const feua = (urineUricAcid * plasmaCreatinine) / (plasmaUricAcid * urineCreatinine) * 100;
+  return Math.round(feua * 10) / 10;
+}
+
+/**
+ * Free Water Clearance (CH2O)
+ * CH2O = V × (1 - Uosm/Posm)
+ */
+export function freeWaterClearance(
+  urineOutput: number,
+  urineOsm: number,
+  plasmaOsm: number
+): number {
+  if (plasmaOsm <= 0) return 0;
+  const ch2o = urineOutput * (1 - urineOsm / plasmaOsm);
+  return Math.round(ch2o * 10) / 10;
+}
+
+/**
+ * Henderson-Hasselbalch Equation
+ * pH = 6.1 + log10(HCO3 / (0.03 × pCO2))
+ */
+export function hendersonHasselbalch(
+  bicarbonate: number,
+  pCO2: number
+): number {
+  if (bicarbonate <= 0 || pCO2 <= 0) return 0;
+  const pH = 6.1 + Math.log10(bicarbonate / (0.03 * pCO2));
+  return Math.round(pH * 1000) / 1000;
+}
+
+/**
+ * KDIGO AKI Staging (Creatinine-based)
+ * Reference: KDIGO AKI Clinical Practice Guideline. Kidney Int Suppl. 2012;2(1):1-138
+ */
+export function kdigoAkiStaging(
+  baselineCreatinine: number,
+  currentCreatinine: number
+): number {
+  if (baselineCreatinine <= 0) return 0;
+  const ratio = currentCreatinine / baselineCreatinine;
+  const absoluteIncrease = currentCreatinine - baselineCreatinine;
+  if (ratio >= 3.0 || currentCreatinine >= 4.0) return 3;
+  if (ratio >= 2.0) return 2;
+  if (ratio >= 1.5 || absoluteIncrease >= 0.3) return 1;
+  return 0;
+}
+
+/**
+ * Phosphate Repletion Calculator
+ * Reference: Brown KA et al. Ann Pharmacother. 2006;40(7-8):1227-1230
+ */
+export function phosphateRepletion(
+  serumPhosphate: number,
+  weight: number
+): { dose: number; severity: string } {
+  const cappedWeight = Math.min(weight, 100);
+  if (serumPhosphate >= 2.3) {
+    return { dose: 0, severity: "normal" };
+  } else if (serumPhosphate >= 1.5) {
+    const dose = 0.24 * cappedWeight;
+    return { dose: Math.round(dose * 10) / 10, severity: "mild" };
+  } else if (serumPhosphate >= 1.0) {
+    const dose = 0.48 * cappedWeight;
+    return { dose: Math.round(dose * 10) / 10, severity: "moderate" };
+  } else {
+    const dose = 0.8 * cappedWeight;
+    return { dose: Math.round(dose * 10) / 10, severity: "severe" };
+  }
+}
+
+/**
+ * Potassium Repletion Estimation
+ * Each 0.27 mEq/L drop ≈ 100 mEq total body deficit
+ * Reference: Sterns RH et al. Am J Med. 1981;71(5):811-818
+ */
+export function potassiumRepletion(
+  serumPotassium: number,
+  targetPotassium: number = 4.0
+): { deficit: number; severity: string } {
+  if (serumPotassium >= targetPotassium) {
+    return { deficit: 0, severity: "normal" };
+  }
+  const deficit = ((targetPotassium - serumPotassium) / 0.27) * 100;
+  let severity: string;
+  if (serumPotassium >= 3.5) severity = "mild";
+  else if (serumPotassium >= 3.0) severity = "moderate";
+  else if (serumPotassium >= 2.5) severity = "severe";
+  else severity = "critical";
+  return { deficit: Math.round(deficit), severity };
+}
+
+/**
+ * Stool Osmolar Gap
+ * Gap = Stool Osm - 2×(Stool Na + Stool K)
+ */
+export function stoolOsmolarGap(
+  stoolNa: number,
+  stoolK: number,
+  stoolOsmolality: number = 290
+): number {
+  const gap = stoolOsmolality - 2 * (stoolNa + stoolK);
+  return Math.round(gap * 10) / 10;
+}
+
+/**
+ * TRP & TmP/GFR (Phosphate)
+ * Reference: Walton RJ, Bijvoet OL. Lancet. 1975;2(7929):309-310
+ */
+export function trpTmpGfr(
+  urinePhosphate: number,
+  plasmaPhosphate: number,
+  urineCreatinine: number,
+  plasmaCreatinine: number
+): { trp: number; tmpGfr: number } {
+  if (plasmaPhosphate <= 0 || urineCreatinine <= 0) return { trp: 0, tmpGfr: 0 };
+  const fePhos = (urinePhosphate * plasmaCreatinine) / (plasmaPhosphate * urineCreatinine);
+  const trp = 1 - fePhos;
+  let tmpGfr: number;
+  if (trp <= 0.86) {
+    tmpGfr = trp * plasmaPhosphate;
+  } else {
+    tmpGfr = (0.3 * trp) / (1 - 0.8 * trp) * plasmaPhosphate;
+  }
+  return {
+    trp: Math.round(trp * 1000) / 1000,
+    tmpGfr: Math.round(tmpGfr * 100) / 100,
+  };
+}
+
+/**
+ * Urine Osmolal Gap
+ * UOG = Measured Uosm - Calculated Uosm
+ * Reference: Kamel KS, Halperin ML. Clin J Am Soc Nephrol. 2012;7(4):674-678
+ */
+export function urineOsmolalGap(
+  measuredUrineOsm: number,
+  urineNa: number,
+  urineK: number,
+  urineUrea: number,
+  urineGlucose: number = 0
+): number {
+  const calculatedUrineOsm = 2 * (urineNa + urineK) + urineUrea / 2.8 + urineGlucose / 18;
+  const gap = measuredUrineOsm - calculatedUrineOsm;
+  return Math.round(gap * 10) / 10;
+}
+
+/**
+ * Winters' Formula
+ * Expected pCO2 = 1.5 × [HCO3] + 8 (± 2)
+ * Reference: Albert MS, Dell RB, Winters RW. Ann Intern Med. 1967;66(2):312-322
+ */
+export function wintersFormula(
+  bicarbonate: number
+): { expectedPCO2: number; lower: number; upper: number } {
+  const expectedPCO2 = 1.5 * bicarbonate + 8;
+  return {
+    expectedPCO2: Math.round(expectedPCO2 * 10) / 10,
+    lower: Math.round((expectedPCO2 - 2) * 10) / 10,
+    upper: Math.round((expectedPCO2 + 2) * 10) / 10,
+  };
+}
