@@ -177,8 +177,8 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   urineGlucose: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0555 },
 };
 
-// Inputs that default to SI units (mg/mmol) instead of conventional
-const siDefaultInputs = new Set(["acr", "pcr", "ratioValue"]);
+// Global unit preference key for localStorage
+const UNIT_PREF_KEY = 'nephrology-unit-preference';
 
 // BUN/Urea inputs that need 4-option toggle
 const bunUreaInputIds = ["bun", "preBUN", "postBUN", "plasmaUrea", "urineUrea", "urineaNitrogen", "bunValue"];
@@ -280,6 +280,10 @@ export default function Dashboard() {
     const saved = localStorage.getItem('nephrology-calculator-units');
     return saved ? JSON.parse(saved) : {};
   });
+  const [globalUnitPreference, setGlobalUnitPreference] = useState<"conventional" | "si">(() => {
+    const saved = localStorage.getItem(UNIT_PREF_KEY);
+    return saved === "si" ? "si" : "conventional";
+  });
   const [result, setResult] = useState<number | { [key: string]: number } | null>(null);
   const [lastCalculatedEgfr, setLastCalculatedEgfr] = useState<number | null>(null);
   const [navigatedFromMehran, setNavigatedFromMehran] = useState<string | null>(null);
@@ -334,6 +338,10 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem('nephrology-calculator-units', JSON.stringify(unitState));
   }, [unitState]);
+
+  useEffect(() => {
+    localStorage.setItem(UNIT_PREF_KEY, globalUnitPreference);
+  }, [globalUnitPreference]);
 
   // Toggle favorite status for a calculator
   const toggleFavorite = useCallback((calcId: string, e?: React.MouseEvent) => {
@@ -532,19 +540,24 @@ export default function Dashboard() {
   }, []);
 
   const handleUnitChange = useCallback((inputId: string, unit: string) => {
+    // Standard 2-option toggle (conventional/si) → update global preference for ALL inputs
+    if (unit === "conventional" || unit === "si") {
+      setGlobalUnitPreference(unit);
+      // Clear all per-input overrides so every input follows the global preference
+      setUnitState({});
+      return;
+    }
+
+    // Special multi-option toggles (BUN 4-option, KFRE ACR 3-option) — store specific selection
     // Link related inputs of the same measurement type so they toggle together
     const allCreatinineIds = ["creatinine", "baselineCreatinine", "currentCreatinine", "creatinine1", "creatinine2", "preCreatinine", "postCreatinine", "plasmaCr", "urineCr", "urineCreatinine24h", "donorCreatinine"];
     const allPhosphateIds = ["phosphate", "serumPhosphate", "urinePhosphate", "plasmaPhosphate"];
     const allMagnesiumIds = ["urineMagnesium", "plasmaMagnesium"];
     const allUricAcidIds = ["urineUricAcid", "plasmaUricAcid"];
     const creatinineGroups: Record<string, string[]> = {
-      // All creatinine inputs (factor 88.4)
       ...Object.fromEntries(allCreatinineIds.map(id => [id, allCreatinineIds])),
-      // All phosphate inputs (factor 0.3229)
       ...Object.fromEntries(allPhosphateIds.map(id => [id, allPhosphateIds])),
-      // Magnesium inputs (factor 0.4114)
       ...Object.fromEntries(allMagnesiumIds.map(id => [id, allMagnesiumIds])),
-      // Uric acid inputs (factor 59.48)
       ...Object.fromEntries(allUricAcidIds.map(id => [id, allUricAcidIds])),
     };
     const linked = creatinineGroups[inputId];
@@ -559,16 +572,13 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Get the current unit for an input (default to conventional)
+  // Get the current unit for an input (follows global unit preference)
   const getInputUnit = useCallback((inputId: string): string => {
     if (unitOptions[inputId]) {
-      if (siDefaultInputs.has(inputId)) {
-        return unitState[inputId] || "si";
-      }
-      return unitState[inputId] || "conventional";
+      return unitState[inputId] || globalUnitPreference;
     }
     return "conventional";
-  }, [unitState]);
+  }, [unitState, globalUnitPreference]);
 
   // Get the display unit label for an input
   const getUnitLabel = useCallback((input: { id: string; unit?: string }): string => {
@@ -584,7 +594,7 @@ export default function Dashboard() {
   const getDynamicPlaceholder = useCallback((input: CalculatorInput): string => {
     // Handle ACR multi-unit placeholders for KFRE calculator
     if (selectedCalculatorId === "kfre" && input.id === "acr") {
-      const currentAcrUnit = unitState.acr || "mg/mmol";
+      const currentAcrUnit = unitState.acr || (globalUnitPreference === "si" ? "mg/mmol" : "mg/g");
       // Typical moderately elevated ACR values for each unit
       // 300 mg/g = 33.9 mg/mmol = 0.3 mg/mg (A3 category)
       switch (currentAcrUnit) {
@@ -640,6 +650,22 @@ export default function Dashboard() {
       pcr: { conventional: "0.5", si: "57" },
       // Ratio value: 0.5 mg/mg = 56.6 mg/mmol (mild)
       ratioValue: { conventional: "0.5", si: "57" },
+      // Additional creatinine inputs
+      baselineCreatinine: { conventional: "1.0", si: "88" },
+      currentCreatinine: { conventional: "2.5", si: "221" },
+      creatinine1: { conventional: "2.0", si: "177" },
+      creatinine2: { conventional: "3.0", si: "265" },
+      // UACR raw inputs
+      urineAlbumin: { conventional: "150", si: "150000" },
+      urineCreatinineUACR: { conventional: "1.0", si: "1000" },
+      // UPCR raw inputs
+      urineProtein: { conventional: "500", si: "0.5" },
+      urineCreatinineUPCR: { conventional: "100", si: "0.1" },
+      // 24h protein estimator raw inputs
+      proteinValue: { conventional: "50", si: "0.5" },
+      creatinineValue: { conventional: "100", si: "8.8" },
+      // Bilirubin: 1.0 mg/dL = 17.1 μmol/L
+      bilirubin: { conventional: "1.0", si: "17" },
       // Urine Creatinine (24h): 80 mg/dL = 7072 μmol/L
       urineCreatinine24h: { conventional: "80", si: "7072" },
       // Height: 170 cm = 67 in
@@ -666,7 +692,7 @@ export default function Dashboard() {
     
     // Handle BUN/Urea 4-option toggle placeholders
     if (bunUreaInputIds.includes(input.id)) {
-      const bunUreaUnit = unitState[input.id] || "BUN (mg/dL)";
+      const bunUreaUnit = unitState[input.id] || (globalUnitPreference === "si" ? "BUN (mmol/L)" : "BUN (mg/dL)");
       // Typical pre-dialysis BUN: 60 mg/dL, post-dialysis: 20 mg/dL
       const isPreBUN = input.id === "preBUN";
       const baseBUN = isPreBUN ? 60 : 20; // mg/dL
@@ -725,7 +751,7 @@ export default function Dashboard() {
         const raw = Number(calculatorState[inputId]) || 0;
         if (raw === undefined || raw === null || isNaN(raw)) return 0;
         
-        const selectedUnit = unitState[`${inputId}_bunUrea`] || "BUN (mg/dL)";
+        const selectedUnit = unitState[`${inputId}_bunUrea`] || (globalUnitPreference === "si" ? "BUN (mmol/L)" : "BUN (mg/dL)");
         
         // Conversion factors:
         // BUN (mg/dL) -> BUN (mg/dL): 1
@@ -813,7 +839,7 @@ export default function Dashboard() {
             calculatorState.sex as "M" | "F",
             Number(calculatorState.eGFR) || 0,
             Number(calculatorState.acr) || 0,
-            (unitState.acr as "mg/g" | "mg/mmol" | "mg/mg") || "mg/mmol",
+            (unitState.acr as "mg/g" | "mg/mmol" | "mg/mg") || (globalUnitPreference === "si" ? "mg/mmol" : "mg/g"),
             (calculatorState.years as 2 | 5) || 5
           );
           break;
@@ -1033,7 +1059,7 @@ export default function Dashboard() {
           if (inputMode === "ratio") {
             // Get ratio value and convert to mg/mg base unit
             const rawRatio = parseFloat(String(calculatorState.ratioValue)) || 0;
-            const ratioUnit = unitState.ratioValue || "mg/mmol";
+            const ratioUnit = unitState.ratioValue || (globalUnitPreference === "si" ? "mg/mmol" : "mg/mg");
             
             // Convert to mg/mg (base unit)
             if (ratioUnit === "mg/mg") {
@@ -2601,7 +2627,11 @@ export default function Dashboard() {
     
     if (hasMultiUnitOptions && multiUnitOptions[inputId]) {
       const options = multiUnitOptions[inputId];
-      const currentUnit = unitState[inputId] || options[0];
+      // Default follows global unit preference: si → mg/mmol, conventional → mg/g (or first option)
+      const defaultUnit = globalUnitPreference === "si"
+        ? (options.includes("mg/mmol") ? "mg/mmol" : options[0])
+        : (options.includes("mg/g") ? "mg/g" : options.includes("mg/mg") ? "mg/mg" : options[0]);
+      const currentUnit = unitState[inputId] || defaultUnit;
       
       return (
         <div className="flex items-center gap-0.5 bg-muted rounded p-0.5">
@@ -2626,7 +2656,7 @@ export default function Dashboard() {
 
     // Check if this is a BUN/Urea input that needs 4-option toggle
     if (bunUreaInputIds.includes(inputId)) {
-      const currentBunUreaUnit = unitState[`${inputId}_bunUrea`] || "BUN (mg/dL)";
+      const currentBunUreaUnit = unitState[`${inputId}_bunUrea`] || (globalUnitPreference === "si" ? "BUN (mmol/L)" : "BUN (mg/dL)");
       
       return (
         <div className="flex items-center gap-0.5 bg-muted rounded p-0.5 flex-wrap">
