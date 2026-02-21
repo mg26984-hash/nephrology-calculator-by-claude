@@ -123,24 +123,47 @@ export function schwartzPediatric(
 }
 
 export function kineticEgfr(
-  preBUN: number,
-  postBUN: number,
-  preCreatinine: number,
-  postCreatinine: number,
-  weight: number,
-  sessionTime: number,
-  creatinineUnit: "mg/dL" | "μmol/L" = "mg/dL"
+  baselineCreatinine: number,
+  cr1: number,
+  cr2: number,
+  timeIntervalHours: number,
+  age: number,
+  sex: "M" | "F"
 ): number {
-  let preCreatMgDl =
-    creatinineUnit === "μmol/L" ? preCreatinine / 88.4 : preCreatinine;
-  let postCreatMgDl =
-    creatinineUnit === "μmol/L" ? postCreatinine / 88.4 : postCreatinine;
+  // Chen 2013 Kinetic eGFR (KeGFR) formula
+  // Reference: MDCalc, Chen S. Am J Kidney Dis. 2013;62(6):1171-1172
+  //
+  // keGFR = baselineEGFR × (Cr_baseline / Cr_mean) × kineticFactor
+  // kineticFactor = 1 - (24 × ΔCr) / (Δt × 1.5), clamped to [0, 1]
+  //
+  // 1.5 mg/dL/day = assumed maximal daily creatinine rise with zero GFR
 
-  const ureaGeneration =
-    ((preBUN - postBUN) * weight * 0.6) / (sessionTime * 0.58);
-  const eGFR = (ureaGeneration * 1440) / (preBUN * 0.58 * weight);
+  if (baselineCreatinine <= 0 || cr1 <= 0 || cr2 <= 0 || age <= 0 || timeIntervalHours <= 0) return 0;
 
-  return Math.round(eGFR);
+  // Step 1: Calculate baseline eGFR using CKD-EPI 2021 (race-free)
+  let baselineEgfr: number;
+  if (sex === "F") {
+    const kappa = 0.7;
+    const alpha = baselineCreatinine <= kappa ? -0.241 : -1.200;
+    baselineEgfr = 142 * Math.pow(baselineCreatinine / kappa, alpha) * Math.pow(0.9938, age) * 1.012;
+  } else {
+    const kappa = 0.9;
+    const alpha = baselineCreatinine <= kappa ? -0.302 : -1.200;
+    baselineEgfr = 142 * Math.pow(baselineCreatinine / kappa, alpha) * Math.pow(0.9938, age);
+  }
+
+  // Step 2: Mean creatinine
+  const crMean = (cr1 + cr2) / 2;
+
+  // Step 3: Kinetic correction factor
+  const deltaCr = cr2 - cr1;
+  let kineticFactor = 1 - (24 * deltaCr) / (timeIntervalHours * 1.5);
+  kineticFactor = Math.max(0, Math.min(1, kineticFactor)); // Clamp 0-1
+
+  // Step 4: KeGFR
+  const keGFR = baselineEgfr * (baselineCreatinine / crMean) * kineticFactor;
+
+  return Math.round(keGFR * 10) / 10;
 }
 
 export function ckdEpiCystatinC(

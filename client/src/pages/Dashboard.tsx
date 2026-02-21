@@ -119,6 +119,10 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   creatinine: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   preCreatinine: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   postCreatinine: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  baselineCreatinine: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  currentCreatinine: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  creatinine1: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  creatinine2: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   plasmaCr: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   urineCr: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   donorCreatinine: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
@@ -509,10 +513,24 @@ export default function Dashboard() {
   }, []);
 
   const handleUnitChange = useCallback((inputId: string, unit: string) => {
-    setUnitState((prev) => ({
-      ...prev,
-      [inputId]: unit,
-    }));
+    // Link related creatinine inputs so they toggle together
+    const creatinineGroups: Record<string, string[]> = {
+      baselineCreatinine: ["baselineCreatinine", "creatinine1", "creatinine2"],
+      creatinine1: ["baselineCreatinine", "creatinine1", "creatinine2"],
+      creatinine2: ["baselineCreatinine", "creatinine1", "creatinine2"],
+      preCreatinine: ["preCreatinine", "postCreatinine"],
+      postCreatinine: ["preCreatinine", "postCreatinine"],
+    };
+    const linked = creatinineGroups[inputId];
+    if (linked) {
+      setUnitState((prev) => {
+        const next = { ...prev };
+        for (const id of linked) next[id] = unit;
+        return next;
+      });
+    } else {
+      setUnitState((prev) => ({ ...prev, [inputId]: unit }));
+    }
   }, []);
 
   // Get the current unit for an input (default to conventional)
@@ -714,13 +732,12 @@ export default function Dashboard() {
 
         case "kinetic-egfr":
           calculationResult = calc.kineticEgfr(
-            getBunValue("preBUN"),
-            getBunValue("postBUN"),
-            getValue("preCreatinine"),
-            getValue("postCreatinine"),
-            calculatorState.weight as number,
-            calculatorState.sessionTime as number,
-            "mg/dL"
+            getValue("baselineCreatinine"),
+            getValue("creatinine1"),
+            getValue("creatinine2"),
+            calculatorState.timeInterval as number,
+            calculatorState.age as number,
+            calculatorState.sex as "M" | "F"
           );
           break;
 

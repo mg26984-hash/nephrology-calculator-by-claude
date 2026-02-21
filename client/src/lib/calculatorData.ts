@@ -144,32 +144,36 @@ export const calculators: Calculator[] = [
   },
   {
     id: "kinetic-egfr",
-    name: "Kinetic eGFR",
-    description: "Calculates GFR from urea kinetics during dialysis",
+    name: "Kinetic eGFR (KeGFR)",
+    description: "Estimates GFR when creatinine is rapidly changing (AKI or recovery)",
     category: "Kidney Function & CKD Risk",
     inputs: [
-      { id: "preBUN", label: "Pre-Dialysis BUN / Urea", type: "number", unit: "mg/dL or mmol/L", placeholder: "60", required: true },
-      { id: "postBUN", label: "Post-Dialysis BUN / Urea", type: "number", unit: "mg/dL or mmol/L", placeholder: "20", required: true },
-      { id: "preCreatinine", label: "Pre-Dialysis Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "8", required: true },
-      { id: "postCreatinine", label: "Post-Dialysis Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "6", required: true },
-      { id: "weight", label: "Body Weight", type: "number", unit: "kg", placeholder: "70", required: true },
-      { id: "sessionTime", label: "Session Duration", type: "number", unit: "hours", placeholder: "4", required: true },
-      { id: "bunUnit", label: "BUN / Urea Unit", type: "select", options: [{ value: "BUN (mg/dL)", label: "BUN (mg/dL)" }, { value: "BUN (mmol/L)", label: "BUN (mmol/L)" }, { value: "Urea (mg/dL)", label: "Urea (mg/dL)" }, { value: "Urea (mmol/L)", label: "Urea (mmol/L)" }], required: true },
-      { id: "creatinineUnit", label: "Creatinine Unit", type: "select", options: [{ value: "mg/dL", label: "mg/dL" }, { value: "μmol/L", label: "μmol/L" }], required: true },
+      { id: "baselineCreatinine", label: "Baseline (Stable) Creatinine", type: "number", unit: "mg/dL or μmol/L", placeholder: "1.0", required: true },
+      { id: "creatinine1", label: "First Creatinine (Cr\u2081)", type: "number", unit: "mg/dL or μmol/L", placeholder: "2.0", required: true },
+      { id: "creatinine2", label: "Second Creatinine (Cr\u2082)", type: "number", unit: "mg/dL or μmol/L", placeholder: "3.0", required: true },
+      { id: "timeInterval", label: "Time Between Cr\u2081 and Cr\u2082", type: "number", unit: "hours", placeholder: "24", required: true },
+      { id: "age", label: "Age", type: "number", unit: "years", placeholder: "60", required: true },
+      { id: "sex", label: "Sex", type: "select", options: [{ value: "M", label: "Male" }, { value: "F", label: "Female" }], required: true },
     ],
-    resultLabel: "Residual eGFR",
+    resultLabel: "Kinetic eGFR",
     resultUnit: "mL/min/1.73m²",
     interpretation: (value) => {
-      if (value >= 2) return "Significant residual kidney function - preserve it!";
-      if (value > 0) return "Minimal residual function";
-      return "No residual kidney function";
+      if (value >= 90) return "Normal or near-normal kidney function";
+      if (value >= 60) return "Mildly decreased (CKD G2 equivalent)";
+      if (value >= 45) return "Mildly to moderately decreased (CKD G3a equivalent)";
+      if (value >= 30) return "Moderately to severely decreased (CKD G3b equivalent)";
+      if (value >= 15) return "Severely decreased (CKD G4 equivalent)";
+      return "Kidney failure (CKD G5 equivalent)";
     },
     clinicalPearls: [
-      "Assesses residual kidney function in dialysis patients",
-      "Preservation of RKF improves survival",
-      "Protect RKF: avoid NSAIDs, maintain euvolemia",
+      "Use when creatinine is rapidly changing (AKI, recovery, post-transplant)",
+      "Steady-state eGFR underestimates true GFR when creatinine is rising",
+      "Baseline creatinine should reflect the patient's stable pre-AKI level",
+      "keGFR of 30 mL/min is 90% specific (71% sensitive) for AKI",
     ],
-    references: ["KDIGO 2024 CKD Guideline"],
+    references: [
+      "Chen S. Retooling the creatinine clearance equation to estimate kinetic GFR. Am J Kidney Dis. 2013;62(6):1171-1172",
+    ],
   },
   {
     id: "ckd-epi-cystatin-c",
