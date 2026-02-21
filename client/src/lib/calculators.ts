@@ -734,9 +734,9 @@ export function kdpi(
     xBeta += -0.2199 * (creatMgDl - 1.5);
   }
   
-  // DCD Status: 0.1308
+  // DCD Status: 0.1966 (OPTN 2024 Refit)
   if (isDCD) {
-    xBeta += 0.1308;
+    xBeta += 0.1966;
   }
   
   // Calculate KDRI_RAO = e^(Xβ)

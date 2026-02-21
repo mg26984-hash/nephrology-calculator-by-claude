@@ -1005,7 +1005,7 @@ export const calculators: Calculator[] = [
   {
     id: "kdpi",
     name: "Kidney Donor Profile Index (KDPI)",
-    description: "OPTN 2024 formula - predicts donor kidney quality and graft survival",
+    description: "OPTN 2024 Refit formula (8 factors, no race/HCV) - predicts donor kidney quality and graft survival",
     category: "Transplantation",
     inputs: [
       { id: "donorAge", label: "Donor Age", type: "number", unit: "years", placeholder: "45", required: true },
@@ -1049,7 +1049,12 @@ export const calculators: Calculator[] = [
       "Does not predict rejection or surgical complications",
       "KDPI >85% kidneys: higher early discard rate but transplant better than dialysis",
     ],
-    references: ["Rao PS et al. Transplantation. 2009;88(2):231-236"],
+    references: [
+      "OPTN Refit KDPI (October 2024). HRSA KDPI Guide, April 2025. https://www.hrsa.gov/sites/default/files/hrsa/optn/kdpi_guide.pdf",
+      "OPTN KDPI Mapping Table (2024 reference population), April 2025. https://www.hrsa.gov/sites/default/files/hrsa/optn/kdpi_mapping_table.pdf",
+      "Miller J et al. Updating the Kidney Donor Risk Index. Am J Transplant. 2025.",
+      "Rao PS et al. A comprehensive risk quantification score for deceased donor kidneys. Transplantation. 2009;88(2):231-236",
+    ],
   },
   {
     id: "epts",
