@@ -698,8 +698,8 @@ export function kdpi(
     xBeta += 0.0113 * (donorAge - 18);
   }
   
-  // Age > 50: additional 0.0067*(Age-50)
-  if (donorAge > 50) {
+  // Age >= 50: additional 0.0067*(Age-50)
+  if (donorAge >= 50) {
     xBeta += 0.0067 * (donorAge - 50);
   }
   
@@ -734,9 +734,9 @@ export function kdpi(
     xBeta += -0.2199 * (creatMgDl - 1.5);
   }
   
-  // DCD Status: 0.1966
+  // DCD Status: 0.1308
   if (isDCD) {
-    xBeta += 0.1966;
+    xBeta += 0.1308;
   }
   
   // Calculate KDRI_RAO = e^(Xβ)
@@ -753,106 +753,108 @@ export function kdpi(
   // KDPI is the percentile rank of KDRI_SCALED based on 2024 reference population
   let kdpi: number;
   
-  // Mapping table from OPTN (key thresholds)
-  if (kdriScaled <= 0.4376) kdpi = 0;
-  else if (kdriScaled <= 0.5414) kdpi = 1;
-  else if (kdriScaled <= 0.5646) kdpi = 2;
-  else if (kdriScaled <= 0.5823) kdpi = 3;
-  else if (kdriScaled <= 0.5966) kdpi = 4;
-  else if (kdriScaled <= 0.6083) kdpi = 5;
-  else if (kdriScaled <= 0.6207) kdpi = 6;
-  else if (kdriScaled <= 0.6321) kdpi = 7;
-  else if (kdriScaled <= 0.6435) kdpi = 8;
-  else if (kdriScaled <= 0.6532) kdpi = 9;
-  else if (kdriScaled <= 0.6630) kdpi = 10;
-  else if (kdriScaled <= 0.6715) kdpi = 11;
-  else if (kdriScaled <= 0.6909) kdpi = 12;
-  else if (kdriScaled <= 0.6975) kdpi = 14;
-  else if (kdriScaled <= 0.7069) kdpi = 15;
-  else if (kdriScaled <= 0.7147) kdpi = 16;
-  else if (kdriScaled <= 0.7236) kdpi = 17;
-  else if (kdriScaled <= 0.7317) kdpi = 18;
-  else if (kdriScaled <= 0.7400) kdpi = 19;
-  else if (kdriScaled <= 0.7479) kdpi = 20;
-  else if (kdriScaled <= 0.7560) kdpi = 21;
-  else if (kdriScaled <= 0.7638) kdpi = 22;
-  else if (kdriScaled <= 0.7716) kdpi = 23;
-  else if (kdriScaled <= 0.7802) kdpi = 24;
-  else if (kdriScaled <= 0.7885) kdpi = 25;
-  else if (kdriScaled <= 0.7966) kdpi = 26;
-  else if (kdriScaled <= 0.8039) kdpi = 27;
-  else if (kdriScaled <= 0.8107) kdpi = 28;
-  else if (kdriScaled <= 0.8186) kdpi = 29;
-  else if (kdriScaled <= 0.8263) kdpi = 30;
-  else if (kdriScaled <= 0.8332) kdpi = 31;
-  else if (kdriScaled <= 0.8412) kdpi = 32;
-  else if (kdriScaled <= 0.8494) kdpi = 33;
-  else if (kdriScaled <= 0.8565) kdpi = 34;
-  else if (kdriScaled <= 0.8646) kdpi = 35;
-  else if (kdriScaled <= 0.8743) kdpi = 36;
-  else if (kdriScaled <= 0.8837) kdpi = 37;
-  else if (kdriScaled <= 0.8927) kdpi = 38;
-  else if (kdriScaled <= 0.9008) kdpi = 39;
-  else if (kdriScaled <= 0.9093) kdpi = 40;
-  else if (kdriScaled <= 0.9174) kdpi = 41;
-  else if (kdriScaled <= 0.9257) kdpi = 42;
-  else if (kdriScaled <= 0.9340) kdpi = 43;
-  else if (kdriScaled <= 0.9440) kdpi = 44;
-  else if (kdriScaled <= 0.9536) kdpi = 45;
-  else if (kdriScaled <= 0.9615) kdpi = 46;
-  else if (kdriScaled <= 0.9714) kdpi = 47;
-  else if (kdriScaled <= 0.9797) kdpi = 48;
-  else if (kdriScaled <= 0.9891) kdpi = 49;
-  else if (kdriScaled <= 1.0000) kdpi = 50;
-  else if (kdriScaled <= 1.0090) kdpi = 51;
-  else if (kdriScaled <= 1.0196) kdpi = 52;
-  else if (kdriScaled <= 1.0288) kdpi = 53;
-  else if (kdriScaled <= 1.0373) kdpi = 54;
-  else if (kdriScaled <= 1.0475) kdpi = 55;
-  else if (kdriScaled <= 1.0570) kdpi = 56;
-  else if (kdriScaled <= 1.0668) kdpi = 57;
-  else if (kdriScaled <= 1.0757) kdpi = 58;
-  else if (kdriScaled <= 1.0857) kdpi = 59;
-  else if (kdriScaled <= 1.0953) kdpi = 60;
-  else if (kdriScaled <= 1.1053) kdpi = 61;
-  else if (kdriScaled <= 1.1156) kdpi = 62;
-  else if (kdriScaled <= 1.1258) kdpi = 63;
-  else if (kdriScaled <= 1.1360) kdpi = 64;
-  else if (kdriScaled <= 1.1461) kdpi = 65;
-  else if (kdriScaled <= 1.1561) kdpi = 66;
-  else if (kdriScaled <= 1.1660) kdpi = 67;
-  else if (kdriScaled <= 1.1760) kdpi = 68;
-  else if (kdriScaled <= 1.1880) kdpi = 69;
-  else if (kdriScaled <= 1.1996) kdpi = 70;
-  else if (kdriScaled <= 1.2109) kdpi = 71;
-  else if (kdriScaled <= 1.2214) kdpi = 72;
-  else if (kdriScaled <= 1.2340) kdpi = 73;
-  else if (kdriScaled <= 1.2467) kdpi = 74;
-  else if (kdriScaled <= 1.2591) kdpi = 75;
-  else if (kdriScaled <= 1.2715) kdpi = 76;
-  else if (kdriScaled <= 1.2845) kdpi = 77;
-  else if (kdriScaled <= 1.2975) kdpi = 78;
-  else if (kdriScaled <= 1.3137) kdpi = 79;
-  else if (kdriScaled <= 1.3291) kdpi = 80;
-  else if (kdriScaled <= 1.3443) kdpi = 81;
-  else if (kdriScaled <= 1.3600) kdpi = 82;
-  else if (kdriScaled <= 1.3765) kdpi = 83;
-  else if (kdriScaled <= 1.3927) kdpi = 84;
-  else if (kdriScaled <= 1.4109) kdpi = 85;
-  else if (kdriScaled <= 1.4288) kdpi = 86;
-  else if (kdriScaled <= 1.4469) kdpi = 87;
-  else if (kdriScaled <= 1.4700) kdpi = 88;
-  else if (kdriScaled <= 1.4912) kdpi = 89;
-  else if (kdriScaled <= 1.5157) kdpi = 90;
-  else if (kdriScaled <= 1.5416) kdpi = 91;
-  else if (kdriScaled <= 1.5691) kdpi = 92;
-  else if (kdriScaled <= 1.6024) kdpi = 93;
-  else if (kdriScaled <= 1.6367) kdpi = 94;
-  else if (kdriScaled <= 1.6808) kdpi = 95;
-  else if (kdriScaled <= 1.7237) kdpi = 96;
-  else if (kdriScaled <= 1.7800) kdpi = 97;
-  else if (kdriScaled <= 1.8162) kdpi = 98;
-  else if (kdriScaled <= 1.9868) kdpi = 99;
+  // Full-precision OPTN KDRI-to-KDPI mapping table (April 2025)
+  // Source: https://www.hrsa.gov/sites/default/files/hrsa/optn/kdpi_mapping_table.pdf
+  if (kdriScaled <= 0.43756347366936) kdpi = 0;
+  else if (kdriScaled <= 0.54140400678998) kdpi = 1;
+  else if (kdriScaled <= 0.56455335268328) kdpi = 2;
+  else if (kdriScaled <= 0.58227670794108) kdpi = 3;
+  else if (kdriScaled <= 0.59655639363358) kdpi = 4;
+  else if (kdriScaled <= 0.60825393903620) kdpi = 5;
+  else if (kdriScaled <= 0.62073718385389) kdpi = 6;
+  else if (kdriScaled <= 0.63214751577493) kdpi = 7;
+  else if (kdriScaled <= 0.64347410023235) kdpi = 8;
+  else if (kdriScaled <= 0.65318851478785) kdpi = 9;
+  else if (kdriScaled <= 0.66302770586452) kdpi = 10;
+  else if (kdriScaled <= 0.67145522964513) kdpi = 11;
+  else if (kdriScaled <= 0.68087570963769) kdpi = 12;
+  else if (kdriScaled <= 0.69029274652971) kdpi = 13;
+  else if (kdriScaled <= 0.69751483197311) kdpi = 14;
+  else if (kdriScaled <= 0.70694281453250) kdpi = 15;
+  else if (kdriScaled <= 0.71473924076668) kdpi = 16;
+  else if (kdriScaled <= 0.72358482223375) kdpi = 17;
+  else if (kdriScaled <= 0.73165769729743) kdpi = 18;
+  else if (kdriScaled <= 0.73996713862377) kdpi = 19;
+  else if (kdriScaled <= 0.74791682700397) kdpi = 20;
+  else if (kdriScaled <= 0.75595207245550) kdpi = 21;
+  else if (kdriScaled <= 0.76380290485577) kdpi = 22;
+  else if (kdriScaled <= 0.77160424143161) kdpi = 23;
+  else if (kdriScaled <= 0.78021363869746) kdpi = 24;
+  else if (kdriScaled <= 0.78851346149113) kdpi = 25;
+  else if (kdriScaled <= 0.79655510945428) kdpi = 26;
+  else if (kdriScaled <= 0.80387692407067) kdpi = 27;
+  else if (kdriScaled <= 0.81072894733318) kdpi = 28;
+  else if (kdriScaled <= 0.81856104693612) kdpi = 29;
+  else if (kdriScaled <= 0.82627642950060) kdpi = 30;
+  else if (kdriScaled <= 0.83318339328986) kdpi = 31;
+  else if (kdriScaled <= 0.84121542290184) kdpi = 32;
+  else if (kdriScaled <= 0.84935715740213) kdpi = 33;
+  else if (kdriScaled <= 0.85645842665560) kdpi = 34;
+  else if (kdriScaled <= 0.86460674884622) kdpi = 35;
+  else if (kdriScaled <= 0.87434827297452) kdpi = 36;
+  else if (kdriScaled <= 0.88372133226563) kdpi = 37;
+  else if (kdriScaled <= 0.89269482214228) kdpi = 38;
+  else if (kdriScaled <= 0.90077164376820) kdpi = 39;
+  else if (kdriScaled <= 0.90931337155045) kdpi = 40;
+  else if (kdriScaled <= 0.91735632893166) kdpi = 41;
+  else if (kdriScaled <= 0.92571141314443) kdpi = 42;
+  else if (kdriScaled <= 0.93474875125877) kdpi = 43;
+  else if (kdriScaled <= 0.94395526660055) kdpi = 44;
+  else if (kdriScaled <= 0.95360141288907) kdpi = 45;
+  else if (kdriScaled <= 0.96147289850279) kdpi = 46;
+  else if (kdriScaled <= 0.97141500633747) kdpi = 47;
+  else if (kdriScaled <= 0.97969822621390) kdpi = 48;
+  else if (kdriScaled <= 0.98914385687021) kdpi = 49;
+  else if (kdriScaled <= 1.00000000000001) kdpi = 50;
+  else if (kdriScaled <= 1.00985758010347) kdpi = 51;
+  else if (kdriScaled <= 1.01958175487502) kdpi = 52;
+  else if (kdriScaled <= 1.02880558070335) kdpi = 53;
+  else if (kdriScaled <= 1.03725904354631) kdpi = 54;
+  else if (kdriScaled <= 1.04748546724369) kdpi = 55;
+  else if (kdriScaled <= 1.05701035027583) kdpi = 56;
+  else if (kdriScaled <= 1.06633035599198) kdpi = 57;
+  else if (kdriScaled <= 1.07573892220660) kdpi = 58;
+  else if (kdriScaled <= 1.08566912172970) kdpi = 59;
+  else if (kdriScaled <= 1.09533088857168) kdpi = 60;
+  else if (kdriScaled <= 1.10529967684360) kdpi = 61;
+  else if (kdriScaled <= 1.11546364557302) kdpi = 62;
+  else if (kdriScaled <= 1.12583220387625) kdpi = 63;
+  else if (kdriScaled <= 1.13596203398932) kdpi = 64;
+  else if (kdriScaled <= 1.14607664781339) kdpi = 65;
+  else if (kdriScaled <= 1.15614802585337) kdpi = 66;
+  else if (kdriScaled <= 1.16950575516190) kdpi = 67;
+  else if (kdriScaled <= 1.17597158234812) kdpi = 68;
+  else if (kdriScaled <= 1.18797063065605) kdpi = 69;
+  else if (kdriScaled <= 1.19958840121024) kdpi = 70;
+  else if (kdriScaled <= 1.21092254012845) kdpi = 71;
+  else if (kdriScaled <= 1.22137860162032) kdpi = 72;
+  else if (kdriScaled <= 1.23397479393383) kdpi = 73;
+  else if (kdriScaled <= 1.24670304020145) kdpi = 74;
+  else if (kdriScaled <= 1.25914195259812) kdpi = 75;
+  else if (kdriScaled <= 1.27152186119531) kdpi = 76;
+  else if (kdriScaled <= 1.28446270045611) kdpi = 77;
+  else if (kdriScaled <= 1.29752226906290) kdpi = 78;
+  else if (kdriScaled <= 1.31372090832136) kdpi = 79;
+  else if (kdriScaled <= 1.32913598921872) kdpi = 80;
+  else if (kdriScaled <= 1.34428799207615) kdpi = 81;
+  else if (kdriScaled <= 1.36002692720158) kdpi = 82;
+  else if (kdriScaled <= 1.37645657674097) kdpi = 83;
+  else if (kdriScaled <= 1.39274343883440) kdpi = 84;
+  else if (kdriScaled <= 1.41088970093023) kdpi = 85;
+  else if (kdriScaled <= 1.42882224348119) kdpi = 86;
+  else if (kdriScaled <= 1.44689676213656) kdpi = 87;
+  else if (kdriScaled <= 1.47000896434346) kdpi = 88;
+  else if (kdriScaled <= 1.49117067437256) kdpi = 89;
+  else if (kdriScaled <= 1.51572594977824) kdpi = 90;
+  else if (kdriScaled <= 1.54164889013418) kdpi = 91;
+  else if (kdriScaled <= 1.56911614985970) kdpi = 92;
+  else if (kdriScaled <= 1.60239998973729) kdpi = 93;
+  else if (kdriScaled <= 1.63668114440017) kdpi = 94;
+  else if (kdriScaled <= 1.68076407902584) kdpi = 95;
+  else if (kdriScaled <= 1.72368854740753) kdpi = 96;
+  else if (kdriScaled <= 1.77998421976632) kdpi = 97;
+  else if (kdriScaled <= 1.86168222116483) kdpi = 98;
+  else if (kdriScaled <= 1.98677654539587) kdpi = 99;
   else kdpi = 100;
   
   return {
