@@ -407,10 +407,20 @@ export function sodiumCorrectionRateHyponatremia(
   totalBodyWater: number,
   correctionHours: number
 ): number {
-  const changeInNa = (infusionNa - currentNa) / (totalBodyWater + 1);
-  const ratePerHour = changeInNa / correctionHours;
+  // Adrogue-Madias: change in serum Na per 1 L of infusate
+  const changePerLiter = (infusionNa - currentNa) / (totalBodyWater + 1);
+  if (changePerLiter === 0) return 0;
 
-  return Math.round(ratePerHour * 100) / 100;
+  // Desired total Na change over the correction period
+  const desiredChange = targetNa - currentNa;
+
+  // Total volume (mL) of infusate needed
+  const totalVolumeMl = (desiredChange / changePerLiter) * 1000;
+
+  // Infusion rate in mL/hr
+  const mlPerHour = totalVolumeMl / correctionHours;
+
+  return Math.round(mlPerHour * 10) / 10;
 }
 
 export function sodiumDeficitHyponatremia(

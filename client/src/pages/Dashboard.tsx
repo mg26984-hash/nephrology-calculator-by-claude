@@ -18,8 +18,9 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from "@/components/ui/sheet";
 import { 
   Calculator, 
-  Sun, 
-  Moon, 
+  Sun,
+  Moon,
+  Sparkles,
   Menu, 
   Search, 
   ChevronRight,
@@ -68,6 +69,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { EGFRComparison } from "@/components/EGFRComparison";
+import { PEPathway } from "@/components/PEPathway";
 import { getResultColorCoding } from "@/lib/resultColorCoding";
 import { UnitConversionTooltip, hasUnitConversion } from "@/components/UnitConversionTooltip";
 import { isBinaryYesNoInput, getYesNoLabel, getYesNoValue, isYesValue } from "@/lib/inputHelpers";
@@ -320,6 +322,7 @@ export default function Dashboard() {
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [copied, setCopied] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+  const [showPEPathway, setShowPEPathway] = useState(false);
   const [showConversionCard, setShowConversionCard] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
@@ -499,24 +502,83 @@ export default function Dashboard() {
     [selectedCalculatorId]
   );
 
-  // Filter calculators based on search and category
+  // Smart search: scores calculators by relevance using tokenized matching,
+  // abbreviation handling, prefix matching, and searchTerms aliases
   const filteredCalculators = useMemo(() => {
     let filtered = calculators;
-    
+
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (c) =>
-          c.name.toLowerCase().includes(query) ||
-          c.description.toLowerCase().includes(query) ||
-          c.category.toLowerCase().includes(query)
-      );
+      const query = searchQuery.toLowerCase().trim();
+      // Normalize: strip special chars, collapse spaces
+      const normalizedQuery = query.replace(/[₂²\-_\/]/g, "").replace(/\s+/g, " ");
+      const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+
+      // Score each calculator
+      const scored = calculators.map(c => {
+        const name = c.name.toLowerCase();
+        const normalizedName = name.replace(/[₂²\-_\/()]/g, "").replace(/\s+/g, " ");
+        const desc = c.description.toLowerCase();
+        const cat = c.category.toLowerCase();
+        const id = c.id.toLowerCase().replace(/[\-_]/g, "");
+        const terms = (c.searchTerms || []).map(t => t.toLowerCase());
+
+        let score = 0;
+
+        // Exact match on searchTerms (highest priority)
+        if (terms.some(t => t === normalizedQuery || t === query)) {
+          score += 100;
+        }
+
+        // searchTerm starts with query (prefix match)
+        if (terms.some(t => t.startsWith(normalizedQuery) || t.startsWith(query))) {
+          score += 80;
+        }
+
+        // searchTerm contains query
+        if (terms.some(t => t.includes(normalizedQuery) || t.includes(query))) {
+          score += 60;
+        }
+
+        // Name contains query directly
+        if (name.includes(query) || normalizedName.includes(normalizedQuery)) {
+          score += 50;
+        }
+
+        // ID matches
+        if (id.includes(normalizedQuery.replace(/\s/g, ""))) {
+          score += 45;
+        }
+
+        // All query tokens match somewhere (name, desc, category, or searchTerms)
+        const allSearchable = [normalizedName, desc, cat, ...terms, id].join(" ");
+        const allTokensMatch = queryTokens.every(token => allSearchable.includes(token));
+        if (allTokensMatch && queryTokens.length > 0) {
+          score += 40;
+        }
+
+        // Description contains query
+        if (desc.includes(query) || desc.includes(normalizedQuery)) {
+          score += 20;
+        }
+
+        // Category contains query
+        if (cat.includes(query)) {
+          score += 10;
+        }
+
+        return { calc: c, score };
+      });
+
+      filtered = scored
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(s => s.calc);
     }
-    
+
     if (selectedCategory) {
       filtered = filtered.filter((c) => c.category === selectedCategory);
     }
-    
+
     return filtered;
   }, [searchQuery, selectedCategory]);
 
@@ -949,13 +1011,16 @@ export default function Dashboard() {
           );
           break;
 
-        case "water-deficit-hypernatremia":
+        case "water-deficit-hypernatremia": {
+          const wdWt = Number(calculatorState.weight) || 0;
+          const wdTbw = wdWt * (calculatorState.sex === "F" ? 0.5 : 0.6);
           calculationResult = calc.waterDeficitHypernatremia(
             Number(calculatorState.currentNa) || 0,
             Number(calculatorState.targetNa) || 0,
-            Number(calculatorState.totalBodyWater) || 0
+            wdTbw
           );
           break;
+        }
 
         case "corrected-sodium-hyperglycemia":
           // getValue already normalizes to conventional units (mg/dL)
@@ -966,23 +1031,30 @@ export default function Dashboard() {
           );
           break;
 
-        case "sodium-correction-rate":
+        case "sodium-correction-rate": {
+          const wt = Number(calculatorState.weight) || 0;
+          const tbwFactor = calculatorState.sex === "F" ? 0.5 : 0.6;
+          const tbw = wt * tbwFactor;
           calculationResult = calc.sodiumCorrectionRateHyponatremia(
             Number(calculatorState.currentNa) || 0,
             Number(calculatorState.targetNa) || 0,
-            Number(calculatorState.infusionNa) || 0,
-            Number(calculatorState.totalBodyWater) || 0,
+            parseInt(String(calculatorState.infusionNa)) || 0,
+            tbw,
             Number(calculatorState.correctionHours) || 0
           );
           break;
+        }
 
-        case "sodium-deficit":
+        case "sodium-deficit": {
+          const sdWt = Number(calculatorState.weight) || 0;
+          const sdTbw = sdWt * (calculatorState.sex === "F" ? 0.5 : 0.6);
           calculationResult = calc.sodiumDeficitHyponatremia(
             Number(calculatorState.currentNa) || 0,
             Number(calculatorState.targetNa) || 0,
-            Number(calculatorState.totalBodyWater) || 0
+            sdTbw
           );
           break;
+        }
 
         case "corrected-calcium":
           calculationResult = calc.correctedCalcium(
@@ -1118,30 +1190,39 @@ export default function Dashboard() {
           );
           break;
 
-        case "hd-session-duration":
+        case "hd-session-duration": {
+          const hdWt = Number(calculatorState.weight) || 0;
+          const hdTbw = hdWt * (calculatorState.sex === "F" ? 0.5 : 0.6);
           calculationResult = calc.hemodialysisSessionDuration(
             Number(calculatorState.targetKtV) || 0,
             Number(calculatorState.dialyzerClearance) || 0,
-            Number(calculatorState.totalBodyWater) || 0
+            hdTbw
           );
           break;
+        }
 
-        case "pd-weekly-ktv":
+        case "pd-weekly-ktv": {
+          const pdWt = Number(calculatorState.weight) || 0;
+          const pdTbw = pdWt * (calculatorState.sex === "F" ? 0.5 : 0.6);
           calculationResult = calc.pdWeeklyKtv(
             Number(calculatorState.dailyDialysateUrea) || 0,
             Number(calculatorState.plasmaUrea) || 0,
             Number(calculatorState.dialysateVolume) || 0,
-            Number(calculatorState.totalBodyWater) || 0,
+            pdTbw,
             Number(calculatorState.residualKtv) || 0
           );
           break;
+        }
 
-        case "residual-rkf-ktv":
+        case "residual-rkf-ktv": {
+          const rkfWt = Number(calculatorState.weight) || 0;
+          const rkfTbw = rkfWt * (calculatorState.sex === "F" ? 0.5 : 0.6);
           calculationResult = calc.residualKfKtv(
             Number(calculatorState.ureaUrineClearance) || 0,
-            Number(calculatorState.totalBodyWater) || 0
+            rkfTbw
           );
           break;
+        }
 
         case "equilibrated-ktv":
           calculationResult = calc.equilibratedKtv(
@@ -2215,11 +2296,11 @@ export default function Dashboard() {
         if (selectedCalculator.id === "corrected-calcium" && typeof calculationResult === "object") {
           setResult(calculationResult);
           const numResult = (calculationResult as any).mgDl;
-          setResultInterpretation(selectedCalculator.interpretation(numResult));
+          setResultInterpretation(selectedCalculator.interpretation(numResult, calculatorState as Record<string, unknown>));
         } else {
           const numResult = typeof calculationResult === "number" ? calculationResult : 0;
           setResult(numResult);
-          setResultInterpretation(selectedCalculator.interpretation(numResult));
+          setResultInterpretation(selectedCalculator.interpretation(numResult, calculatorState as Record<string, unknown>));
           // Store eGFR result for auto-population in other calculators (e.g., Mehran 2)
           if (['ckd-epi-creatinine', 'ckd-epi-cystatin-c', 'cockcroft-gault', 'kinetic-egfr'].includes(selectedCalculator.id)) {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
@@ -2750,11 +2831,14 @@ export default function Dashboard() {
               size="icon"
               onClick={toggleTheme}
               className="rounded-lg"
+              title={`Switch to ${theme === "light" ? "dark" : theme === "dark" ? "midnight" : "light"} mode`}
             >
-              {theme === "dark" ? (
-                <Sun className="w-5 h-5" />
-              ) : (
+              {theme === "light" ? (
                 <Moon className="w-5 h-5" />
+              ) : theme === "dark" ? (
+                <Sparkles className="w-5 h-5 text-purple-400" />
+              ) : (
+                <Sun className="w-5 h-5 text-amber-400" />
               )}
             </Button>
           </div>
@@ -2888,20 +2972,35 @@ export default function Dashboard() {
                     placeholder="Search calculators..." 
                   />
                 </div>
-                <Button 
-                  onClick={() => setShowComparison(!showComparison)}
-                  variant={showComparison ? "default" : "outline"}
-                  className="mb-8"
-                >
-                  <ArrowLeftRight className="w-4 h-4 mr-2" />
-                  {showComparison ? "Hide eGFR Comparison" : "Compare eGFR Equations"}
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+                  <Button
+                    onClick={() => setShowComparison(!showComparison)}
+                    variant={showComparison ? "default" : "outline"}
+                  >
+                    <ArrowLeftRight className="w-4 h-4 mr-2" />
+                    {showComparison ? "Hide eGFR Comparison" : "Compare eGFR Equations"}
+                  </Button>
+                  <Button
+                    onClick={() => setShowPEPathway(!showPEPathway)}
+                    variant={showPEPathway ? "default" : "outline"}
+                  >
+                    <Activity className="w-4 h-4 mr-2" />
+                    {showPEPathway ? "Hide PE Pathway" : "PE Clinical Pathway"}
+                  </Button>
+                </div>
               </div>
 
               {/* eGFR Comparison Mode - Always appears before favorites when shown */}
               {showComparison && (
                 <div className="mb-8">
                   <EGFRComparison onClose={() => setShowComparison(false)} />
+                </div>
+              )}
+
+              {/* PE Clinical Pathway */}
+              {showPEPathway && (
+                <div className="mb-8">
+                  <PEPathway onClose={() => setShowPEPathway(false)} />
                 </div>
               )}
 

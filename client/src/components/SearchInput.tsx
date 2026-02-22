@@ -24,13 +24,39 @@ const SearchInput = memo(function SearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Filter calculators based on search query
+  // Smart search: score and rank calculators by relevance
   const suggestions = localValue.length >= 1
-    ? calculators.filter(calc => 
-        calc.name.toLowerCase().includes(localValue.toLowerCase()) ||
-        calc.description.toLowerCase().includes(localValue.toLowerCase()) ||
-        calc.category.toLowerCase().includes(localValue.toLowerCase())
-      ).slice(0, 8) // Limit to 8 suggestions
+    ? (() => {
+        const query = localValue.toLowerCase().trim();
+        const normalizedQuery = query.replace(/[₂²\-_\/]/g, "").replace(/\s+/g, " ");
+        const queryTokens = normalizedQuery.split(" ").filter(Boolean);
+
+        return calculators.map(c => {
+          const name = c.name.toLowerCase();
+          const normalizedName = name.replace(/[₂²\-_\/()]/g, "").replace(/\s+/g, " ");
+          const desc = c.description.toLowerCase();
+          const cat = c.category.toLowerCase();
+          const id = c.id.toLowerCase().replace(/[\-_]/g, "");
+          const terms = (c.searchTerms || []).map(t => t.toLowerCase());
+
+          let score = 0;
+          if (terms.some(t => t === normalizedQuery || t === query)) score += 100;
+          if (terms.some(t => t.startsWith(normalizedQuery) || t.startsWith(query))) score += 80;
+          if (terms.some(t => t.includes(normalizedQuery) || t.includes(query))) score += 60;
+          if (name.includes(query) || normalizedName.includes(normalizedQuery)) score += 50;
+          if (id.includes(normalizedQuery.replace(/\s/g, ""))) score += 45;
+          const allSearchable = [normalizedName, desc, cat, ...terms, id].join(" ");
+          if (queryTokens.length > 0 && queryTokens.every(token => allSearchable.includes(token))) score += 40;
+          if (desc.includes(query) || desc.includes(normalizedQuery)) score += 20;
+          if (cat.includes(query)) score += 10;
+
+          return { calc: c, score };
+        })
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 8)
+        .map(s => s.calc);
+      })()
     : [];
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

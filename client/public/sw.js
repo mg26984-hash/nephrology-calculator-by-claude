@@ -1,6 +1,6 @@
 // ASNRT Nephrology Calculator - Service Worker for Offline Support
-const CACHE_NAME = 'asnrt-calculator-v1';
-const STATIC_CACHE_NAME = 'asnrt-static-v1';
+const CACHE_NAME = 'asnrt-calculator-v3';
+const STATIC_CACHE_NAME = 'asnrt-static-v3';
 const BASE_PATH = '/';
 
 // Assets to cache immediately on install

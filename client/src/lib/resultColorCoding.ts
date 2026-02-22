@@ -73,7 +73,7 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
       return getCorrectedSodiumColor(value);
 
     case 'sodium-correction-rate':
-      return getSodiumCorrectionRateColor(value);
+      return getSodiumCorrectionRateColor(value, inputs);
 
     case 'sodium-deficit':
       return getSodiumDeficitColor(value);
@@ -197,10 +197,10 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'sofa':
       return getSOFAColor(value);
 
-    case 'wellsPE':
+    case 'wells-pe':
       return getWellsPEColor(value);
 
-    case 'wellsDVT':
+    case 'wells-dvt':
       return getWellsDVTColor(value);
 
     case 'gcs':
@@ -661,8 +661,14 @@ function getCorrectedSodiumColor(value: number): ColorResult {
   };
 }
 
-function getSodiumCorrectionRateColor(value: number): ColorResult {
-  if (value <= 6) {
+function getSodiumCorrectionRateColor(_value: number, inputs?: Record<string, unknown>): ColorResult {
+  // Color is based on Na correction rate (mEq/L per 24h), not the mL/hr infusion rate
+  const currentNa = Number(inputs?.currentNa) || 0;
+  const targetNa = Number(inputs?.targetNa) || 0;
+  const correctionHours = Number(inputs?.correctionHours) || 24;
+  const naChangeIn24h = Math.abs(targetNa - currentNa) / correctionHours * 24;
+
+  if (naChangeIn24h <= 6) {
     return {
       bgClass: 'bg-emerald-500/10',
       textClass: 'text-emerald-600 dark:text-emerald-400',
@@ -671,7 +677,7 @@ function getSodiumCorrectionRateColor(value: number): ColorResult {
       severity: 'success'
     };
   }
-  if (value <= 8) {
+  if (naChangeIn24h <= 8) {
     return {
       bgClass: 'bg-yellow-500/10',
       textClass: 'text-yellow-600 dark:text-yellow-400',
@@ -680,7 +686,7 @@ function getSodiumCorrectionRateColor(value: number): ColorResult {
       severity: 'warning'
     };
   }
-  if (value <= 10) {
+  if (naChangeIn24h <= 10) {
     return {
       bgClass: 'bg-orange-500/10',
       textClass: 'text-orange-600 dark:text-orange-400',
