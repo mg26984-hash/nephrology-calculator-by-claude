@@ -70,7 +70,7 @@ When passing numeric values from `calculatorState` to calculator functions:
 ## Stack
 - React 19 + TypeScript + Tailwind + shadcn/ui
 - GitHub Pages deployment (gh-pages branch of nephrology_calculator_dashboard repo)
-- Domain: nephrocalcs.xyz
+- Domain: otccalcs.com (Vercel)
 
 ## KDPI Calculator (CRITICAL)
 - Uses exact OPTN 2024 Refit formula (8 factors, no race/HCV)

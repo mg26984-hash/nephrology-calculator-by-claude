@@ -1,5 +1,5 @@
 /**
- * ASNRT Nephrology Calculator Dashboard
+ * OTC Calculators Dashboard
  * Professional open-access calculator for nephrologists
  * 53 calculators organized by clinical category
  * Features: Light/Dark theme, inline unit conversion per input, mobile-friendly
@@ -2812,13 +2812,13 @@ export default function Dashboard() {
             </Sheet>
 
             <div className="flex items-center gap-2">
-              <img 
-                src={`${import.meta.env.BASE_URL}images/asnrt-logo.webp`} 
-                alt="ASNRT Logo" 
+              <img
+                src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
+                alt="OTC Calculators Logo"
                 className="w-10 h-10 object-contain"
               />
               <div>
-                <h1 className="text-lg font-bold text-foreground">ASNRT Calculator</h1>
+                <h1 className="text-lg font-bold text-foreground">OTC Calculators</h1>
                 <p className="text-xs text-muted-foreground hidden sm:block">Nephrology Clinical Tools</p>
               </div>
             </div>
@@ -2954,13 +2954,13 @@ export default function Dashboard() {
             <div className="max-w-4xl mx-auto">
               <div className="text-center py-12">
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6">
-                  <img 
-                    src={`${import.meta.env.BASE_URL}images/asnrt-logo.webp`} 
-                    alt="ASNRT Logo" 
+                  <img
+                    src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
+                    alt="OTC Calculators Logo"
                     className="w-14 h-14 object-contain"
                   />
                 </div>
-                <h2 className="text-2xl font-bold mb-3">Welcome to ASNRT Calculator</h2>
+                <h2 className="text-2xl font-bold mb-3">Welcome to OTC Calculators</h2>
                 <p className="text-muted-foreground max-w-md mx-auto mb-6">
                   Select a calculator from the sidebar to begin. This dashboard includes {calculators.length} clinical calculators organized by category for nephrology practice.
                 </p>

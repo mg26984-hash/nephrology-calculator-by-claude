@@ -1,6 +1,6 @@
-// ASNRT Nephrology Calculator - Service Worker for Offline Support
-const CACHE_NAME = 'asnrt-calculator-v3';
-const STATIC_CACHE_NAME = 'asnrt-static-v3';
+// OTC Calculators - Service Worker for Offline Support
+const CACHE_NAME = 'otc-calculator-v3';
+const STATIC_CACHE_NAME = 'otc-static-v3';
 const BASE_PATH = '/';
 
 // Assets to cache immediately on install
@@ -166,4 +166,4 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-console.log('[SW] Service Worker loaded - ASNRT Calculator');
+console.log('[SW] Service Worker loaded - OTC Calculators');

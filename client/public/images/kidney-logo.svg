@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Left kidney -->
+  <path d="M30 20C18 20 10 32 10 48C10 58 14 66 18 72C22 78 28 82 30 82C34 82 36 76 36 68C36 60 38 56 40 52C42 48 44 44 44 36C44 28 38 20 30 20Z" fill="#3b82f6"/>
+  <!-- Right kidney -->
+  <path d="M70 20C82 20 90 32 90 48C90 58 86 66 82 72C78 78 72 82 70 82C66 82 64 76 64 68C64 60 62 56 60 52C58 48 56 44 56 36C56 28 62 20 70 20Z" fill="#3b82f6"/>
+  <!-- Left ureter -->
+  <path d="M26 78C26 78 28 88 34 94" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+  <!-- Right ureter -->
+  <path d="M74 78C74 78 72 88 66 94" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+  <!-- Bladder (small) -->
+  <ellipse cx="50" cy="95" rx="8" ry="4" fill="#3b82f6" opacity="0.7"/>
+  <!-- Subtle highlight on left kidney -->
+  <path d="M24 30C20 34 16 42 16 50C16 54 17 57 18 60" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <!-- Subtle highlight on right kidney -->
+  <path d="M76 30C80 34 84 42 84 50C84 54 83 57 82 60" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+</svg>

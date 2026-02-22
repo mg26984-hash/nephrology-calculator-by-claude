@@ -1,6 +1,6 @@
 {
-  "name": "ASNRT Nephrology Calculator",
-  "short_name": "ASNRT Calc",
+  "name": "OTC Calculators",
+  "short_name": "OTC Calcs",
   "description": "Professional nephrology clinical calculators for healthcare providers. 74 calculators including eGFR, dialysis adequacy, electrolytes, and more.",
   "start_url": "/",
   "scope": "/",
