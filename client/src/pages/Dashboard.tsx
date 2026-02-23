@@ -2573,10 +2573,11 @@ export default function Dashboard() {
       <div className="h-full flex flex-col">
       {/* Search - Using separate memoized component to prevent iOS focus loss */}
       <div className="sticky top-0 z-10 p-4 border-b border-border bg-background">
-        <SearchInput 
-          onSearchChange={setSearchQuery} 
+        <SearchInput
+          onSearchChange={setSearchQuery}
           onSelectCalculator={handleSelectCalculator}
-          placeholder="Search calculators..." 
+          placeholder="Search calculators..."
+          inputClassName="border-primary/50 bg-primary/5 shadow-[0_0_0_1px_var(--primary)/0.2] animate-pulse focus:animate-none focus:border-primary focus:bg-secondary"
         />
       </div>
 
@@ -2810,7 +2811,7 @@ export default function Dashboard() {
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0 max-h-screen overflow-y-auto">
+              <SheetContent side="left" className="w-80 p-0 max-h-screen overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <SheetHeader className="sr-only">
                   <SheetTitle>Calculator Navigation</SheetTitle>
                   <SheetDescription>Browse and select nephrology calculators by category</SheetDescription>

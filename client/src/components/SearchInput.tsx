@@ -9,14 +9,16 @@ interface SearchInputProps {
   onSelectCalculator?: (calculatorId: string) => void;
   placeholder?: string;
   showAutocomplete?: boolean;
+  inputClassName?: string;
 }
 
 // Memoized search input component with autocomplete
-const SearchInput = memo(function SearchInput({ 
-  onSearchChange, 
+const SearchInput = memo(function SearchInput({
+  onSearchChange,
   onSelectCalculator,
   placeholder = "Search calculators...",
-  showAutocomplete = true
+  showAutocomplete = true,
+  inputClassName
 }: SearchInputProps) {
   const [localValue, setLocalValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -157,7 +159,7 @@ const SearchInput = memo(function SearchInput({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onFocus={() => localValue.length >= 1 && showAutocomplete && setIsOpen(true)}
-        className="pl-9 pr-8 bg-secondary border-border"
+        className={cn("pl-9 pr-8 bg-secondary border-border", inputClassName)}
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
