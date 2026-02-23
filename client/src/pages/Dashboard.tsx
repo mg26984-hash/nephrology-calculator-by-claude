@@ -15,6 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from "@/components/ui/sheet";
 import { 
   Calculator, 
@@ -84,6 +87,22 @@ interface CalculatorState {
 interface UnitState {
   [inputId: string]: string;
 }
+
+// Category color classes for sidebar accordion titles
+const categoryColors: { [key: string]: string } = {
+  "Kidney Function & CKD Risk": "text-blue-600 dark:text-blue-400",
+  "Acute Kidney Injury (AKI) Workup": "text-red-600 dark:text-red-400",
+  "Electrolytes & Acid-Base": "text-cyan-600 dark:text-cyan-400",
+  "Proteinuria & Glomerular Disease": "text-violet-600 dark:text-violet-400",
+  "Dialysis Adequacy": "text-teal-600 dark:text-teal-400",
+  "Transplantation": "text-rose-600 dark:text-rose-400",
+  "Cardiovascular Risk": "text-pink-600 dark:text-pink-400",
+  "Anthropometric & Body Composition": "text-amber-600 dark:text-amber-400",
+  "CKD-Mineral Bone Disease": "text-orange-600 dark:text-orange-400",
+  "Systemic Diseases & Scores": "text-indigo-600 dark:text-indigo-400",
+  "Bone & Fracture Risk": "text-yellow-700 dark:text-yellow-400",
+  "Critical Care": "text-red-700 dark:text-red-300",
+};
 
 // Category icons mapping
 const categoryIcons: { [key: string]: React.ReactNode } = {
@@ -340,12 +359,17 @@ export default function Dashboard() {
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showCategoryCustomizer, setShowCategoryCustomizer] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [sidebarAccordionValue, setSidebarAccordionValue] = useState<string>("");
   const [clinicalRecommendation, setClinicalRecommendation] = useState<any>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [copied, setCopied] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [showPEPathway, setShowPEPathway] = useState(false);
   const [showConversionCard, setShowConversionCard] = useState(false);
+  const comparisonRef = useRef<HTMLDivElement>(null);
+  const pePathwayRef = useRef<HTMLDivElement>(null);
+  const conversionRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultCardRef = useRef<HTMLDivElement>(null);
   
@@ -457,6 +481,47 @@ export default function Dashboard() {
   useEffect(() => {
     localStorage.setItem('nephrology-calculator-recent', JSON.stringify(recentCalculatorIds));
   }, [recentCalculatorIds]);
+
+  // Scroll to panel when toggled on
+  useEffect(() => {
+    if (showComparison) {
+      setTimeout(() => comparisonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showComparison]);
+
+  useEffect(() => {
+    if (showPEPathway) {
+      setTimeout(() => pePathwayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showPEPathway]);
+
+  useEffect(() => {
+    if (showConversionCard) {
+      setTimeout(() => conversionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showConversionCard]);
+
+  // Auto-expand sidebar accordion to selected calculator's category
+  useEffect(() => {
+    if (selectedCalculatorId) {
+      const cat = calculators.find(c => c.id === selectedCalculatorId)?.category;
+      if (cat) setSidebarAccordionValue(cat);
+    } else if (selectedCategory) {
+      setSidebarAccordionValue(selectedCategory);
+    }
+  }, [selectedCalculatorId, selectedCategory]);
+
+  // Command palette keyboard shortcut (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCommandOpen(prev => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Add calculator to recent list (called when selecting a calculator)
   const addToRecent = useCallback((calcId: string) => {
@@ -2628,61 +2693,69 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Regular Calculator List */}
+          {/* Regular Calculator List — Accordion */}
           {(() => {
             let globalIndex = 0;
-            return Object.entries(groupedCalculators).map(([category, calcs]) => (
-              <div key={category} className="mb-4">
-                <div className="flex items-center gap-2 px-2 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {categoryIcons[category] || <Calculator className="w-4 h-4" />}
-                  <span className="truncate">{category.split(" & ")[0]}</span>
-                  <span className="ml-auto text-[10px] bg-secondary px-1.5 py-0.5 rounded">{calcs.length}</span>
-                </div>
-                <div className="space-y-1">
-                  {calcs.map((calc) => {
-                    const currentIndex = globalIndex++;
-                    const isFocused = focusedIndex === currentIndex;
-                    const isFavorite = favorites.includes(calc.id);
-                    return (
-                      <button
-                        key={calc.id}
-                        data-calculator-id={calc.id}
-                        data-calculator-index={currentIndex}
-                        onClick={() => handleSelectCalculator(calc.id)}
-                        className={cn(
-                          "w-full text-left px-3 py-2 rounded-md text-sm transition-colors group",
-                          "hover:bg-accent hover:text-accent-foreground",
-                          selectedCalculatorId === calc.id
-                            ? "bg-primary text-primary-foreground"
-                            : isFocused
-                            ? "bg-accent text-accent-foreground ring-2 ring-primary ring-offset-1"
-                            : "text-foreground"
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="break-words hyphens-auto pr-2" style={{ wordBreak: 'break-word' }}>{calc.name}</span>
-                          <div className="flex items-center gap-1">
-                            <span
-                              onClick={(e) => toggleFavorite(calc.id, e)}
+            return (
+              <Accordion type="single" collapsible value={sidebarAccordionValue} onValueChange={setSidebarAccordionValue}>
+                {Object.entries(groupedCalculators).map(([category, calcs]) => (
+                  <AccordionItem key={category} value={category} className="border-b-0">
+                    <AccordionTrigger className={cn("px-2 py-2 text-xs font-semibold uppercase tracking-wider hover:no-underline", categoryColors[category] || "text-muted-foreground")}>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {categoryIcons[category] || <Calculator className="w-4 h-4" />}
+                        <span className="truncate">{category.split(" & ")[0]}</span>
+                        <span className={cn("ml-auto mr-2 text-[10px] px-1.5 py-0.5 rounded", categoryColors[category] ? "bg-current/10" : "bg-secondary")}>{calcs.length}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-2">
+                      <div className="space-y-1">
+                        {calcs.map((calc) => {
+                          const currentIndex = globalIndex++;
+                          const isFocused = focusedIndex === currentIndex;
+                          const isFavorite = favorites.includes(calc.id);
+                          return (
+                            <button
+                              key={calc.id}
+                              data-calculator-id={calc.id}
+                              data-calculator-index={currentIndex}
+                              onClick={() => handleSelectCalculator(calc.id)}
                               className={cn(
-                                "p-0.5 rounded transition-colors cursor-pointer",
-                                isFavorite 
-                                  ? "text-amber-500" 
-                                  : "text-muted-foreground/50 hover:text-amber-500 sm:opacity-0 sm:group-hover:opacity-100"
+                                "w-full text-left px-3 py-2 rounded-md text-sm transition-colors group",
+                                "hover:bg-accent hover:text-accent-foreground",
+                                selectedCalculatorId === calc.id
+                                  ? "bg-primary text-primary-foreground"
+                                  : isFocused
+                                  ? "bg-accent text-accent-foreground ring-2 ring-primary ring-offset-1"
+                                  : "text-muted-foreground hover:text-foreground"
                               )}
-                              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
                             >
-                              <Star className={cn("w-3 h-3", isFavorite && "fill-current")} />
-                            </span>
-                            <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-50" />
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ));
+                              <div className="flex items-center justify-between">
+                                <span className="break-words hyphens-auto pr-2" style={{ wordBreak: 'break-word' }}>{calc.name}</span>
+                                <div className="flex items-center gap-1">
+                                  <span
+                                    onClick={(e) => toggleFavorite(calc.id, e)}
+                                    className={cn(
+                                      "p-0.5 rounded transition-colors cursor-pointer",
+                                      isFavorite
+                                        ? "text-amber-500"
+                                        : "text-muted-foreground/50 hover:text-amber-500 sm:opacity-0 sm:group-hover:opacity-100"
+                                    )}
+                                    title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                                  >
+                                    <Star className={cn("w-3 h-3", isFavorite && "fill-current")} />
+                                  </span>
+                                  <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-50" />
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            );
           })()}
           
           {filteredCalculators.length === 0 && (
@@ -2703,11 +2776,11 @@ export default function Dashboard() {
           {filteredCalculators.length} of {calculators.length} calculators
         </p>
         <p className="text-[10px] text-muted-foreground/70 mt-1">
-          ↑↓ Navigate · Enter Select · Esc Clear
+          ↑↓ Navigate · Enter Select · ⌘K Search
         </p>
       </div>
     </div>
-  ), [selectedCategory, categories, favoriteCalculators, recentCalculators, groupedCalculators, filteredCalculators, selectedCalculatorId, focusedIndex, favorites, handleSelectCalculator, toggleFavorite]);
+  ), [selectedCategory, categories, favoriteCalculators, recentCalculators, groupedCalculators, filteredCalculators, selectedCalculatorId, focusedIndex, favorites, handleSelectCalculator, toggleFavorite, sidebarAccordionValue]);
 
   // Inline Unit Toggle Component
   // Multi-option unit definitions for calculators with more than 2 unit options
@@ -2852,6 +2925,28 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Command Palette Search Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCommandOpen(true)}
+              className="hidden sm:inline-flex items-center gap-2 text-muted-foreground text-sm h-9 px-3"
+            >
+              <Search className="w-4 h-4" />
+              <span>Search...</span>
+              <kbd className="pointer-events-none ml-1 inline-flex h-5 items-center rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                ⌘K
+              </kbd>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCommandOpen(true)}
+              className="sm:hidden"
+              title="Search calculators"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -2977,301 +3072,267 @@ export default function Dashboard() {
               </div>
             </div>
           ) : !selectedCalculator ? (
-            // Welcome Screen
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center py-6 sm:py-12">
-                <div className="hidden sm:inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6">
+            // Welcome Screen — Bento Grid Layout
+            <div className="max-w-5xl mx-auto">
+              {/* Compact Header */}
+              <div className="flex items-center gap-3 mb-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 flex-shrink-0">
                   <img
                     src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
                     alt="OTC Calculators Logo"
-                    className="w-14 h-14 object-contain"
+                    className="w-8 h-8 object-contain"
                   />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">Welcome to OTC Calculators</h2>
-                <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto mb-4 sm:mb-6">
-                  Select a calculator from the sidebar to begin. {calculators.length} clinical tools for nephrology practice.
-                </p>
-                {/* Mobile Search Bar - visible only on small screens where sidebar is hidden */}
-                <div className="lg:hidden max-w-md mx-auto mb-6">
-                  <SearchInput 
-                    onSearchChange={setSearchQuery} 
-                    onSelectCalculator={handleSelectCalculator}
-                    placeholder="Search calculators..." 
-                  />
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-8">
-                  <Button
-                    onClick={() => setShowComparison(!showComparison)}
-                    variant={showComparison ? "default" : "outline"}
-                    size="sm"
-                    className="sm:size-default text-xs sm:text-sm"
-                  >
-                    <ArrowLeftRight className="w-4 h-4 mr-1 sm:mr-2" />
-                    {showComparison ? "Hide eGFR Comparison" : "Compare eGFR Equations"}
-                  </Button>
-                  <Button
-                    onClick={() => setShowPEPathway(!showPEPathway)}
-                    variant={showPEPathway ? "default" : "outline"}
-                    size="sm"
-                    className="sm:size-default text-xs sm:text-sm"
-                  >
-                    <Activity className="w-4 h-4 mr-1 sm:mr-2" />
-                    {showPEPathway ? "Hide PE Pathway" : "PE Clinical Pathway"}
-                  </Button>
+                <div>
+                  <h2 className="text-xl font-bold">OTC Calculators</h2>
+                  <p className="text-sm text-muted-foreground">{calculators.length} clinical calculators for nephrology practice</p>
                 </div>
               </div>
 
-              {/* eGFR Comparison Mode - Always appears before favorites when shown */}
+              {/* Mobile Search Bar */}
+              <div className="lg:hidden mb-4">
+                <SearchInput
+                  onSearchChange={setSearchQuery}
+                  onSelectCalculator={handleSelectCalculator}
+                  placeholder="Search calculators..."
+                />
+              </div>
+
+              {/* Bento Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Favorites Card — spans 2 cols */}
+                <Card className="md:col-span-2 lg:col-span-2">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Star className={cn("w-4 h-4", favoriteCalculators.length > 0 ? "fill-amber-500 text-amber-500" : "text-muted-foreground")} />
+                        Your Favorites
+                        {favoriteCalculators.length > 0 && (
+                          <span className="text-xs text-muted-foreground font-normal">({favoriteCalculators.length}) • Drag to reorder</span>
+                        )}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {favoriteCalculators.length === 0 ? (
+                      <div className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center">
+                        <Star className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          Click the star icon on any calculator to add it here.
+                        </p>
+                      </div>
+                    ) : (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={favorites}
+                          strategy={rectSortingStrategy}
+                        >
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            {favoriteCalculators.map((calc) => (
+                              <SortableFavoriteCard
+                                key={calc.id}
+                                calc={calc}
+                                categoryIcons={categoryIcons}
+                                onSelect={handleSelectCalculator}
+                                onToggleFavorite={toggleFavorite}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Recently Viewed Card */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      Recently Viewed
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recentCalculators.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Your recently used calculators will appear here.
+                      </p>
+                    ) : (
+                      <div className="space-y-1">
+                        {recentCalculators.map((calc) => (
+                          <button
+                            key={`home-recent-${calc.id}`}
+                            onClick={() => handleSelectCalculator(calc.id)}
+                            className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between group"
+                          >
+                            <span className="truncate">{calc.name}</span>
+                            <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Quick Tools Card */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Stethoscope className="w-4 h-4 text-primary" />
+                      Quick Tools
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Button
+                      onClick={() => setShowComparison(!showComparison)}
+                      variant={showComparison ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <ArrowLeftRight className="w-4 h-4 mr-2" />
+                      {showComparison ? "Hide eGFR Comparison" : "Compare eGFR Equations"}
+                    </Button>
+                    <Button
+                      onClick={() => setShowPEPathway(!showPEPathway)}
+                      variant={showPEPathway ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <Activity className="w-4 h-4 mr-2" />
+                      {showPEPathway ? "Hide PE Pathway" : "PE Clinical Pathway"}
+                    </Button>
+                    <Button
+                      onClick={() => setShowConversionCard(!showConversionCard)}
+                      variant={showConversionCard ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <ArrowLeftRight className="w-4 h-4 mr-2" />
+                      {showConversionCard ? "Hide Unit Converter" : "Unit Conversion Reference"}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Categories Section — spans 2 cols */}
+                <Card className="md:col-span-2 lg:col-span-2">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">
+                        {showAllCategories ? "All Categories" : "Browse by Category"}
+                      </CardTitle>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCategoryCustomizer(!showCategoryCustomizer)}
+                          className="text-primary hover:text-primary/80 h-8 px-2 text-xs"
+                          title="Customize category order"
+                        >
+                          Customize
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowAllCategories(!showAllCategories)}
+                          className="text-primary hover:text-primary/80 h-8 px-2 text-xs"
+                        >
+                          {showAllCategories ? "Show Less" : `View All (${categories.length})`}
+                          <ChevronRight className={cn("w-3 h-3 ml-1 transition-transform", showAllCategories && "rotate-90")} />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Category Customizer */}
+                    {showCategoryCustomizer && (
+                      <div className="mb-4 p-4 rounded-lg border border-primary/50 bg-primary/5 space-y-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Reorder Categories</span>
+                          <Button variant="ghost" size="sm" onClick={() => setShowCategoryCustomizer(false)} className="h-6 w-6 p-0">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {sortedCategories.map((category, index) => (
+                          <div key={category} className="flex items-center gap-3 p-2 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                {categoryIcons[category] || <Calculator className="w-4 h-4" />}
+                              </div>
+                              <span className="text-sm font-medium">{category}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => { if (index > 0) { const newOrder = [...sortedCategories]; [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]]; setCategoryOrder(newOrder); } }} disabled={index === 0} className="h-7 w-7 p-0">↑</Button>
+                              <Button variant="ghost" size="sm" onClick={() => { if (index < sortedCategories.length - 1) { const newOrder = [...sortedCategories]; [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]; setCategoryOrder(newOrder); } }} disabled={index === sortedCategories.length - 1} className="h-7 w-7 p-0">↓</Button>
+                            </div>
+                          </div>
+                        ))}
+                        <Button variant="outline" size="sm" onClick={() => setCategoryOrder([])} className="w-full mt-2">Reset to Default</Button>
+                      </div>
+                    )}
+
+                    {/* Category Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
+                      {(showAllCategories ? sortedCategories : sortedCategories.filter(cat => [
+                        "Acute Kidney Injury (AKI) Workup",
+                        "Dialysis Adequacy",
+                        "Electrolytes & Acid-Base",
+                        "Kidney Function & CKD Risk",
+                        "Proteinuria & Glomerular Disease",
+                        "Transplantation"
+                      ].includes(cat))).map((category) => {
+                        const categoryCalculators = calculators.filter((c) => c.category === category);
+                        return (
+                          <button
+                            key={category}
+                            onClick={() => { setViewingCategoryList(category); setSelectedCategory(category); }}
+                            className="p-3 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group cursor-pointer"
+                          >
+                            <div className="flex items-center gap-3 mb-1.5">
+                              <div className="p-1.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                {categoryIcons[category] || <Calculator className="w-4 h-4" />}
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary ml-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            <h3 className="font-medium text-sm">{category.split(" & ")[0]}</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">{categoryCalculators.length} calculators</p>
+                            {showAllCategories && categoryDescriptions[category] && (
+                              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{categoryDescriptions[category]}</p>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Full-width panels below the grid */}
               {showComparison && (
-                <div className="mb-8">
+                <div className="mt-4" ref={comparisonRef}>
                   <EGFRComparison onClose={() => setShowComparison(false)} />
                 </div>
               )}
 
-              {/* PE Clinical Pathway */}
               {showPEPathway && (
-                <div className="mb-8">
+                <div className="mt-4" ref={pePathwayRef}>
                   <PEPathway onClose={() => setShowPEPathway(false)} />
                 </div>
               )}
 
-              {/* Favorite Calculators Section with Drag-and-Drop */}
-              {favoriteCalculators.length === 0 && (
-                <div className="mb-10">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Star className="w-5 h-5 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold">Your Favorites</h3>
-                  </div>
-                  <div className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-8 text-center">
-                    <div className="flex justify-center mb-4">
-                      <div className="p-4 rounded-full bg-muted">
-                        <Star className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <h4 className="text-lg font-medium text-foreground mb-2">No favorites yet</h4>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-                      Click the star icon on any calculator to add it to your favorites for quick access.
-                      Your favorites will appear here and can be reordered by dragging.
-                    </p>
-                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Star className="w-3 h-3" /> Click star to favorite
-                      </span>
-                      <span className="text-muted-foreground/50">•</span>
-                      <span className="flex items-center gap-1">
-                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-                          <circle cx="4" cy="4" r="1.5" />
-                          <circle cx="12" cy="4" r="1.5" />
-                          <circle cx="4" cy="8" r="1.5" />
-                          <circle cx="12" cy="8" r="1.5" />
-                          <circle cx="4" cy="12" r="1.5" />
-                          <circle cx="12" cy="12" r="1.5" />
-                        </svg>
-                        Drag to reorder
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {favoriteCalculators.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-                    <h3 className="text-lg font-semibold">Your Favorites</h3>
-                    <span className="text-sm text-muted-foreground">({favoriteCalculators.length})</span>
-                    <span className="text-xs text-muted-foreground ml-2">• Drag to reorder</span>
-                  </div>
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={favorites}
-                      strategy={rectSortingStrategy}
-                    >
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        {favoriteCalculators.map((calc) => (
-                          <SortableFavoriteCard
-                            key={calc.id}
-                            calc={calc}
-                            categoryIcons={categoryIcons}
-                            onSelect={handleSelectCalculator}
-                            onToggleFavorite={toggleFavorite}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              )}
-
-              {/* Category Quick Access Header */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">
-                  {showAllCategories ? "All Categories" : "Browse by Category"}
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={showConversionCard ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowConversionCard(!showConversionCard)}
-                    className="text-sm"
-                  >
-                    <ArrowLeftRight className="w-4 h-4 mr-1" />
-                    {showConversionCard ? "Hide Unit Converter" : "Unit Conversion Reference"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowCategoryCustomizer(!showCategoryCustomizer)}
-                    className="text-primary hover:text-primary/80"
-                    title="Customize category order"
-                  >
-                    ⚙️ Customize
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllCategories(!showAllCategories)}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    {showAllCategories ? "Show Less" : `View All ${categories.length} Categories`}
-                    <ChevronRight className={cn("w-4 h-4 ml-1 transition-transform", showAllCategories && "rotate-90")} />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Category Customizer Modal */}
-              {showCategoryCustomizer && (
-                <Card className="mb-6 border-primary/50 bg-primary/5">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">Customize Category Order</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowCategoryCustomizer(false)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <CardDescription>
-                      Drag categories to reorder them. Your preferences will be saved automatically.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {sortedCategories.map((category, index) => (
-                      <div
-                        key={category}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 flex-1">
-                          <div className="p-1 rounded text-muted-foreground">::</div>
-                          <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                            {categoryIcons[category] || <Calculator className="w-4 h-4" />}
-                          </div>
-                          <span className="text-sm font-medium">{category}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (index > 0) {
-                                const newOrder = [...sortedCategories];
-                                [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
-                                setCategoryOrder(newOrder);
-                              }
-                            }}
-                            disabled={index === 0}
-                            className="h-8 w-8 p-0"
-                          >
-                            ↑
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (index < sortedCategories.length - 1) {
-                                const newOrder = [...sortedCategories];
-                                [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-                                setCategoryOrder(newOrder);
-                              }
-                            }}
-                            disabled={index === sortedCategories.length - 1}
-                            className="h-8 w-8 p-0"
-                          >
-                            ↓
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setCategoryOrder([]);
-                      }}
-                      className="w-full mt-4"
-                    >
-                      Reset to Default
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Category Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
-                {(showAllCategories ? sortedCategories : sortedCategories.filter(cat => [
-                  "Acute Kidney Injury (AKI) Workup",
-                  "Dialysis Adequacy",
-                  "Electrolytes & Acid-Base",
-                  "Kidney Function & CKD Risk",
-                  "Proteinuria & Glomerular Disease",
-                  "Transplantation"
-                ].includes(cat))).map((category) => {
-                  const categoryCalculators = calculators.filter((c) => c.category === category);
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => {
-                        setViewingCategoryList(category);
-                        setSelectedCategory(category);
-                      }}
-                      className="p-3 sm:p-4 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                          {categoryIcons[category] || <Calculator className="w-4 h-4" />}
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary ml-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
-                      </div>
-                      <h3 className="font-medium text-sm">{category.split(" & ")[0]}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {categoryCalculators.length} calculators
-                      </p>
-                      {showAllCategories && categoryDescriptions[category] && (
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                          {categoryDescriptions[category]}
-                        </p>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Unit Conversion Reference Card - At Bottom */}
               {showConversionCard && (
-                <div className="mt-8">
+                <div className="mt-4" ref={conversionRef}>
                   <ConversionReferenceCard onClose={() => setShowConversionCard(false)} />
                 </div>
               )}
             </div>
           ) : (
             // Calculator View
-            <div className="max-w-2xl mx-auto space-y-3 sm:space-y-6">
+            <div className="max-w-2xl mx-auto space-y-6 max-lg:space-y-3">
               {/* Breadcrumb Navigation */}
               <nav className="flex items-center gap-2 text-sm">
                 <button
@@ -3281,14 +3342,14 @@ export default function Dashboard() {
                   <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
                   Dashboard
                 </button>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground/50 hidden lg:block" />
                 <button
                   onClick={() => {
                     setViewingCategoryList(selectedCalculator.category);
                     setSelectedCategory(selectedCalculator.category);
                     setSelectedCalculatorId(null);
                   }}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors hidden lg:block"
                 >
                   {selectedCalculator.category}
                 </button>
@@ -3301,8 +3362,8 @@ export default function Dashboard() {
               {/* Calculator Header */}
               <div className="flex items-start justify-between gap-2 sm:gap-4">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold">{selectedCalculator.name}</h2>
-                  <p className="text-muted-foreground mt-1 hidden sm:block">{selectedCalculator.description}</p>
+                  <h2 className="text-2xl max-lg:text-lg font-bold">{selectedCalculator.name}</h2>
+                  <p className="text-muted-foreground mt-1 hidden lg:block">{selectedCalculator.description}</p>
                 </div>
                 <button
                   onClick={(e) => toggleFavorite(selectedCalculator.id, e)}
@@ -3332,7 +3393,7 @@ export default function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-lg:gap-2.5">
                     {selectedCalculator.inputs
                       .filter((input) => !input.id.endsWith("Unit")) // Skip unit selector inputs
                       .filter((input) => {
@@ -3379,7 +3440,7 @@ export default function Dashboard() {
                               min={input.min}
                               max={input.max}
                               step={input.step}
-                              className={hasUnitToggle(input.id) ? "" : hasUnitConversion(input.id) ? "pr-20" : "pr-16"}
+                              className={cn("max-lg:text-base max-lg:min-h-[48px]", hasUnitToggle(input.id) ? "" : hasUnitConversion(input.id) ? "pr-20" : "pr-16")}
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                               {hasUnitConversion(input.id) && calculatorState[input.id] && (
@@ -3418,7 +3479,7 @@ export default function Dashboard() {
                               value={String(calculatorState[input.id] ?? "")}
                               onValueChange={(value) => handleInputChange(input.id, value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="max-lg:text-base max-lg:min-h-[48px]">
                                 <SelectValue placeholder="Select..." />
                               </SelectTrigger>
                               <SelectContent>
@@ -3474,7 +3535,7 @@ export default function Dashboard() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="w-8 h-8 p-0 font-semibold text-lg"
+                                className="w-8 h-8 max-lg:w-11 max-lg:h-11 p-0 font-semibold text-lg"
                                 onClick={() => {
                                   const currentVal = parseInt(String(calculatorState[input.id] ?? 0));
                                   if (currentVal > (input.min ?? 0)) {
@@ -3491,7 +3552,7 @@ export default function Dashboard() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="w-8 h-8 p-0 font-semibold text-lg"
+                                className="w-8 h-8 max-lg:w-11 max-lg:h-11 p-0 font-semibold text-lg"
                                 onClick={() => {
                                   const currentVal = parseInt(String(calculatorState[input.id] ?? 0));
                                   if (currentVal < (input.max ?? 3)) {
@@ -3531,21 +3592,35 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <Separator className="my-4 sm:my-6" />
+                  <Separator className="my-6 max-lg:hidden" />
 
-                  <div className="sticky bottom-0 z-10 -mx-6 px-6 py-3 bg-card/95 backdrop-blur border-t border-border sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-t-0">
+                  {/* Desktop Calculate Button (inline) */}
                   <Button
                     onClick={handleCalculate}
                     disabled={!allRequiredFilled}
-                    className="w-full"
+                    className="w-full hidden lg:flex"
                     size="lg"
                   >
                     <Calculator className="w-4 h-4 mr-2" />
                     Calculate
                   </Button>
-                  </div>
                 </CardContent>
               </Card>
+
+              {/* Mobile Sticky Calculate Button */}
+              <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-background/80 backdrop-blur-lg border-t border-border" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+                <Button
+                  onClick={handleCalculate}
+                  disabled={!allRequiredFilled}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Calculate
+                </Button>
+              </div>
+              {/* Spacer for sticky button on mobile */}
+              <div className="lg:hidden h-20" />
 
               {/* Result Card */}
               {result !== null && (() => {
@@ -3562,13 +3637,14 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-base">Result</CardTitle>
                       {colorCoding && (
-                        <span className={cn(
-                          "text-xs font-medium px-2 py-0.5 rounded-full",
+                        <Badge variant="outline" className={cn(
+                          "text-xs font-medium",
                           colorCoding.bgClass,
-                          colorCoding.textClass
+                          colorCoding.textClass,
+                          colorCoding.borderClass
                         )}>
                           {colorCoding.label}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     <Button
@@ -3635,6 +3711,7 @@ export default function Dashboard() {
                           colorCoding && colorCoding.severity === 'info' && "text-blue-500"
                         )} />
                         <AlertDescription className={cn(
+                          "break-words",
                           colorCoding && colorCoding.severity === 'danger' && "text-red-700 dark:text-red-400",
                           colorCoding && colorCoding.severity === 'warning' && "text-yellow-700 dark:text-yellow-400",
                           colorCoding && colorCoding.severity === 'success' && "text-emerald-700 dark:text-emerald-400",
@@ -5235,6 +5312,56 @@ export default function Dashboard() {
           )}
         </main>
       </div>
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandDialog
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+        title="Search Calculators"
+        description="Find a calculator by name, category, or keyword"
+      >
+        <CommandInput placeholder="Search calculators..." />
+        <CommandList className="max-h-[400px]">
+          <CommandEmpty>No calculators found.</CommandEmpty>
+          {favoriteCalculators.length > 0 && (
+            <CommandGroup heading="Favorites">
+              {favoriteCalculators.map((calc) => (
+                <CommandItem
+                  key={`cmd-fav-${calc.id}`}
+                  value={`${calc.name} ${calc.description} ${calc.category} ${calc.searchTerms?.join(" ") || ""}`}
+                  onSelect={() => {
+                    handleSelectCalculator(calc.id);
+                    setCommandOpen(false);
+                  }}
+                >
+                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                  <span>{calc.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {categories.map((cat) => {
+            const catCalcs = calculators.filter(c => c.category === cat);
+            return (
+              <CommandGroup key={cat} heading={cat}>
+                {catCalcs.map((calc) => (
+                  <CommandItem
+                    key={`cmd-${calc.id}`}
+                    value={`${calc.name} ${calc.description} ${calc.category} ${calc.searchTerms?.join(" ") || ""}`}
+                    onSelect={() => {
+                      handleSelectCalculator(calc.id);
+                      setCommandOpen(false);
+                    }}
+                  >
+                    {categoryIcons[calc.category] || <Calculator className="w-4 h-4" />}
+                    <span>{calc.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            );
+          })}
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 }
