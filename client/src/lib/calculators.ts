@@ -1388,6 +1388,28 @@ export function slicc2012(
 
 
 // ============================================================================
+// DAS28-ESR (Disease Activity Score 28 joints - ESR)
+// Reference: Prevoo ML et al. Arthritis Rheum. 1995;38(1):44-48
+// ============================================================================
+
+export function das28esr(
+  tenderJointCount: number,
+  swollenJointCount: number,
+  esr: number,
+  patientGlobalVAS: number
+): number {
+  // DAS28-ESR = 0.56 × √(TJC28) + 0.28 × √(SJC28) + 0.70 × ln(ESR) + 0.014 × GH
+  // TJC28 and SJC28 capped at 28
+  const tjc = Math.min(Math.max(tenderJointCount, 0), 28);
+  const sjc = Math.min(Math.max(swollenJointCount, 0), 28);
+  const esrVal = Math.max(esr, 1); // ln(0) is undefined, minimum ESR = 1
+  const vas = Math.min(Math.max(patientGlobalVAS, 0), 100);
+
+  const score = 0.56 * Math.sqrt(tjc) + 0.28 * Math.sqrt(sjc) + 0.70 * Math.log(esrVal) + 0.014 * vas;
+  return Math.round(score * 100) / 100;
+}
+
+// ============================================================================
 // FRAX FRACTURE RISK ASSESSMENT (Simplified)
 // ============================================================================
 

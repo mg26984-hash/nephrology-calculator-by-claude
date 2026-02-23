@@ -167,14 +167,20 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     // ============================================================================
     // SYSTEMIC DISEASES
     // ============================================================================
+    case 'sledai-2k':
     case 'sledai':
       return getSLEDAIColor(value);
 
+    case 'slicc-2012':
     case 'slicc':
       return getSLICCColor(value);
 
+    case 'frail-scale':
     case 'frail':
       return getFRAILColor(value);
+
+    case 'das28-esr':
+      return getDAS28Color(value);
 
     case 'prisma7':
       return getPRISMA7Color(value);
@@ -1499,6 +1505,43 @@ function getFRAILColor(value: number): ColorResult {
     textClass: 'text-red-600 dark:text-red-400',
     borderClass: 'border-red-500',
     label: 'Frail',
+    severity: 'danger'
+  };
+}
+
+function getDAS28Color(value: number): ColorResult {
+  if (value < 2.6) {
+    return {
+      bgClass: 'bg-emerald-500/10',
+      textClass: 'text-emerald-600 dark:text-emerald-400',
+      borderClass: 'border-emerald-500',
+      label: 'Remission',
+      severity: 'success'
+    };
+  }
+  if (value <= 3.2) {
+    return {
+      bgClass: 'bg-blue-500/10',
+      textClass: 'text-blue-600 dark:text-blue-400',
+      borderClass: 'border-blue-500',
+      label: 'Low Disease Activity',
+      severity: 'info'
+    };
+  }
+  if (value <= 5.1) {
+    return {
+      bgClass: 'bg-orange-500/10',
+      textClass: 'text-orange-600 dark:text-orange-400',
+      borderClass: 'border-orange-500',
+      label: 'Moderate Disease Activity',
+      severity: 'warning'
+    };
+  }
+  return {
+    bgClass: 'bg-red-500/10',
+    textClass: 'text-red-600 dark:text-red-400',
+    borderClass: 'border-red-500',
+    label: 'High Disease Activity',
     severity: 'danger'
   };
 }

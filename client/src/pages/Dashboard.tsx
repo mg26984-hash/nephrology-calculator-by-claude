@@ -1617,6 +1617,15 @@ export default function Dashboard() {
           );
           break;
 
+        case "das28-esr":
+          calculationResult = calc.das28esr(
+            Number(calculatorState.tenderJointCount) || 0,
+            Number(calculatorState.swollenJointCount) || 0,
+            Number(calculatorState.esr) || 0,
+            Number(calculatorState.patientGlobalVAS) || 0
+          );
+          break;
+
         case "frax-simplified": {
           const fraxCalcResult = calc.fraxSimplified(
             Number(calculatorState.age) || 0,

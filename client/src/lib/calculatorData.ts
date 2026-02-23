@@ -1572,6 +1572,47 @@ export const calculators: Calculator[] = [
     references: ["Petri M et al. Arthritis Care Res (Hoboken). 2012;64(8):1246-1255"],
   },
   {
+    id: "das28-esr",
+    name: "DAS28-ESR (Disease Activity Score)",
+    searchTerms: ["das28", "das 28", "disease activity score", "rheumatoid arthritis", "ra disease activity", "das28 esr", "ra score"],
+    description: "Measures rheumatoid arthritis disease activity using 28 joint counts, ESR, and patient global assessment",
+    category: "Systemic Diseases & Scores",
+    inputs: [
+      { id: "tenderJointCount", label: "Tender Joint Count (0–28)", type: "number", unit: "joints", placeholder: "4", required: true, min: 0, max: 28 },
+      { id: "swollenJointCount", label: "Swollen Joint Count (0–28)", type: "number", unit: "joints", placeholder: "3", required: true, min: 0, max: 28 },
+      { id: "esr", label: "ESR (Erythrocyte Sedimentation Rate)", type: "number", unit: "mm/h", placeholder: "28", required: true, min: 1 },
+      { id: "patientGlobalVAS", label: "Patient Global Assessment (VAS 0–100)", type: "number", unit: "mm", placeholder: "40", required: true, min: 0, max: 100 },
+    ],
+    resultLabel: "DAS28-ESR",
+    resultUnit: "",
+    interpretation: (value) => {
+      if (value < 2.6) return "Remission (DAS28 <2.6). Target achieved per treat-to-target strategy. Continue current DMARD therapy, monitor every 3–6 months. Consider tapering biologics if sustained remission >6 months.";
+      if (value < 3.2) return "Low disease activity (DAS28 2.6–3.2). Acceptable alternative target if remission is not achievable. Optimize current DMARD therapy, consider dose adjustment. Monitor every 3–6 months.";
+      if (value <= 5.1) return "Moderate disease activity (DAS28 3.2–5.1). Treatment escalation recommended. Consider adding or switching DMARDs (methotrexate, leflunomide, sulfasalazine). If failing conventional DMARDs, consider biologic or targeted synthetic DMARDs (TNF inhibitors, IL-6 inhibitors, JAK inhibitors).";
+      return "High disease activity (DAS28 >5.1). Aggressive treatment escalation required. Initiate or switch biologic/targeted synthetic DMARD. Consider short-course glucocorticoid bridging (≤3 months). Reassess in 1–3 months. Screen for extra-articular manifestations (interstitial lung disease, vasculitis, secondary amyloidosis).";
+    },
+    referenceRanges: [
+      { label: "Remission", max: 2.6, unit: "", note: "<2.6" },
+      { label: "Low Activity", min: 2.6, max: 3.2, unit: "", note: "2.6–3.2" },
+      { label: "Moderate Activity", min: 3.2, max: 5.1, unit: "", note: "3.2–5.1" },
+      { label: "High Activity", min: 5.1, unit: "", note: ">5.1" },
+    ],
+    clinicalPearls: [
+      "DAS28-ESR is the most widely used composite measure for RA disease activity in clinical trials and practice",
+      "28-joint assessment includes: shoulders, elbows, wrists, MCPs (1–5), PIPs (1–5), and knees bilaterally — excludes hips, ankles, and feet",
+      "Patient Global Assessment (VAS): 0 mm = best, 100 mm = worst overall disease activity as perceived by the patient",
+      "Treat-to-target: aim for remission (DAS28 <2.6) or low disease activity (<3.2) within 6 months of treatment initiation",
+      "A change in DAS28 ≥1.2 is considered a clinically significant improvement (EULAR good response)",
+      "DAS28-ESR may overestimate disease activity in patients with elevated ESR from other causes (infections, anemia, obesity)",
+      "Renal relevance: RA patients on long-term NSAIDs need CKD screening; amyloid AA nephropathy can occur with prolonged uncontrolled disease; methotrexate requires dose adjustment for eGFR <30",
+    ],
+    references: [
+      "Prevoo ML et al. Arthritis Rheum. 1995;38(1):44-48",
+      "Smolen JS et al. Ann Rheum Dis. 2017;76(6):960-977 (EULAR treat-to-target update)",
+      "Fransen J, van Riel PL. Clin Exp Rheumatol. 2005;23(5 Suppl 39):S93-99",
+    ],
+  },
+  {
     id: "frail-scale",
     name: "FRAIL Scale",
     searchTerms: ["frail", "frailty", "elderly", "geriatric", "frail scale"],
