@@ -2601,51 +2601,6 @@ export default function Dashboard() {
       {/* Calculator List */}
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-2">
-          {/* Favorites Section */}
-          {favoriteCalculators.length > 0 && !searchQuery && !selectedCategory && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 px-2 py-2 text-xs font-semibold text-amber-500 uppercase tracking-wider">
-                <Star className="w-4 h-4 fill-amber-500" />
-                <span>Favorites</span>
-                <span className="ml-auto text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded">{favoriteCalculators.length}</span>
-              </div>
-              <div className="space-y-1">
-                {favoriteCalculators.map((calc) => (
-                  <button
-                    key={`fav-${calc.id}`}
-                    data-calculator-id={calc.id}
-                    onClick={() => handleSelectCalculator(calc.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2 rounded-md text-sm transition-colors group",
-                      "hover:bg-accent hover:text-accent-foreground",
-                      selectedCalculatorId === calc.id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="break-words hyphens-auto pr-2" style={{ wordBreak: 'break-word' }}>{calc.name}</span>
-                      <div className="flex items-center gap-1">
-                        <span
-                          onClick={(e) => toggleFavorite(calc.id, e)}
-                          className={cn(
-                            "p-0.5 rounded hover:bg-background/50 transition-colors cursor-pointer",
-                            selectedCalculatorId === calc.id ? "text-primary-foreground" : "text-amber-500"
-                          )}
-                          title="Remove from favorites"
-                        >
-                          <Star className="w-3 h-3 fill-current" />
-                        </span>
-                        <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-50" />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <Separator className="my-3" />
-            </div>
-          )}
-
           {/* Recent Calculators Section */}
           {recentCalculators.length > 0 && !searchQuery && !selectedCategory && (
             <div className="mb-4">
