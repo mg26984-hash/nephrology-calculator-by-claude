@@ -1,7 +1,7 @@
 /**
  * OTC Calculators Dashboard
  * Professional open-access calculator for nephrologists
- * 53 calculators organized by clinical category
+ * 92 calculators organized by clinical category
  * Features: Light/Dark theme, inline unit conversion per input, mobile-friendly
  */
 
