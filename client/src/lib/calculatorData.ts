@@ -3085,8 +3085,8 @@ export const calculators: Calculator[] = [
   {
     id: "kdigo-aki-staging",
     name: "KDIGO AKI Staging",
-    searchTerms: ["kdigo", "aki staging", "aki stage", "acute kidney injury stage", "aki criteria", "rifle"],
-    description: "Creatinine-based AKI staging per KDIGO 2012 criteria",
+    searchTerms: ["kdigo", "aki staging", "aki stage", "acute kidney injury stage", "aki criteria", "rifle", "akin", "acute kidney injury classification"],
+    description: "Creatinine-based AKI staging per KDIGO 2012 criteria with clinical management guidance",
     category: "Acute Kidney Injury (AKI) Workup",
     inputs: [
       { id: "baselineCreatinine", label: "Baseline Creatinine", type: "number", unit: "mg/dL", placeholder: "1.0", required: true },
@@ -3095,27 +3095,30 @@ export const calculators: Calculator[] = [
     resultLabel: "AKI Stage",
     resultUnit: "",
     interpretation: (value) => {
-      if (value === 0) return "No AKI — creatinine <1.5× baseline and <0.3 mg/dL rise";
-      if (value === 1) return "Stage 1 — SCr 1.5-1.9× baseline OR ≥0.3 mg/dL increase";
-      if (value === 2) return "Stage 2 — SCr 2.0-2.9× baseline";
-      return "Stage 3 — SCr ≥3.0× baseline OR ≥4.0 mg/dL OR dialysis initiated";
+      if (value === 0) return "No AKI — Creatinine <1.5× baseline and absolute increase <0.3 mg/dL within 48h. Continue monitoring if clinical suspicion persists; consider urine output criteria.";
+      if (value === 1) return "Stage 1 AKI — SCr 1.5–1.9× baseline OR ≥0.3 mg/dL increase within 48h. Management: identify and treat underlying cause, optimize volume status, avoid nephrotoxins (NSAIDs, aminoglycosides, IV contrast), monitor urine output and SCr every 12–24h. Consider nephrology consult if no clear etiology.";
+      if (value === 2) return "Stage 2 AKI — SCr 2.0–2.9× baseline. Management: nephrology consult recommended, aggressive cause-directed therapy, strict I&O monitoring, hold ACEi/ARB, renally adjust all medications, monitor for fluid overload and hyperkalemia. Consider ICU transfer if hemodynamically unstable.";
+      return "Stage 3 AKI — SCr ≥3.0× baseline OR absolute SCr ≥4.0 mg/dL with acute rise OR initiation of RRT. Management: urgent nephrology consult, evaluate for RRT indications (refractory hyperkalemia >6.5 mEq/L, metabolic acidosis pH <7.1, fluid overload unresponsive to diuretics, uremic encephalopathy/pericarditis), ICU-level care, daily labs (K⁺, bicarb, phosphate, CBC).";
     },
     referenceRanges: [
-      { label: "No AKI", max: 0, unit: "" },
-      { label: "Stage 1", min: 1, max: 1, unit: "", note: "1.5-1.9× baseline" },
-      { label: "Stage 2", min: 2, max: 2, unit: "", note: "2.0-2.9× baseline" },
-      { label: "Stage 3", min: 3, max: 3, unit: "", note: "≥3.0× or ≥4.0 mg/dL" },
+      { label: "No AKI", max: 0, unit: "", note: "<1.5× baseline and <0.3 rise" },
+      { label: "Stage 1", min: 1, max: 1, unit: "", note: "1.5–1.9× baseline OR ≥0.3 mg/dL rise in 48h" },
+      { label: "Stage 2", min: 2, max: 2, unit: "", note: "2.0–2.9× baseline" },
+      { label: "Stage 3", min: 3, max: 3, unit: "", note: "≥3.0× baseline OR SCr ≥4.0 mg/dL OR RRT" },
     ],
     clinicalPearls: [
-      "KDIGO also uses urine output criteria (not captured by this calculator)",
-      "Stage 1 includes ≥0.3 mg/dL rise within 48h — even if ratio <1.5×",
-      "Stage 3 also applies if creatinine ≥4.0 mg/dL with acute rise ≥0.5 mg/dL",
-      "If baseline unknown, can estimate using back-calculation from CKD-EPI assuming eGFR 75",
-      "AKI staging guides management: nephrology consult, fluid strategy, RRT consideration",
+      "KDIGO also uses urine output criteria: Stage 1 (<0.5 mL/kg/h for 6–12h), Stage 2 (<0.5 mL/kg/h for ≥12h), Stage 3 (<0.3 mL/kg/h for ≥24h or anuria ≥12h)",
+      "Stage 1 includes ≥0.3 mg/dL absolute rise within 48h — even if ratio is <1.5×",
+      "Stage 3 also applies if SCr ≥4.0 mg/dL with an acute rise ≥0.5 mg/dL",
+      "If baseline is unknown, estimate by back-calculating from CKD-EPI assuming eGFR 75 mL/min/1.73m²",
+      "AKI-to-CKD transition: monitor renal function for 3 months post-AKI; persistent dysfunction = new CKD or CKD progression",
+      "Common reversible causes: volume depletion, urinary obstruction, nephrotoxic drugs, sepsis, cardiorenal syndrome",
+      "RRT indications (Stage 3): refractory hyperkalemia >6.5 mEq/L, severe metabolic acidosis pH <7.1, fluid overload unresponsive to diuretics, uremic encephalopathy/pericarditis",
     ],
     references: [
       "KDIGO AKI Clinical Practice Guideline. Kidney Int Suppl. 2012;2(1):1-138",
-      "Kellum JA et al. Lancet. 2021;398(10302):786-798",
+      "Kellum JA et al. Acute kidney injury. Lancet. 2021;398(10302):786-798",
+      "Chawla LS et al. Acute kidney disease and renal recovery. Nat Rev Nephrol. 2017;13(4):241-257",
     ],
   },
   {

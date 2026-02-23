@@ -57,6 +57,9 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'urine-anion-gap':
       return getUrineAnionGapColor(value);
 
+    case 'kdigo-aki-staging':
+      return getKDIGOAKIColor(value);
+
     case 'cin-risk':
       return getCINRiskColor(value);
 
@@ -367,6 +370,43 @@ function getKFREColor(value: number): ColorResult {
     textClass: 'text-red-600 dark:text-red-500',
     borderClass: 'border-red-600',
     label: 'Very High Risk',
+    severity: 'danger'
+  };
+}
+
+function getKDIGOAKIColor(value: number): ColorResult {
+  if (value === 0) {
+    return {
+      bgClass: 'bg-emerald-500/10',
+      textClass: 'text-emerald-600 dark:text-emerald-400',
+      borderClass: 'border-emerald-500',
+      label: 'No AKI',
+      severity: 'success'
+    };
+  }
+  if (value === 1) {
+    return {
+      bgClass: 'bg-yellow-500/10',
+      textClass: 'text-yellow-600 dark:text-yellow-400',
+      borderClass: 'border-yellow-500',
+      label: 'Stage 1 AKI',
+      severity: 'warning'
+    };
+  }
+  if (value === 2) {
+    return {
+      bgClass: 'bg-orange-500/10',
+      textClass: 'text-orange-600 dark:text-orange-400',
+      borderClass: 'border-orange-500',
+      label: 'Stage 2 AKI',
+      severity: 'warning'
+    };
+  }
+  return {
+    bgClass: 'bg-red-500/10',
+    textClass: 'text-red-600 dark:text-red-400',
+    borderClass: 'border-red-500',
+    label: 'Stage 3 AKI',
     severity: 'danger'
   };
 }
