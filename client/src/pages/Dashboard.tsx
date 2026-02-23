@@ -2601,53 +2601,6 @@ export default function Dashboard() {
       {/* Calculator List */}
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-2">
-          {/* Recent Calculators Section */}
-          {recentCalculators.length > 0 && !searchQuery && !selectedCategory && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 px-2 py-2 text-xs font-semibold text-blue-500 uppercase tracking-wider">
-                <Clock className="w-4 h-4" />
-                <span>Recent</span>
-                <span className="ml-auto text-[10px] bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">{recentCalculators.length}</span>
-              </div>
-              <div className="space-y-1">
-                {recentCalculators.map((calc) => (
-                  <button
-                    key={`recent-${calc.id}`}
-                    data-calculator-id={calc.id}
-                    onClick={() => handleSelectCalculator(calc.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2 rounded-md text-sm transition-colors group",
-                      "hover:bg-accent hover:text-accent-foreground",
-                      selectedCalculatorId === calc.id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="break-words hyphens-auto pr-2" style={{ wordBreak: 'break-word' }}>{calc.name}</span>
-                      <div className="flex items-center gap-1">
-                        <span
-                          onClick={(e) => toggleFavorite(calc.id, e)}
-                          className={cn(
-                            "p-0.5 rounded transition-colors cursor-pointer",
-                            favorites.includes(calc.id)
-                              ? "text-amber-500" 
-                              : "text-muted-foreground/50 hover:text-amber-500 sm:opacity-0 sm:group-hover:opacity-100"
-                          )}
-                          title={favorites.includes(calc.id) ? "Remove from favorites" : "Add to favorites"}
-                        >
-                          <Star className={cn("w-3 h-3", favorites.includes(calc.id) && "fill-current")} />
-                        </span>
-                        <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-50" />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <Separator className="my-3" />
-            </div>
-          )}
-
           {/* Regular Calculator List — Accordion */}
           {(() => {
             let globalIndex = 0;
