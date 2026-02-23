@@ -41,7 +41,8 @@ import {
   ArrowLeft,
   Copy,
   Check,
-  ArrowLeftRight
+  ArrowLeftRight,
+  ChevronDown
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { calculators, getCategories, getCalculatorById, CalculatorInput } from "@/lib/calculatorData";
@@ -193,6 +194,27 @@ const bunUreaOptions = [
   { value: "Urea (mmol/L)", label: "Urea (mmol/L)", isBUN: false, unit: "mmol/L" },
 ];
 
+// Collapsible section - collapsed by default on mobile, always open on desktop
+function MobileCollapsible({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <>
+      {/* Desktop: always visible */}
+      <div className="hidden sm:block">{children}</div>
+      {/* Mobile: collapsible */}
+      <details className="sm:hidden group">
+        <summary className="flex items-center justify-between cursor-pointer list-none p-3 rounded-lg bg-muted/30 border border-border text-sm font-medium [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center gap-2">
+            {icon}
+            {title}
+          </span>
+          <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-2">{children}</div>
+      </details>
+    </>
+  );
+}
+
 // Sortable Favorite Card Component for drag-and-drop
 interface SortableFavoriteCardProps {
   calc: typeof calculators[0];
@@ -325,6 +347,7 @@ export default function Dashboard() {
   const [showPEPathway, setShowPEPathway] = useState(false);
   const [showConversionCard, setShowConversionCard] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const resultCardRef = useRef<HTMLDivElement>(null);
   
   // Favorites state with localStorage persistence
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -2306,6 +2329,10 @@ export default function Dashboard() {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
           }
         }
+        // Auto-scroll to result on mobile
+        setTimeout(() => {
+          resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       }
     } catch (error) {
       console.error("Calculation error:", error);
@@ -2952,17 +2979,17 @@ export default function Dashboard() {
           ) : !selectedCalculator ? (
             // Welcome Screen
             <div className="max-w-4xl mx-auto">
-              <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6">
+              <div className="text-center py-6 sm:py-12">
+                <div className="hidden sm:inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6">
                   <img
                     src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
                     alt="OTC Calculators Logo"
                     className="w-14 h-14 object-contain"
                   />
                 </div>
-                <h2 className="text-2xl font-bold mb-3">Welcome to OTC Calculators</h2>
-                <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                  Select a calculator from the sidebar to begin. This dashboard includes {calculators.length} clinical calculators organized by category for nephrology practice.
+                <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">Welcome to OTC Calculators</h2>
+                <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto mb-4 sm:mb-6">
+                  Select a calculator from the sidebar to begin. {calculators.length} clinical tools for nephrology practice.
                 </p>
                 {/* Mobile Search Bar - visible only on small screens where sidebar is hidden */}
                 <div className="lg:hidden max-w-md mx-auto mb-6">
@@ -2972,19 +2999,23 @@ export default function Dashboard() {
                     placeholder="Search calculators..." 
                   />
                 </div>
-                <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-8">
                   <Button
                     onClick={() => setShowComparison(!showComparison)}
                     variant={showComparison ? "default" : "outline"}
+                    size="sm"
+                    className="sm:size-default text-xs sm:text-sm"
                   >
-                    <ArrowLeftRight className="w-4 h-4 mr-2" />
+                    <ArrowLeftRight className="w-4 h-4 mr-1 sm:mr-2" />
                     {showComparison ? "Hide eGFR Comparison" : "Compare eGFR Equations"}
                   </Button>
                   <Button
                     onClick={() => setShowPEPathway(!showPEPathway)}
                     variant={showPEPathway ? "default" : "outline"}
+                    size="sm"
+                    className="sm:size-default text-xs sm:text-sm"
                   >
-                    <Activity className="w-4 h-4 mr-2" />
+                    <Activity className="w-4 h-4 mr-1 sm:mr-2" />
                     {showPEPathway ? "Hide PE Pathway" : "PE Clinical Pathway"}
                   </Button>
                 </div>
@@ -3192,7 +3223,7 @@ export default function Dashboard() {
               )}
 
               {/* Category Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                 {(showAllCategories ? sortedCategories : sortedCategories.filter(cat => [
                   "Acute Kidney Injury (AKI) Workup",
                   "Dialysis Adequacy",
@@ -3209,7 +3240,7 @@ export default function Dashboard() {
                         setViewingCategoryList(category);
                         setSelectedCategory(category);
                       }}
-                      className="p-4 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group cursor-pointer"
+                      className="p-3 sm:p-4 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group cursor-pointer"
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -3240,7 +3271,7 @@ export default function Dashboard() {
             </div>
           ) : (
             // Calculator View
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="max-w-2xl mx-auto space-y-3 sm:space-y-6">
               {/* Breadcrumb Navigation */}
               <nav className="flex items-center gap-2 text-sm">
                 <button
@@ -3268,10 +3299,10 @@ export default function Dashboard() {
               </nav>
 
               {/* Calculator Header */}
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-2 sm:gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold">{selectedCalculator.name}</h2>
-                  <p className="text-muted-foreground mt-1">{selectedCalculator.description}</p>
+                  <h2 className="text-xl sm:text-2xl font-bold">{selectedCalculator.name}</h2>
+                  <p className="text-muted-foreground mt-1 hidden sm:block">{selectedCalculator.description}</p>
                 </div>
                 <button
                   onClick={(e) => toggleFavorite(selectedCalculator.id, e)}
@@ -3291,7 +3322,7 @@ export default function Dashboard() {
 
               {/* Input Card */}
               <Card className="border-border">
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-4 hidden sm:block">
                   <CardTitle className="text-base flex items-center gap-2">
                     <FlaskConical className="w-4 h-4" />
                     Input Values
@@ -3301,7 +3332,7 @@ export default function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {selectedCalculator.inputs
                       .filter((input) => !input.id.endsWith("Unit")) // Skip unit selector inputs
                       .filter((input) => {
@@ -3327,7 +3358,7 @@ export default function Dashboard() {
                         return true;
                       })
                       .map((input) => (
-                      <div key={input.id} className="space-y-2">
+                      <div key={input.id} className="space-y-1.5 sm:space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <Label className="text-sm font-medium flex items-center gap-1">
                             {input.label}
@@ -3500,8 +3531,9 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <Separator className="my-6" />
+                  <Separator className="my-4 sm:my-6" />
 
+                  <div className="sticky bottom-0 z-10 -mx-6 px-6 py-3 bg-card/95 backdrop-blur border-t border-border sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:backdrop-blur-none sm:border-t-0">
                   <Button
                     onClick={handleCalculate}
                     disabled={!allRequiredFilled}
@@ -3511,6 +3543,7 @@ export default function Dashboard() {
                     <Calculator className="w-4 h-4 mr-2" />
                     Calculate
                   </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -3521,8 +3554,8 @@ export default function Dashboard() {
                   : null;
                 
                 return (
-                <Card className={cn(
-                  "border-l-4",
+                <Card ref={resultCardRef} className={cn(
+                  "border-l-4 scroll-mt-20",
                   colorCoding ? `${colorCoding.bgClass} ${colorCoding.borderClass}` : "border-primary/50 bg-primary/5"
                 )}>
                   <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -3706,42 +3739,44 @@ export default function Dashboard() {
                         </div>
 
                         {/* Reference Ranges */}
-                        <div className="p-4 rounded-lg bg-muted/50">
-                          <p className="text-sm font-semibold mb-3">KDPI Reference Ranges</p>
-                          <div className="space-y-2">
-                            <div className={`flex items-center justify-between p-2 rounded ${
-                              kdpiResult.kdpi <= 20 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
-                            }`}>
-                              <span className="text-sm">Low Risk</span>
-                              <span className="text-sm font-medium">0-20%</span>
-                            </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
-                              kdpiResult.kdpi > 20 && kdpiResult.kdpi <= 85 ? 'bg-amber-500/20 ring-2 ring-amber-500' : 'bg-muted'
-                            }`}>
-                              <span className="text-sm">Standard Criteria</span>
-                              <span className="text-sm font-medium">21-85%</span>
-                            </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
-                              kdpiResult.kdpi > 85 ? 'bg-red-500/20 ring-2 ring-red-500' : 'bg-muted'
-                            }`}>
-                              <span className="text-sm">High Risk / ECD</span>
-                              <span className="text-sm font-medium">&gt;85%</span>
+                        <MobileCollapsible title="KDPI Reference Ranges" icon={<Info className="w-4 h-4" />}>
+                          <div className="p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-semibold mb-3 hidden sm:block">KDPI Reference Ranges</p>
+                            <div className="space-y-2">
+                              <div className={`flex items-center justify-between p-2 rounded ${
+                                kdpiResult.kdpi <= 20 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
+                              }`}>
+                                <span className="text-sm">Low Risk</span>
+                                <span className="text-sm font-medium">0-20%</span>
+                              </div>
+                              <div className={`flex items-center justify-between p-2 rounded ${
+                                kdpiResult.kdpi > 20 && kdpiResult.kdpi <= 85 ? 'bg-amber-500/20 ring-2 ring-amber-500' : 'bg-muted'
+                              }`}>
+                                <span className="text-sm">Standard Criteria</span>
+                                <span className="text-sm font-medium">21-85%</span>
+                              </div>
+                              <div className={`flex items-center justify-between p-2 rounded ${
+                                kdpiResult.kdpi > 85 ? 'bg-red-500/20 ring-2 ring-red-500' : 'bg-muted'
+                              }`}>
+                                <span className="text-sm">High Risk / ECD</span>
+                                <span className="text-sm font-medium">&gt;85%</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Info Note */}
-                        <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                          <div className="flex items-start gap-2">
-                            <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                            <div>
-                              <p className="text-sm text-blue-600 dark:text-blue-400">
-                                <strong>Note:</strong> KDPI represents the percentage of donors in a reference population with a KDRI less than or equal to this donor's KDRI. 
-                                Higher KDPI indicates higher relative risk of graft failure. Based on OPTN 2024 mapping table.
-                              </p>
+                          {/* Info Note */}
+                          <div className="mt-3 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                            <div className="flex items-start gap-2">
+                              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                              <div>
+                                <p className="text-sm text-blue-600 dark:text-blue-400">
+                                  <strong>Note:</strong> KDPI represents the percentage of donors in a reference population with a KDRI less than or equal to this donor's KDRI.
+                                  Higher KDPI indicates higher relative risk of graft failure. Based on OPTN 2024 mapping table.
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </MobileCollapsible>
                       </div>
                     )}
 
@@ -3915,53 +3950,54 @@ export default function Dashboard() {
                           <p className="text-xs text-muted-foreground mt-1">Contrast-Associated Acute Kidney Injury after PCI</p>
                         </div>
 
-                        {/* Risk Factor Breakdown */}
-                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                            <Activity className="w-4 h-4" />
-                            Risk Factor Breakdown
-                          </h3>
-                          <div className="space-y-2">
-                            {mehranResult.breakdown.map((item, idx) => (
-                              <div 
-                                key={idx} 
-                                className={`flex items-center justify-between p-2 rounded ${
-                                  item.present 
-                                    ? 'bg-primary/10 border border-primary/30' 
-                                    : 'bg-muted/50'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className={`font-bold text-sm ${
-                                    item.present 
-                                      ? 'text-primary' 
+                        {/* Risk Factor Breakdown + Risk Stratification */}
+                        <MobileCollapsible title="Risk Factor Breakdown" icon={<Activity className="w-4 h-4" />}>
+                          <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 hidden sm:flex">
+                              <Activity className="w-4 h-4" />
+                              Risk Factor Breakdown
+                            </h3>
+                            <div className="space-y-2">
+                              {mehranResult.breakdown.map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`flex items-center justify-between p-2 rounded ${
+                                    item.present
+                                      ? 'bg-primary/10 border border-primary/30'
+                                      : 'bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className={`font-bold text-sm ${
+                                      item.present
+                                        ? 'text-primary'
+                                        : 'text-muted-foreground'
+                                    }`}>
+                                      {item.present ? '✓' : '○'}
+                                    </span>
+                                    <span className={`text-sm ${
+                                      item.present
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground'
+                                    }`}>
+                                      {item.factor}
+                                    </span>
+                                  </div>
+                                  <span className={`text-sm font-medium ${
+                                    item.present && item.points > 0
+                                      ? 'text-primary'
                                       : 'text-muted-foreground'
                                   }`}>
-                                    {item.present ? '✓' : '○'}
-                                  </span>
-                                  <span className={`text-sm ${
-                                    item.present 
-                                      ? 'text-foreground' 
-                                      : 'text-muted-foreground'
-                                  }`}>
-                                    {item.factor}
+                                    +{item.points} pts
                                   </span>
                                 </div>
-                                <span className={`text-sm font-medium ${
-                                  item.present && item.points > 0
-                                    ? 'text-primary' 
-                                    : 'text-muted-foreground'
-                                }`}>
-                                  +{item.points} pts
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Risk Stratification Reference */}
-                        <div className="p-4 rounded-lg bg-muted/50">
-                          <p className="text-sm font-semibold mb-3">Risk Stratification (Mehran 2 Model 1)</p>
+                          {/* Risk Stratification Reference */}
+                          <div className="mt-3 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-semibold mb-3">Risk Stratification (Mehran 2 Model 1)</p>
                           <div className="space-y-2">
                             <div className={`flex items-center justify-between p-2 rounded ${
                               mehranResult.totalScore <= 4 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
@@ -3987,36 +4023,38 @@ export default function Dashboard() {
                               <span className="text-sm">Very High Risk</span>
                               <span className="text-sm font-medium">&gt;11 pts (CA-AKI ~34.9%)</span>
                             </div>
+                            </div>
                           </div>
-                        </div>
+                        </MobileCollapsible>
 
                         {/* Clinical Recommendations */}
-                        <div className={`p-4 rounded-lg border ${
-                          mehranResult.totalScore <= 4 
-                            ? 'bg-emerald-500/5 border-emerald-500/30' 
-                            : mehranResult.totalScore <= 8 
-                              ? 'bg-yellow-500/5 border-yellow-500/30' 
-                              : mehranResult.totalScore <= 11
-                                ? 'bg-orange-500/5 border-orange-500/30'
-                                : 'bg-red-500/5 border-red-500/30'
-                        }`}>
-                          <div className="flex items-start gap-2">
-                            <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-semibold mb-2">Clinical Recommendations</p>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                {mehranResult.totalScore <= 4 && (
-                                  <>
-                                    <li>• Standard hydration protocol (IV NS 1 mL/kg/hr)</li>
-                                    <li>• Minimize contrast volume when possible</li>
-                                    <li>• Monitor serum creatinine at 48-72 hours post-procedure</li>
-                                    <li>• Withhold nephrotoxic medications peri-procedurally</li>
-                                  </>
-                                )}
-                                {mehranResult.totalScore > 4 && mehranResult.totalScore <= 8 && (
-                                  <>
-                                    <li>• Aggressive IV hydration (1-1.5 mL/kg/hr for 12 hrs pre and post)</li>
-                                    <li>• Use iso-osmolar or low-osmolar contrast media</li>
+                        <MobileCollapsible title="Clinical Recommendations" icon={<Info className="w-4 h-4" />}>
+                          <div className={`p-4 rounded-lg border ${
+                            mehranResult.totalScore <= 4
+                              ? 'bg-emerald-500/5 border-emerald-500/30'
+                              : mehranResult.totalScore <= 8
+                                ? 'bg-yellow-500/5 border-yellow-500/30'
+                                : mehranResult.totalScore <= 11
+                                  ? 'bg-orange-500/5 border-orange-500/30'
+                                  : 'bg-red-500/5 border-red-500/30'
+                          }`}>
+                            <div className="flex items-start gap-2">
+                              <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-semibold mb-2 hidden sm:block">Clinical Recommendations</p>
+                                <ul className="text-sm text-muted-foreground space-y-1">
+                                  {mehranResult.totalScore <= 4 && (
+                                    <>
+                                      <li>• Standard hydration protocol (IV NS 1 mL/kg/hr)</li>
+                                      <li>• Minimize contrast volume when possible</li>
+                                      <li>• Monitor serum creatinine at 48-72 hours post-procedure</li>
+                                      <li>• Withhold nephrotoxic medications peri-procedurally</li>
+                                    </>
+                                  )}
+                                  {mehranResult.totalScore > 4 && mehranResult.totalScore <= 8 && (
+                                    <>
+                                      <li>• Aggressive IV hydration (1-1.5 mL/kg/hr for 12 hrs pre and post)</li>
+                                      <li>• Use iso-osmolar or low-osmolar contrast media</li>
                                     <li>• Minimize contrast volume (&lt;3 × eGFR mL)</li>
                                     <li>• Hold metformin, NSAIDs, and other nephrotoxins</li>
                                     <li>• Monitor creatinine at 24, 48, and 72 hours</li>
@@ -4043,10 +4081,11 @@ export default function Dashboard() {
                                     <li>• Daily renal function monitoring for ≥5 days</li>
                                   </>
                                 )}
-                              </ul>
+                                </ul>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </MobileCollapsible>
 
                         {/* Advantage over Original Mehran */}
                         <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
@@ -4142,120 +4181,124 @@ export default function Dashboard() {
                           </div>
                         </div>
 
-                        {/* Risk Factor Breakdown */}
-                        <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                            <Activity className="w-4 h-4" />
-                            Risk Factor Breakdown
-                          </h3>
-                          <div className="space-y-2">
-                            {mehranResult.breakdown.map((item, idx) => (
-                              <div 
-                                key={idx} 
-                                className={`flex items-center justify-between p-2 rounded ${
-                                  item.present 
-                                    ? 'bg-primary/10 border border-primary/30' 
-                                    : 'bg-muted/50'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className={`font-bold text-sm ${
-                                    item.present 
-                                      ? 'text-primary' 
+                        {/* Risk Factor Breakdown + Risk Stratification */}
+                        <MobileCollapsible title="Risk Factor Breakdown" icon={<Activity className="w-4 h-4" />}>
+                          <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 hidden sm:flex">
+                              <Activity className="w-4 h-4" />
+                              Risk Factor Breakdown
+                            </h3>
+                            <div className="space-y-2">
+                              {mehranResult.breakdown.map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`flex items-center justify-between p-2 rounded ${
+                                    item.present
+                                      ? 'bg-primary/10 border border-primary/30'
+                                      : 'bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className={`font-bold text-sm ${
+                                      item.present
+                                        ? 'text-primary'
+                                        : 'text-muted-foreground'
+                                    }`}>
+                                      {item.present ? '✓' : '○'}
+                                    </span>
+                                    <span className={`text-sm ${
+                                      item.present
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground'
+                                    }`}>
+                                      {item.factor}
+                                    </span>
+                                  </div>
+                                  <span className={`text-sm font-medium ${
+                                    item.present && item.points > 0
+                                      ? 'text-primary'
                                       : 'text-muted-foreground'
                                   }`}>
-                                    {item.present ? '✓' : '○'}
-                                  </span>
-                                  <span className={`text-sm ${
-                                    item.present 
-                                      ? 'text-foreground' 
-                                      : 'text-muted-foreground'
-                                  }`}>
-                                    {item.factor}
+                                    +{item.points} pts
                                   </span>
                                 </div>
-                                <span className={`text-sm font-medium ${
-                                  item.present && item.points > 0
-                                    ? 'text-primary' 
-                                    : 'text-muted-foreground'
-                                }`}>
-                                  +{item.points} pts
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Risk Stratification Reference Table */}
-                        <div className="p-4 rounded-lg bg-muted/50">
-                          <p className="text-sm font-semibold mb-3">Risk Stratification (Original Mehran 2004)</p>
-                          <div className="space-y-2">
-                            <div className={`flex items-center justify-between p-2 rounded ${
-                              mehranResult.totalScore <= 5 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
-                            }`}>
-                              <span className="text-sm">Low Risk</span>
-                              <span className="text-sm font-medium">≤5 pts (CIN 7.5%, Dialysis 0.04%)</span>
-                            </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
-                              mehranResult.totalScore > 5 && mehranResult.totalScore <= 10 ? 'bg-yellow-500/20 ring-2 ring-yellow-500' : 'bg-muted'
-                            }`}>
-                              <span className="text-sm">Moderate Risk</span>
-                              <span className="text-sm font-medium">6-10 pts (CIN 14%, Dialysis 0.12%)</span>
-                            </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
-                              mehranResult.totalScore > 10 && mehranResult.totalScore <= 15 ? 'bg-orange-500/20 ring-2 ring-orange-500' : 'bg-muted'
-                            }`}>
-                              <span className="text-sm">High Risk</span>
-                              <span className="text-sm font-medium">11-15 pts (CIN 26.1%, Dialysis 1.09%)</span>
-                            </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
-                              mehranResult.totalScore > 15 ? 'bg-red-500/20 ring-2 ring-red-500' : 'bg-muted'
-                            }`}>
-                              <span className="text-sm">Very High Risk</span>
-                              <span className="text-sm font-medium">&gt;15 pts (CIN 57.3%, Dialysis 12.6%)</span>
+                          {/* Risk Stratification Reference Table */}
+                          <div className="mt-3 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-semibold mb-3">Risk Stratification (Original Mehran 2004)</p>
+                            <div className="space-y-2">
+                              <div className={`flex items-center justify-between p-2 rounded ${
+                                mehranResult.totalScore <= 5 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
+                              }`}>
+                                <span className="text-sm">Low Risk</span>
+                                <span className="text-sm font-medium">≤5 pts (CIN 7.5%, Dialysis 0.04%)</span>
+                              </div>
+                              <div className={`flex items-center justify-between p-2 rounded ${
+                                mehranResult.totalScore > 5 && mehranResult.totalScore <= 10 ? 'bg-yellow-500/20 ring-2 ring-yellow-500' : 'bg-muted'
+                              }`}>
+                                <span className="text-sm">Moderate Risk</span>
+                                <span className="text-sm font-medium">6-10 pts (CIN 14%, Dialysis 0.12%)</span>
+                              </div>
+                              <div className={`flex items-center justify-between p-2 rounded ${
+                                mehranResult.totalScore > 10 && mehranResult.totalScore <= 15 ? 'bg-orange-500/20 ring-2 ring-orange-500' : 'bg-muted'
+                              }`}>
+                                <span className="text-sm">High Risk</span>
+                                <span className="text-sm font-medium">11-15 pts (CIN 26.1%, Dialysis 1.09%)</span>
+                              </div>
+                              <div className={`flex items-center justify-between p-2 rounded ${
+                                mehranResult.totalScore > 15 ? 'bg-red-500/20 ring-2 ring-red-500' : 'bg-muted'
+                              }`}>
+                                <span className="text-sm">Very High Risk</span>
+                                <span className="text-sm font-medium">&gt;15 pts (CIN 57.3%, Dialysis 12.6%)</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </MobileCollapsible>
 
                         {/* Clinical Recommendations */}
-                        <div className={`p-4 rounded-lg border ${
-                          mehranResult.totalScore <= 5 
-                            ? 'bg-emerald-500/5 border-emerald-500/30' 
-                            : mehranResult.totalScore <= 10 
-                              ? 'bg-yellow-500/5 border-yellow-500/30' 
-                              : mehranResult.totalScore <= 15
-                                ? 'bg-orange-500/5 border-orange-500/30'
-                                : 'bg-red-500/5 border-red-500/30'
-                        }`}>
-                          <div className="flex items-start gap-2">
-                            <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-semibold mb-2">Prevention Strategies</p>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                <li>• IV hydration: 0.9% NaCl at 1 mL/kg/h for 12h before and after procedure</li>
-                                <li>• Minimize contrast volume (target &lt;3-4 × eGFR in mL)</li>
-                                <li>• Use iso-osmolar or low-osmolar contrast</li>
-                                <li>• Hold nephrotoxins (NSAIDs, aminoglycosides) 24-48h before</li>
-                                <li>• Consider holding metformin 48h post-procedure</li>
-                                <li>• Monitor SCr at 48-72h post-procedure</li>
-                                {mehranResult.totalScore > 10 && (
-                                  <>
-                                    <li>• Consider alternative imaging if clinically appropriate</li>
-                                    <li>• Nephrology consultation recommended</li>
-                                    <li>• Consider staging procedures if feasible</li>
-                                  </>
-                                )}
-                                {mehranResult.totalScore > 15 && (
-                                  <>
-                                    <li>• Strongly consider CO₂ angiography or IVUS</li>
-                                    <li>• Consider prophylactic hemofiltration in select cases</li>
-                                    <li>• ICU-level monitoring may be warranted post-procedure</li>
-                                  </>
-                                )}
-                              </ul>
+                        <MobileCollapsible title="Prevention Strategies" icon={<Info className="w-4 h-4" />}>
+                          <div className={`p-4 rounded-lg border ${
+                            mehranResult.totalScore <= 5
+                              ? 'bg-emerald-500/5 border-emerald-500/30'
+                              : mehranResult.totalScore <= 10
+                                ? 'bg-yellow-500/5 border-yellow-500/30'
+                                : mehranResult.totalScore <= 15
+                                  ? 'bg-orange-500/5 border-orange-500/30'
+                                  : 'bg-red-500/5 border-red-500/30'
+                          }`}>
+                            <div className="flex items-start gap-2">
+                              <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-semibold mb-2 hidden sm:block">Prevention Strategies</p>
+                                <ul className="text-sm text-muted-foreground space-y-1">
+                                  <li>• IV hydration: 0.9% NaCl at 1 mL/kg/h for 12h before and after procedure</li>
+                                  <li>• Minimize contrast volume (target &lt;3-4 × eGFR in mL)</li>
+                                  <li>• Use iso-osmolar or low-osmolar contrast</li>
+                                  <li>• Hold nephrotoxins (NSAIDs, aminoglycosides) 24-48h before</li>
+                                  <li>• Consider holding metformin 48h post-procedure</li>
+                                  <li>• Monitor SCr at 48-72h post-procedure</li>
+                                  {mehranResult.totalScore > 10 && (
+                                    <>
+                                      <li>• Consider alternative imaging if clinically appropriate</li>
+                                      <li>• Nephrology consultation recommended</li>
+                                      <li>• Consider staging procedures if feasible</li>
+                                    </>
+                                  )}
+                                  {mehranResult.totalScore > 15 && (
+                                    <>
+                                      <li>• Strongly consider CO₂ angiography or IVUS</li>
+                                      <li>• Consider prophylactic hemofiltration in select cases</li>
+                                      <li>• ICU-level monitoring may be warranted post-procedure</li>
+                                    </>
+                                  )}
+                                </ul>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </MobileCollapsible>
 
                         {/* Reference */}
                         <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
@@ -4368,63 +4411,65 @@ export default function Dashboard() {
                         </div>
 
                         {/* Clinical Recommendations */}
-                        <div className={`p-4 rounded-lg border ${
-                          fraxResult.majorFracture < 10 
-                            ? 'bg-emerald-500/5 border-emerald-500/30' 
-                            : fraxResult.majorFracture < 20 
-                              ? 'bg-yellow-500/5 border-yellow-500/30' 
-                              : 'bg-red-500/5 border-red-500/30'
-                        }`}>
-                          <div className="flex items-start gap-2">
-                            <Bone className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-semibold mb-2">Clinical Recommendations</p>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                {fraxResult.majorFracture < 10 && fraxResult.hipFracture < 3 && (
-                                  <>
-                                    <li>• Lifestyle modifications (weight-bearing exercise, fall prevention)</li>
-                                    <li>• Adequate calcium (1000-1200 mg/day) and vitamin D (800-1000 IU/day)</li>
-                                    <li>• Reassess fracture risk in 5 years or if risk factors change</li>
-                                  </>
-                                )}
-                                {(fraxResult.majorFracture >= 10 || fraxResult.hipFracture >= 3) && fraxResult.majorFracture < 20 && (
-                                  <>
-                                    <li>• Consider DXA scan if not already performed</li>
-                                    <li>• Discuss pharmacologic treatment options</li>
-                                    <li>• Address modifiable risk factors</li>
-                                    <li>• Fall risk assessment and prevention</li>
-                                  </>
-                                )}
-                                {(fraxResult.majorFracture >= 20 || fraxResult.hipFracture >= 3) && (
-                                  <>
-                                    <li>• Pharmacologic treatment recommended</li>
-                                    <li>• First-line: Bisphosphonates (alendronate, risedronate, zoledronic acid)</li>
-                                    <li>• Alternatives: Denosumab, teriparatide, romosozumab</li>
-                                    <li>• Comprehensive fall prevention program</li>
-                                    <li>• Monitor treatment response with DXA</li>
-                                  </>
-                                )}
-                              </ul>
+                        <MobileCollapsible title="Clinical Recommendations" icon={<Bone className="w-4 h-4" />}>
+                          <div className={`p-4 rounded-lg border ${
+                            fraxResult.majorFracture < 10
+                              ? 'bg-emerald-500/5 border-emerald-500/30'
+                              : fraxResult.majorFracture < 20
+                                ? 'bg-yellow-500/5 border-yellow-500/30'
+                                : 'bg-red-500/5 border-red-500/30'
+                          }`}>
+                            <div className="flex items-start gap-2">
+                              <Bone className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0 hidden sm:block" />
+                              <div>
+                                <p className="text-sm font-semibold mb-2 hidden sm:block">Clinical Recommendations</p>
+                                <ul className="text-sm text-muted-foreground space-y-1">
+                                  {fraxResult.majorFracture < 10 && fraxResult.hipFracture < 3 && (
+                                    <>
+                                      <li>• Lifestyle modifications (weight-bearing exercise, fall prevention)</li>
+                                      <li>• Adequate calcium (1000-1200 mg/day) and vitamin D (800-1000 IU/day)</li>
+                                      <li>• Reassess fracture risk in 5 years or if risk factors change</li>
+                                    </>
+                                  )}
+                                  {(fraxResult.majorFracture >= 10 || fraxResult.hipFracture >= 3) && fraxResult.majorFracture < 20 && (
+                                    <>
+                                      <li>• Consider DXA scan if not already performed</li>
+                                      <li>• Discuss pharmacologic treatment options</li>
+                                      <li>• Address modifiable risk factors</li>
+                                      <li>• Fall risk assessment and prevention</li>
+                                    </>
+                                  )}
+                                  {(fraxResult.majorFracture >= 20 || fraxResult.hipFracture >= 3) && (
+                                    <>
+                                      <li>• Pharmacologic treatment recommended</li>
+                                      <li>• First-line: Bisphosphonates (alendronate, risedronate, zoledronic acid)</li>
+                                      <li>• Alternatives: Denosumab, teriparatide, romosozumab</li>
+                                      <li>• Comprehensive fall prevention program</li>
+                                      <li>• Monitor treatment response with DXA</li>
+                                    </>
+                                  )}
+                                </ul>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* CKD-Specific Considerations */}
-                        <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                          <div className="flex items-start gap-2">
-                            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-2">CKD-MBD Considerations</p>
-                              <ul className="text-sm text-amber-600/80 dark:text-amber-400/80 space-y-1">
-                                <li>• FRAX may underestimate fracture risk in CKD patients</li>
-                                <li>• Bisphosphonates: Use with caution if eGFR &lt;30-35 mL/min</li>
-                                <li>• Consider PTH, calcium, phosphorus, and vitamin D status</li>
-                                <li>• Adynamic bone disease may increase fracture risk</li>
-                                <li>• Consult nephrology for CKD stages 4-5</li>
-                              </ul>
+                          {/* CKD-Specific Considerations */}
+                          <div className="mt-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-2">CKD-MBD Considerations</p>
+                                <ul className="text-sm text-amber-600/80 dark:text-amber-400/80 space-y-1">
+                                  <li>• FRAX may underestimate fracture risk in CKD patients</li>
+                                  <li>• Bisphosphonates: Use with caution if eGFR &lt;30-35 mL/min</li>
+                                  <li>• Consider PTH, calcium, phosphorus, and vitamin D status</li>
+                                  <li>• Adynamic bone disease may increase fracture risk</li>
+                                  <li>• Consult nephrology for CKD stages 4-5</li>
+                                </ul>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </MobileCollapsible>
 
                         {/* Info Note */}
                         <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
@@ -5093,15 +5138,15 @@ export default function Dashboard() {
               {result !== null && (() => {
                 const recKey = getRecommendationKey(selectedCalculator.id, typeof result === 'number' ? result : 0);
                 const rec = recKey ? getRecommendations(selectedCalculator.id, recKey) : null;
-                
+
                 if (!rec) return null;
-                
+
                 const urgencyColorMap = {
                   routine: "border-blue-500/50 bg-blue-500/5",
                   urgent: "border-orange-500/50 bg-orange-500/5",
                   emergent: "border-red-500/50 bg-red-500/5"
                 };
-                
+
                 const getUrgencyIcon = (urgency: string) => {
                   switch(urgency) {
                     case 'urgent':
@@ -5112,36 +5157,38 @@ export default function Dashboard() {
                       return <Info className="w-4 h-4 text-blue-500" />;
                   }
                 };
-                
+
                 return (
-                  <Card className={`border ${urgencyColorMap[rec.urgency || 'routine']}`}>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {getUrgencyIcon(rec.urgency || 'routine')}
-                        Clinical Decision Support
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="font-semibold text-sm mb-1">{rec.condition}</p>
-                        <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                      </div>
-                      
-                      {rec.actionItems.length > 0 && (
+                  <MobileCollapsible title="Clinical Decision Support" icon={getUrgencyIcon(rec.urgency || 'routine')}>
+                    <Card className={`border ${urgencyColorMap[rec.urgency || 'routine']}`}>
+                      <CardHeader className="pb-2 hidden sm:block">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          {getUrgencyIcon(rec.urgency || 'routine')}
+                          Clinical Decision Support
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-4 sm:pt-0">
                         <div>
-                          <p className="font-semibold text-sm mb-2">Recommended Actions:</p>
-                          <ul className="space-y-1">
-                            {rec.actionItems.map((item, idx) => (
-                              <li key={idx} className="flex gap-2 text-sm text-muted-foreground">
-                                <span className="text-primary flex-shrink-0">→</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          <p className="font-semibold text-sm mb-1">{rec.condition}</p>
+                          <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
+
+                        {rec.actionItems.length > 0 && (
+                          <div>
+                            <p className="font-semibold text-sm mb-2">Recommended Actions:</p>
+                            <ul className="space-y-1">
+                              {rec.actionItems.map((item, idx) => (
+                                <li key={idx} className="flex gap-2 text-sm text-muted-foreground">
+                                  <span className="text-primary flex-shrink-0">→</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </MobileCollapsible>
                 );
               })()}
 
