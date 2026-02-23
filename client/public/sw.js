@@ -1,6 +1,6 @@
 // OTC Calculators - Service Worker for Offline Support
-const CACHE_NAME = 'otc-calculator-v3';
-const STATIC_CACHE_NAME = 'otc-static-v3';
+const CACHE_NAME = 'otc-calculator-v4';
+const STATIC_CACHE_NAME = 'otc-static-v4';
 const BASE_PATH = '/';
 
 // Assets to cache immediately on install
@@ -92,6 +92,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
     url.pathname.endsWith('.svg') ||
+    url.pathname.endsWith('.webp') ||
     url.pathname.endsWith('.woff2') ||
     url.pathname.endsWith('.woff')
   ) {
