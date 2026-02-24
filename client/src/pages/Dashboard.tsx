@@ -158,10 +158,8 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   albumin: { conventional: "g/dL", si: "g/L", conversionFactor: 10 },
   // UACR inputs
   urineAlbumin: { conventional: "mg", si: "μg", conversionFactor: 1000 },
-  urineCreatinineUACR: { conventional: "g", si: "mg", conversionFactor: 1000 },
   // UPCR inputs
   urineProtein: { conventional: "mg", si: "g", conversionFactor: 0.001 },
-  urineCreatinineUPCR: { conventional: "mg", si: "g", conversionFactor: 0.001 },
   calcium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
   measuredCa: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
   phosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.323 },
@@ -758,7 +756,37 @@ export default function Dashboard() {
           return "300";
       }
     }
-    
+
+    // Handle urine creatinine multi-unit placeholders for UACR calculator
+    if (selectedCalculatorId === "uacr" && input.id === "urineCreatinineUACR") {
+      const currentUnit = unitState.urineCreatinineUACR || "g";
+      switch (currentUnit) {
+        case "g":
+          return "1.0";
+        case "mg":
+          return "1000";
+        case "μmol":
+          return "8840";
+        default:
+          return "1.0";
+      }
+    }
+
+    // Handle urine creatinine multi-unit placeholders for UPCR calculator
+    if (selectedCalculatorId === "upcr" && input.id === "urineCreatinineUPCR") {
+      const currentUnit = unitState.urineCreatinineUPCR || "mg";
+      switch (currentUnit) {
+        case "mg":
+          return "100";
+        case "g":
+          return "0.1";
+        case "μmol":
+          return "884";
+        default:
+          return "100";
+      }
+    }
+
     // Define typical clinical values for common inputs (conventional | SI)
     // These represent typical or moderately abnormal values for clinical context
     const typicalValues: { [inputId: string]: { conventional: string; si: string } } = {
@@ -807,10 +835,8 @@ export default function Dashboard() {
       creatinine2: { conventional: "3.0", si: "265" },
       // UACR raw inputs
       urineAlbumin: { conventional: "150", si: "150000" },
-      urineCreatinineUACR: { conventional: "1.0", si: "1000" },
       // UPCR raw inputs
       urineProtein: { conventional: "500", si: "0.5" },
-      urineCreatinineUPCR: { conventional: "100", si: "0.1" },
       // 24h protein estimator raw inputs
       proteinValue: { conventional: "50", si: "0.5" },
       creatinineValue: { conventional: "100", si: "8.8" },
@@ -1159,23 +1185,39 @@ export default function Dashboard() {
           );
           break;
 
-        case "uacr":
+        case "uacr": {
+          const rawCreatUACR = Number(calculatorState.urineCreatinineUACR) || 0;
+          const creatUnitUACR = unitState.urineCreatinineUACR || "g";
+          // Normalize to grams
+          let creatInG: number;
+          if (creatUnitUACR === "mg") creatInG = rawCreatUACR / 1000;
+          else if (creatUnitUACR === "μmol") creatInG = rawCreatUACR * 113.12 / 1000000;
+          else creatInG = rawCreatUACR; // already in g
           calculationResult = calc.uacr(
             getValue("urineAlbumin"),
-            getValue("urineCreatinineUACR"),
+            creatInG,
             getInputUnit("urineAlbumin") === "si" ? "μg" : "mg",
-            getInputUnit("urineCreatinineUACR") === "si" ? "mg" : "g"
+            "g"
           );
           break;
+        }
 
-        case "upcr":
+        case "upcr": {
+          const rawCreatUPCR = Number(calculatorState.urineCreatinineUPCR) || 0;
+          const creatUnitUPCR = unitState.urineCreatinineUPCR || "mg";
+          // Normalize to mg
+          let creatInMg: number;
+          if (creatUnitUPCR === "g") creatInMg = rawCreatUPCR * 1000;
+          else if (creatUnitUPCR === "μmol") creatInMg = rawCreatUPCR * 113.12 / 1000;
+          else creatInMg = rawCreatUPCR; // already in mg
           calculationResult = calc.upcr(
             getValue("urineProtein"),
-            getValue("urineCreatinineUPCR"),
+            creatInMg,
             getInputUnit("urineProtein") === "si" ? "g" : "mg",
-            getInputUnit("urineCreatinineUPCR") === "si" ? "g" : "mg"
+            "mg"
           );
           break;
+        }
 
         case "selectivity-index":
           // Selectivity Index = (Urine IgG / Plasma IgG) / (Urine Albumin / Plasma Albumin)
@@ -2555,6 +2597,9 @@ export default function Dashboard() {
       const multiUnitIds = ["ratioValue", "proteinValue", "creatinineValue"];
       if (multiUnitIds.includes(inputId)) return true;
     }
+    // For UACR/UPCR calculators, check multi-unit options for urine creatinine
+    if (selectedCalculatorId === "uacr" && inputId === "urineCreatinineUACR") return true;
+    if (selectedCalculatorId === "upcr" && inputId === "urineCreatinineUPCR") return true;
     // Check if this is a BUN/Urea input that needs 4-option toggle
     if (bunUreaInputIds.includes(inputId)) return true;
     return inputId in unitOptions;
@@ -2708,14 +2753,20 @@ export default function Dashboard() {
     creatinineValue: ["mg/dL", "mmol/L"],
     // ACR for KFRE calculator - mg/g is most common, mg/mmol is SI, mg/mg is ratio
     acr: ["mg/g", "mg/mmol", "mg/mg"],
+    // Urine creatinine for UACR calculator - g is most common, mg and μmol alternatives
+    urineCreatinineUACR: ["g", "mg", "μmol"],
+    // Urine creatinine for UPCR calculator - mg is most common, g and μmol alternatives
+    urineCreatinineUPCR: ["mg", "g", "μmol"],
   };
 
   const InlineUnitToggle = ({ inputId }: { inputId: string }) => {
     // Check if this input has multi-unit options
     // For 24-hour-protein calculator or ACR in KFRE
-    const hasMultiUnitOptions = 
+    const hasMultiUnitOptions =
       (selectedCalculatorId === "24-hour-protein" && multiUnitOptions[inputId]) ||
-      (selectedCalculatorId === "kfre" && inputId === "acr");
+      (selectedCalculatorId === "kfre" && inputId === "acr") ||
+      (selectedCalculatorId === "uacr" && multiUnitOptions[inputId]) ||
+      (selectedCalculatorId === "upcr" && multiUnitOptions[inputId]);
     
     if (hasMultiUnitOptions && multiUnitOptions[inputId]) {
       const options = multiUnitOptions[inputId];
@@ -2831,12 +2882,12 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-2">
               <img
-                src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
-                alt="OTC Calculators Logo"
+                src={`${import.meta.env.BASE_URL}images/asnrt-logo.webp`}
+                alt="ASNRT Nephrology Calculator Logo"
                 className="w-10 h-10 object-contain"
               />
               <div>
-                <h1 className="text-lg font-bold text-foreground">OTC Calculators</h1>
+                <h1 className="text-lg font-bold text-foreground">ASNRT Calculator</h1>
                 <p className="text-xs text-muted-foreground hidden sm:block">Nephrology Clinical Tools</p>
               </div>
             </div>
@@ -2996,13 +3047,13 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 mb-2">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 flex-shrink-0">
                   <img
-                    src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
-                    alt="OTC Calculators Logo"
+                    src={`${import.meta.env.BASE_URL}images/asnrt-logo.webp`}
+                    alt="ASNRT Nephrology Calculator Logo"
                     className="w-8 h-8 object-contain"
                   />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">OTC Calculators</h2>
+                  <h2 className="text-xl font-bold">ASNRT Nephrology Calculator</h2>
                   <p className="text-sm text-muted-foreground">{calculators.length} clinical calculators for nephrology practice</p>
                 </div>
               </div>
