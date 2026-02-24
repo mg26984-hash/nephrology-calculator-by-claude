@@ -1524,11 +1524,19 @@ export interface BanffScores {
   // Antibody-mediated markers
   c4d: number;    // C4d staining (0=negative, 1=minimal, 2=focal, 3=diffuse)
   dsa: string;    // Donor-specific antibody (negative/positive/unknown)
+  // Additional clinical findings for expanded Category 2
+  acuteTMA: boolean;           // Acute thrombotic microangiopathy
+  chronicTMA: boolean;         // Chronic TMA (distinguish from transplant glomerulopathy)
+  recurrentGN: boolean;        // Recurrent/de novo glomerulonephritis
+  acuteTubularInjury: boolean; // ATI/ATN on biopsy
+  priorABMR: boolean;          // Prior documented AMR or DSA history
+  ptcBMML: boolean;            // Severe PTC basement membrane multilayering (EM)
 }
 
 export interface BanffDiagnosis {
   diagnosed: boolean;
-  type: 'normal' | 'borderline' | 'tcmr' | 'abmr';
+  type: 'normal' | 'borderline' | 'tcmr' | 'abmr' | 'ifta' | 'mvi' | 'c4d';
+  subtype?: string;
   category: string;
   title: string;
   description: string;
@@ -1550,11 +1558,11 @@ export interface BanffResult {
 
 export function banffClassification(scores: BanffScores): BanffResult {
   const { glomeruli, arteries, i, t, v, g, ptc, ci, ct, cv, cg, ti, iIfta, tIfta, ah, c4d, dsa } = scores;
-  
+
   // Check biopsy adequacy
   let adequacyStatus: 'Adequate' | 'Marginal' | 'Unsatisfactory';
   let isAdequate = true;
-  
+
   if (glomeruli >= 10 && arteries >= 2) {
     adequacyStatus = 'Adequate';
   } else if (glomeruli >= 7 && arteries >= 1) {
@@ -1564,27 +1572,45 @@ export function banffClassification(scores: BanffScores): BanffResult {
     adequacyStatus = 'Unsatisfactory';
     isAdequate = false;
   }
-  
+
   const diagnoses: BanffDiagnosis[] = [];
-  
-  // Check for ABMR
-  const abmrResult = checkABMR(scores);
-  if (abmrResult.diagnosed) {
+
+  // Check for ABMR (returns array — may include 0 or 1 diagnosis)
+  const abmrResults = checkABMR(scores);
+  for (const abmrResult of abmrResults) {
     diagnoses.push(abmrResult);
   }
-  
+
   // Check for TCMR
   const tcmrResult = checkTCMR(scores);
-  if (tcmrResult.diagnosed) {
+  const hasTCMR = tcmrResult.diagnosed;
+  if (hasTCMR) {
     diagnoses.push(tcmrResult);
   }
-  
-  // Check for Borderline
-  const borderlineResult = checkBorderline(scores);
-  if (borderlineResult.diagnosed) {
-    diagnoses.push(borderlineResult);
+
+  // Check for Borderline — suppress if acute TCMR was diagnosed
+  const hasAcuteTCMR = hasTCMR && tcmrResult.title.startsWith('Acute TCMR');
+  if (!hasAcuteTCMR) {
+    const borderlineResult = checkBorderline(scores);
+    if (borderlineResult.diagnosed) {
+      diagnoses.push(borderlineResult);
+    }
   }
-  
+
+  // Post-process: remove C4d without rejection if TCMR was diagnosed
+  if (hasTCMR) {
+    const c4dIdx = diagnoses.findIndex(d => d.subtype === 'c4d_no_rejection');
+    if (c4dIdx !== -1) {
+      diagnoses.splice(c4dIdx, 1);
+    }
+  }
+
+  // IFTA — always report if ci/ct >= 1
+  const iftaResult = checkIFTA(scores);
+  if (iftaResult.diagnosed) {
+    diagnoses.push(iftaResult);
+  }
+
   // If no diagnoses, add normal
   if (diagnoses.length === 0) {
     diagnoses.push({
@@ -1596,15 +1622,16 @@ export function banffClassification(scores: BanffScores): BanffResult {
       criteria: []
     });
   }
-  
+
   // Build score summary
+  const mviSum = g + ptc;
   const scoreSummary = {
     acute: `i${i} t${t} v${v} g${g} ptc${ptc}`,
     chronic: `ci${ci} ct${ct} cv${cv} cg${cg}`,
     chronicActive: `ti${ti} i-IFTA${iIfta} t-IFTA${tIfta}`,
-    other: `C4d${c4d} ah${ah}`
+    other: `C4d${c4d} ah${ah} MVI[g+ptc]=${mviSum} DSA:${dsa}`
   };
-  
+
   return {
     diagnoses,
     isAdequate,
@@ -1613,53 +1640,200 @@ export function banffClassification(scores: BanffScores): BanffResult {
   };
 }
 
-function checkABMR(scores: BanffScores): BanffDiagnosis {
-  const { g, ptc, c4d, dsa, cg, cv } = scores;
-  
-  const mvi = g > 0 || ptc > 0;
+function checkABMR(scores: BanffScores): BanffDiagnosis[] {
+  const { g, ptc, v, c4d, dsa, cg, acuteTMA, chronicTMA, recurrentGN, acuteTubularInjury, priorABMR, ptcBMML } = scores;
+
+  const mviSum = g + ptc;
+  const hasMVI = (g > 0 || ptc > 0) && !recurrentGN;
+  const hasActiveLesions = hasMVI || v > 0 || acuteTMA;
   const c4dPositive = c4d >= 2;
   const dsaPositive = dsa === 'positive';
-  
-  // Active ABMR criteria
-  const acuteInjury = g > 0 || ptc > 0;
-  const antibodyInteraction = c4dPositive || dsaPositive;
-  const dsaCriteria = dsaPositive || c4dPositive;
-  
-  // Chronic active ABMR criteria
-  const chronicInjury = cg > 0 || cv > 0;
-  
-  if (acuteInjury && antibodyInteraction && dsaCriteria) {
-    return {
+  const hasAntibodyInteraction = c4dPositive || (mviSum >= 2 && !recurrentGN);
+  const hasSerologicEvidence = dsaPositive || c4dPositive;
+  const hasChronicABMRLesions = (cg > 0 && !chronicTMA) || ptcBMML;
+
+  // 1. Chronic Active AMR — active lesions + antibody interaction + serologic evidence + chronic lesions
+  if (hasActiveLesions && hasAntibodyInteraction && hasSerologicEvidence && hasChronicABMRLesions) {
+    return [{
       diagnosed: true,
       type: 'abmr',
-      category: 'Category 2',
-      title: 'Active Antibody-Mediated Rejection (ABMR)',
-      description: 'All three criteria for active ABMR are met per Banff 2022.',
-      criteria: [
-        { met: true, text: `Acute tissue injury: g=${g}, ptc=${ptc}` },
-        { met: true, text: `Antibody interaction: C4d=${c4d}, DSA=${dsa}` },
-        { met: true, text: 'Serologic evidence present' }
-      ],
-      interpretation: 'Immediate immunosuppression adjustment recommended. Consider plasma exchange, IVIG, rituximab, or complement inhibition based on severity.'
-    };
-  }
-  
-  if (chronicInjury && antibodyInteraction && dsaCriteria) {
-    return {
-      diagnosed: true,
-      type: 'abmr',
+      subtype: 'chronic_active_amr',
       category: 'Category 2',
       title: 'Chronic Active Antibody-Mediated Rejection',
-      description: 'Criteria for chronic active ABMR are met.',
+      description: 'All criteria for chronic active AMR are met: active lesions with chronic tissue injury and serologic/pathologic evidence of antibody interaction.',
       criteria: [
-        { met: true, text: `Chronic injury: cg=${cg}, cv=${cv}` },
-        { met: true, text: `Antibody interaction: C4d=${c4d}, DSA=${dsa}` },
-        { met: true, text: 'Serologic evidence present' }
+        { met: true, text: `Active tissue injury: ${hasMVI ? `MVI (g=${g}, ptc=${ptc})` : ''}${v > 0 ? ` v=${v}` : ''}${acuteTMA ? ' + acute TMA' : ''}` },
+        { met: true, text: `Antibody interaction: ${c4dPositive ? `C4d=${c4d}` : ''}${mviSum >= 2 ? ` MVI sum=${mviSum}` : ''}` },
+        { met: true, text: `Serologic evidence: ${dsaPositive ? 'DSA positive' : ''}${c4dPositive ? ` C4d=${c4d}` : ''}` },
+        { met: true, text: `Chronic lesions: ${cg > 0 && !chronicTMA ? `cg=${cg}` : ''}${ptcBMML ? ' PTC BMML' : ''}` },
       ],
-      interpretation: 'Indicates ongoing chronic antibody-mediated damage. Optimize immunosuppression and consider DSA monitoring.'
+      interpretation: 'Indicates ongoing chronic antibody-mediated damage with active component. Optimize immunosuppression, consider DSA monitoring, and evaluate for desensitization therapy.'
+    }];
+  }
+
+  // 2. Active AMR — active lesions + antibody interaction + serologic evidence (no chronic lesions)
+  if (hasActiveLesions && hasAntibodyInteraction && hasSerologicEvidence) {
+    return [{
+      diagnosed: true,
+      type: 'abmr',
+      subtype: 'active_amr',
+      category: 'Category 2',
+      title: 'Active Antibody-Mediated Rejection (AMR)',
+      description: 'All three criteria for active AMR are met per Banff 2022: active tissue injury, evidence of antibody interaction, and serologic evidence.',
+      criteria: [
+        { met: true, text: `Active tissue injury: ${hasMVI ? `MVI (g=${g}, ptc=${ptc})` : ''}${v > 0 ? ` v=${v}` : ''}${acuteTMA ? ' + acute TMA' : ''}` },
+        { met: true, text: `Antibody interaction: ${c4dPositive ? `C4d=${c4d}` : ''}${mviSum >= 2 ? ` MVI sum=${mviSum}` : ''}` },
+        { met: true, text: `Serologic evidence: ${dsaPositive ? 'DSA positive' : ''}${c4dPositive ? ` C4d=${c4d}` : ''}` },
+      ],
+      interpretation: 'Immediate immunosuppression adjustment recommended. Consider plasma exchange, IVIG, rituximab, or complement inhibition based on severity.'
+    }];
+  }
+
+  // 3. Chronic AMR — no active MVI/TMA + chronic ABMR lesions + prior ABMR history
+  if (!hasMVI && !acuteTMA && hasChronicABMRLesions && priorABMR) {
+    return [{
+      diagnosed: true,
+      type: 'abmr',
+      subtype: 'chronic_amr',
+      category: 'Category 2',
+      title: 'Chronic (Inactive) Antibody-Mediated Rejection',
+      description: 'Chronic AMR lesions without current active antibody-mediated injury. Requires prior documented AMR episode or DSA history.',
+      criteria: [
+        { met: true, text: `Chronic ABMR lesions: ${cg > 0 && !chronicTMA ? `cg=${cg}` : ''}${ptcBMML ? ' PTC BMML' : ''}` },
+        { met: true, text: 'No active microvascular inflammation' },
+        { met: true, text: 'Prior documented AMR or DSA history' },
+      ],
+      interpretation: 'Indicates prior antibody-mediated damage without current active injury. Monitor DSA levels and graft function. Prognosis depends on degree of chronic changes.'
+    }];
+  }
+
+  // 4. Probable (Suspicious for) AMR — active lesions + DSA positive, but insufficient C4d/MVI
+  if (hasActiveLesions && dsaPositive && !c4dPositive && mviSum < 2) {
+    return [{
+      diagnosed: true,
+      type: 'abmr',
+      subtype: 'probable_amr',
+      category: 'Category 2',
+      title: 'Probable (Suspicious for) Antibody-Mediated Rejection',
+      description: 'Active lesions with DSA positivity but incomplete pathologic criteria. C4d negative and MVI sum <2.',
+      criteria: [
+        { met: true, text: `Active tissue injury present: ${hasMVI ? `MVI (g=${g}, ptc=${ptc})` : ''}${v > 0 ? ` v=${v}` : ''}${acuteTMA ? ' + acute TMA' : ''}` },
+        { met: true, text: `DSA positive` },
+        { met: false, text: `Insufficient antibody interaction evidence: C4d=${c4d}, MVI sum=${mviSum}` },
+      ],
+      interpretation: 'Findings are suspicious but do not meet full diagnostic criteria for active AMR. Close monitoring recommended. Consider repeat biopsy and C4d staining on frozen tissue.'
+    }];
+  }
+
+  // 5. C4d Without Rejection — C4d positive but no active lesions
+  if (c4dPositive && !hasMVI && v === 0 && !acuteTMA && !acuteTubularInjury) {
+    return [{
+      diagnosed: true,
+      type: 'c4d',
+      subtype: 'c4d_no_rejection',
+      category: 'Category 2',
+      title: 'C4d Staining Without Evidence of Rejection',
+      description: 'C4d deposition in peritubular capillaries without morphologic evidence of active rejection.',
+      criteria: [
+        { met: true, text: `C4d positive: C4d=${c4d}` },
+        { met: true, text: 'No microvascular inflammation (g=0, ptc=0)' },
+        { met: true, text: 'No intimal arteritis (v=0)' },
+        { met: true, text: 'No acute TMA' },
+      ],
+      interpretation: 'C4d deposition may represent accommodation or low-level antibody interaction without overt tissue damage. Clinical correlation and DSA monitoring recommended.'
+    }];
+  }
+
+  // 6. MVI DSA/C4d-Negative — MVI sum ≥2 but no DSA or C4d
+  if (mviSum >= 2 && !recurrentGN && !dsaPositive && !c4dPositive) {
+    return [{
+      diagnosed: true,
+      type: 'mvi',
+      subtype: 'mvi_dsa_c4d_negative',
+      category: 'Category 2',
+      title: 'Microvascular Inflammation, DSA/C4d-Negative',
+      description: 'Significant MVI (g+ptc ≥2) without detectable DSA or C4d positivity. Recurrent/de novo GN excluded.',
+      criteria: [
+        { met: true, text: `MVI sum ≥2: g=${g} + ptc=${ptc} = ${mviSum}` },
+        { met: true, text: 'DSA negative' },
+        { met: true, text: `C4d negative: C4d=${c4d}` },
+        { met: true, text: 'Recurrent/de novo GN excluded' },
+      ],
+      interpretation: 'May represent AMR with undetected non-HLA antibodies. Consider non-HLA antibody testing (anti-AT1R, anti-MICA). Treat as possible AMR if graft dysfunction is present.'
+    }];
+  }
+
+  // 7. C4d with Acute Tubular Injury — C4d positive + ATI, no other active lesions
+  if (c4dPositive && acuteTubularInjury && !hasMVI && v === 0 && !acuteTMA) {
+    return [{
+      diagnosed: true,
+      type: 'c4d',
+      subtype: 'c4d_with_ati',
+      category: 'Category 2',
+      title: 'C4d Staining with Acute Tubular Injury',
+      description: 'C4d deposition in the setting of acute tubular injury without microvascular inflammation.',
+      criteria: [
+        { met: true, text: `C4d positive: C4d=${c4d}` },
+        { met: true, text: 'Acute tubular injury present' },
+        { met: true, text: 'No microvascular inflammation' },
+        { met: true, text: 'No intimal arteritis (v=0)' },
+      ],
+      interpretation: 'C4d with ATI may indicate early antibody-mediated injury or coincidental findings. DSA testing and close follow-up recommended. Consider repeat biopsy if graft dysfunction persists.'
+    }];
+  }
+
+  return [];
+}
+
+function checkIFTA(scores: BanffScores): BanffDiagnosis {
+  const { ci, ct } = scores;
+  const maxScore = Math.max(ci, ct);
+
+  if (maxScore >= 3) {
+    return {
+      diagnosed: true,
+      type: 'ifta',
+      category: 'Category 5',
+      title: 'Interstitial Fibrosis and Tubular Atrophy (IFTA) — Grade III (Severe)',
+      description: 'Severe interstitial fibrosis and/or tubular atrophy (>50% of cortex).',
+      criteria: [
+        { met: ci === 3, text: `ci=3: >50% cortical fibrosis (ci=${ci})` },
+        { met: ct === 3, text: `ct=3: >50% tubular atrophy (ct=${ct})` },
+      ],
+      interpretation: 'Severe chronic damage. Significant impact on long-term graft survival. Evaluate for treatable causes (rejection, BK, CNI toxicity). Consider reducing nephrotoxic agents.'
     };
   }
-  
+
+  if (maxScore === 2) {
+    return {
+      diagnosed: true,
+      type: 'ifta',
+      category: 'Category 5',
+      title: 'Interstitial Fibrosis and Tubular Atrophy (IFTA) — Grade II (Moderate)',
+      description: 'Moderate interstitial fibrosis and/or tubular atrophy (26-50% of cortex).',
+      criteria: [
+        { met: ci === 2, text: `ci=2: 26-50% cortical fibrosis (ci=${ci})` },
+        { met: ct === 2, text: `ct=2: 26-50% tubular atrophy (ct=${ct})` },
+      ],
+      interpretation: 'Moderate chronic damage. Identify and treat reversible causes. Monitor graft function closely.'
+    };
+  }
+
+  if (maxScore === 1) {
+    return {
+      diagnosed: true,
+      type: 'ifta',
+      category: 'Category 5',
+      title: 'Interstitial Fibrosis and Tubular Atrophy (IFTA) — Grade I (Mild)',
+      description: 'Mild interstitial fibrosis and/or tubular atrophy (6-25% of cortex).',
+      criteria: [
+        { met: ci === 1, text: `ci=1: 6-25% cortical fibrosis (ci=${ci})` },
+        { met: ct === 1, text: `ct=1: ≤25% tubular atrophy (ct=${ct})` },
+      ],
+      interpretation: 'Mild chronic changes. Common in protocol biopsies. Monitor and minimize nephrotoxic exposure.'
+    };
+  }
+
   return { diagnosed: false, type: 'normal', category: '', title: '', description: '', criteria: [] };
 }
 

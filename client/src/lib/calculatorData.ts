@@ -1182,6 +1182,32 @@ export const calculators: Calculator[] = [
       { id: "tIfta", label: "t-IFTA - Tubulitis in Atrophic Tubules", type: "score", description: "Tubulitis in atrophic tubules", placeholder: "0", required: false, default: 0, min: 0, max: 3 },
       // Other scores
       { id: "ah", label: "ah - Arteriolar Hyalinosis", type: "score", description: "PAS-positive hyaline thickening", placeholder: "0", required: false, default: 0, min: 0, max: 3 },
+      // Additional clinical findings for expanded Category 2
+      { id: "acuteTMA", label: "Acute Thrombotic Microangiopathy (TMA)", type: "select", options: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+      ], required: false, default: "no" },
+      { id: "chronicTMA", label: "Chronic TMA (not transplant glomerulopathy)", type: "select", options: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+      ], required: false, default: "no" },
+      { id: "recurrentGN", label: "Recurrent/De Novo Glomerulonephritis", type: "select", options: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+      ], required: false, default: "no" },
+      { id: "acuteTubularInjury", label: "Acute Tubular Injury (ATI/ATN)", type: "select", options: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+      ], required: false, default: "no" },
+      { id: "priorABMR", label: "Prior Documented AMR or DSA History", type: "select", options: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+      ], required: false, default: "no" },
+      { id: "ptcBMML", label: "Severe PTC Basement Membrane Multilayering (EM)", type: "select", options: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+        { value: "not_performed", label: "EM Not Performed" },
+      ], required: false, default: "not_performed" },
     ],
     resultLabel: "Banff Classification",
     resultUnit: "category",
@@ -1190,19 +1216,29 @@ export const calculators: Calculator[] = [
       return "See detailed classification below";
     },
     clinicalPearls: [
-      "•Banff 2022 classification from the Banff Foundation",
+      "•Banff 2022/2023 classification from the Banff Foundation",
       "•Adequate specimen: ≥10 glomeruli + ≥2 arteries",
       "•Marginal specimen: ≥7 glomeruli + ≥1 artery",
-      "•Acute TCMR Grade IA: i≥2 with t2",
-      "•Acute TCMR Grade IB: i≥2 with t3",
-      "•Acute TCMR Grade IIA: v1 (mild-moderate intimal arteritis)",
-      "•Acute TCMR Grade IIB: v2 (severe intimal arteritis)",
-      "•Acute TCMR Grade III: v3 (transmural arteritis)",
-      "•Active ABMR: MVI (g>0 or ptc>0) + C4d≥2 or DSA positive",
-      "•Chronic Active ABMR: cg>0 or cv>0 + C4d≥2 or DSA positive",
-      "•Borderline: t≥1 with i=1 OR t=1 with i≥2 (without v)",
+      "•Category 2 — AMR spectrum (7 sub-diagnoses):",
+      "  Active AMR: active lesions (MVI/v>0/TMA) + antibody interaction (C4d≥2 or MVI≥2) + serologic evidence (DSA+ or C4d≥2)",
+      "  Chronic Active AMR: active AMR criteria + chronic lesions (cg>0 excluding chronic TMA, or PTC BMML)",
+      "  Chronic (Inactive) AMR: chronic lesions + prior AMR history, no active MVI/TMA",
+      "  Probable AMR: active lesions + DSA+ but C4d neg and MVI sum <2",
+      "  C4d Without Rejection: C4d≥2 without MVI, v, or TMA",
+      "  MVI DSA/C4d-Negative: MVI sum ≥2, DSA neg, C4d neg (exclude recurrent GN)",
+      "  C4d with ATI: C4d≥2 + acute tubular injury, no MVI",
+      "•Category 3 — Borderline: t≥1 with i=1 OR t=1 with i≥2 (without v)",
+      "•Category 4 — TCMR: IA(i≥2,t2) IB(i≥2,t3) IIA(v1) IIB(v2) III(v3)",
+      "•Category 5 — IFTA: Grade I (ci/ct=1), Grade II (ci/ct=2), Grade III (ci/ct=3)",
+      "•MVI = g + ptc; recurrent GN excludes MVI from AMR criteria",
     ],
-    references: ["Loupy A et al. Am J Transplant. 2020;20(9):2305-2331", "Haas M et al. Am J Transplant. 2018;18(2):293-307", "Banff 2022 Classification"],
+    references: [
+      "Loupy A et al. Am J Transplant. 2020;20(9):2305-2331",
+      "Haas M et al. Am J Transplant. 2018;18(2):293-307",
+      "Banff 2022 Classification — Banff Foundation for Allograft Pathology",
+      "Mengel M et al. Am J Transplant. 2024;24(4):557-570 — Banff 2022 meeting report",
+      "Roufosse C et al. Transplantation. 2018;102(11):1795-1814",
+    ],
   },
   // ============================================================================
   // CARDIOVASCULAR RISK

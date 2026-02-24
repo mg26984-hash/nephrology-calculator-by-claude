@@ -1710,6 +1710,12 @@ export default function Dashboard() {
             ah: parseFloat(calculatorState.ah as string) || 0,
             c4d: parseInt(calculatorState.c4d as string) || 0,
             dsa: (calculatorState.dsa as string) || 'negative',
+            acuteTMA: (calculatorState.acuteTMA as string) === 'yes',
+            chronicTMA: (calculatorState.chronicTMA as string) === 'yes',
+            recurrentGN: (calculatorState.recurrentGN as string) === 'yes',
+            acuteTubularInjury: (calculatorState.acuteTubularInjury as string) === 'yes',
+            priorABMR: (calculatorState.priorABMR as string) === 'yes',
+            ptcBMML: (calculatorState.ptcBMML as string) === 'yes',
           };
           console.log('banffScores:', JSON.stringify(banffScores));
           const banffResultData = calc.banffClassification(banffScores);
@@ -3858,10 +3864,13 @@ export default function Dashboard() {
                             tcmr: 'border-l-orange-500 bg-orange-500/5',
                             abmr: 'border-l-red-500 bg-red-500/5',
                             borderline: 'border-l-slate-400 bg-slate-400/5',
-                            normal: 'border-l-emerald-500 bg-emerald-500/5'
+                            normal: 'border-l-emerald-500 bg-emerald-500/5',
+                            ifta: 'border-l-purple-500 bg-purple-500/5',
+                            mvi: 'border-l-amber-500 bg-amber-500/5',
+                            c4d: 'border-l-blue-500 bg-blue-500/5',
                           };
                           const colorClass = diagnosisColors[diagnosis.type as keyof typeof diagnosisColors] || diagnosisColors.normal;
-                          
+
                           return (
                             <div key={idx} className={`p-4 rounded-lg border-l-4 ${colorClass}`}>
                               <div className="flex items-center justify-between mb-2">
@@ -5103,10 +5112,13 @@ export default function Dashboard() {
                           tcmr: 'border-l-orange-500 bg-orange-500/5',
                           abmr: 'border-l-red-500 bg-red-500/5',
                           borderline: 'border-l-slate-400 bg-slate-400/5',
-                          normal: 'border-l-emerald-500 bg-emerald-500/5'
+                          normal: 'border-l-emerald-500 bg-emerald-500/5',
+                          ifta: 'border-l-purple-500 bg-purple-500/5',
+                          mvi: 'border-l-amber-500 bg-amber-500/5',
+                          c4d: 'border-l-blue-500 bg-blue-500/5',
                         };
                         const colorClass = diagnosisColors[diagnosis.type as keyof typeof diagnosisColors] || diagnosisColors.normal;
-                        
+
                         return (
                           <div key={idx} className={`p-4 rounded-lg border-l-4 ${colorClass}`}>
                             <div className="flex items-center justify-between mb-2">
