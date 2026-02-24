@@ -2882,12 +2882,12 @@ export default function Dashboard() {
 
             <div className="flex items-center gap-2">
               <img
-                src={`${import.meta.env.BASE_URL}images/asnrt-logo.webp`}
-                alt="ASNRT Nephrology Calculator Logo"
+                src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
+                alt="OTC Calculators Logo"
                 className="w-10 h-10 object-contain"
               />
               <div>
-                <h1 className="text-lg font-bold text-foreground">ASNRT Calculator</h1>
+                <h1 className="text-lg font-bold text-foreground">OTC Calculators</h1>
                 <p className="text-xs text-muted-foreground hidden sm:block">Nephrology Clinical Tools</p>
               </div>
             </div>
@@ -3047,13 +3047,13 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 mb-2">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 flex-shrink-0">
                   <img
-                    src={`${import.meta.env.BASE_URL}images/asnrt-logo.webp`}
-                    alt="ASNRT Nephrology Calculator Logo"
+                    src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
+                    alt="OTC Calculators Logo"
                     className="w-8 h-8 object-contain"
                   />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">ASNRT Nephrology Calculator</h2>
+                  <h2 className="text-xl font-bold">OTC Calculators</h2>
                   <p className="text-sm text-muted-foreground">{calculators.length} clinical calculators for nephrology practice</p>
                 </div>
               </div>
