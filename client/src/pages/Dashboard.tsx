@@ -328,7 +328,7 @@ export default function Dashboard() {
     return saved === "si" ? "si" : "conventional";
   });
   const [result, setResult] = useState<number | { [key: string]: number } | null>(null);
-  const scrollToResultRef = useRef(false);
+  const [calcCount, setCalcCount] = useState(0);
   const [lastCalculatedEgfr, setLastCalculatedEgfr] = useState<number | null>(null);
   const [navigatedFromMehran, setNavigatedFromMehran] = useState<string | null>(null);
   const [savedMehranState, setSavedMehranState] = useState<CalculatorState | null>(null);
@@ -540,12 +540,11 @@ export default function Dashboard() {
 
   // Scroll to result card after it renders
   useEffect(() => {
-    if (!scrollToResultRef.current || result === null) return;
-    scrollToResultRef.current = false;
+    if (calcCount === 0 || result === null) return;
     setTimeout(() => {
       resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 300);
-  }, [result]);
+  }, [calcCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Add calculator to recent list (called when selecting a calculator)
   const addToRecent = useCallback((calcId: string) => {
@@ -2477,8 +2476,8 @@ export default function Dashboard() {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
           }
         }
-        // Mark that we should scroll to result after render
-        scrollToResultRef.current = true;
+        // Trigger scroll to result after render
+        setCalcCount(c => c + 1);
       }
     } catch (error) {
       console.error("Calculation error:", error);
