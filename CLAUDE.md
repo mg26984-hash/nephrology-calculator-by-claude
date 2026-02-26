@@ -93,11 +93,27 @@ ALL numeric `<Input>` fields — in Dashboard.tsx AND in sub-components (EGFRCom
 The calculate button uses a two-tier approach to avoid overlapping inputs on short calculators:
 
 1. **Inline button** — always visible on all screen sizes, in the natural document flow inside the card. Uses `ref={inlineCalculateRef}` for visibility tracking.
-2. **Compact circular FAB** — a 56×56px (`w-14 h-14 rounded-full`) floating action button that ONLY appears when the inline button scrolls out of view (via IntersectionObserver). Positioned bottom-right, hidden on desktop (`lg:hidden`). Displays **"Go!"** text (`text-xs font-bold`), NOT an icon.
-3. **FAB auto-scrolls to result** — the FAB calls `handleCalculate` which calculates and then scrolls to `resultCardRef` via `scrollIntoView({ behavior: 'smooth', block: 'start' })`.
-4. **No full-width fixed bar** — the old full-width fixed bottom bar is removed. Never re-add it — it overlaps inputs on short calculators (2-3 inputs).
-5. **No spacer div** — the old 80px spacer that compensated for the fixed bar is removed.
-6. **Keyboard awareness** — the FAB repositions above the mobile keyboard via `useKeyboardOffset()` hook (Visual Viewport API): `bottom: Math.max(16, keyboardOffset + 16)`
+2. **Compact circular FAB** — a 56×56px (`w-14 h-14 rounded-full`) floating action button that ONLY appears when the inline button scrolls out of view (via IntersectionObserver). Positioned bottom-right, hidden on desktop (`lg:hidden`). Displays **"Go!"** text (`text-xs font-bold animate-pulse`), NOT an icon.
+3. **No full-width fixed bar** — the old full-width fixed bottom bar is removed. Never re-add it — it overlaps inputs on short calculators (2-3 inputs).
+4. **No spacer div** — the old 80px spacer that compensated for the fixed bar is removed.
+5. **Keyboard awareness** — the FAB repositions above the mobile keyboard via `useKeyboardOffset()` hook (Visual Viewport API): `bottom: Math.max(16, keyboardOffset + 16)`
+
+## Auto-Scroll to Result (CRITICAL)
+
+After every calculation, the page scrolls to the result card. This uses DOM polling — NOT React useEffect — because of early returns in handleCalculate.
+
+1. **`scrollToResultCard()` callback** — polls `document.getElementById('result-card')` every 50ms (up to 1.5s), then calls `window.scrollTo()` with computed offset. Defined as a `useCallback` with no dependencies.
+2. **Called from `finally` block** — `handleCalculate` has `try { switch(...) } catch { ... } finally { scrollToResultCard(); }`. The `finally` is essential because 5 calculators (Banff, KDPI, FRAX, Mehran 2, Mehran Original) have `return;` inside the `try` block that would skip any code after the try/catch.
+3. **`id="result-card"` on ALL result cards** — the main result card (`{result !== null && ...}`) AND the Banff standalone result card both have `id="result-card"`. Any new custom result display MUST also include this id.
+4. **Never use `scrollIntoView`** — it was unreliable on mobile. Always use `window.scrollTo({ top: computedOffset, behavior: 'smooth' })` with `getBoundingClientRect()`.
+5. **Never use useEffect for scrolling** — React's effect timing, dependency arrays, and state batching make it unreliable. The DOM polling approach works regardless of React's render cycle.
+6. **Never depend on `result` state for scroll triggering** — Banff sets `result` to `null` (it uses custom display via `banffResult`). Any condition like `if (result === null) return` will break Banff scrolling.
+
+### Lessons learned (avoid repeating these mistakes)
+- `useEffect` with `[result]` dependency doesn't fire when recalculating with identical inputs (same result value)
+- `useRef` flags get cleared in the same render cycle, cancelling pending timeouts
+- `scrollIntoView()` can target the wrong scroll container on pages with `ScrollArea` components
+- `return;` inside `try` skips code after `try/catch` but NOT code in `finally` — always use `finally` for cleanup that must run regardless of control flow
 
 ## eGFR Comparison Layout (CRITICAL)
 
