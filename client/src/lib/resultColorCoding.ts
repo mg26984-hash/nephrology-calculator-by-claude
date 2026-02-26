@@ -185,7 +185,7 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'prisma7':
       return getPRISMA7Color(value);
 
-    case 'curb65':
+    case 'curb-65':
       return getCURB65Color(value);
 
     case 'roks':
