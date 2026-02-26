@@ -328,6 +328,7 @@ export default function Dashboard() {
     return saved === "si" ? "si" : "conventional";
   });
   const [result, setResult] = useState<number | { [key: string]: number } | null>(null);
+  const [shouldScrollToResult, setShouldScrollToResult] = useState(false);
   const [lastCalculatedEgfr, setLastCalculatedEgfr] = useState<number | null>(null);
   const [navigatedFromMehran, setNavigatedFromMehran] = useState<string | null>(null);
   const [savedMehranState, setSavedMehranState] = useState<CalculatorState | null>(null);
@@ -536,6 +537,16 @@ export default function Dashboard() {
     observer.observe(el);
     return () => observer.disconnect();
   }, [selectedCalculatorId]);
+
+  // Scroll to result card after it renders
+  useEffect(() => {
+    if (shouldScrollToResult && result !== null) {
+      setShouldScrollToResult(false);
+      requestAnimationFrame(() => {
+        resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [shouldScrollToResult, result]);
 
   // Add calculator to recent list (called when selecting a calculator)
   const addToRecent = useCallback((calcId: string) => {
@@ -2467,12 +2478,8 @@ export default function Dashboard() {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
           }
         }
-        // Auto-scroll to result after render
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 50);
-        });
+        // Mark that we should scroll to result after render
+        setShouldScrollToResult(true);
       }
     } catch (error) {
       console.error("Calculation error:", error);
