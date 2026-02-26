@@ -197,7 +197,10 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   // Magnesium (1 mg/dL = 0.4114 mmol/L)
   urineMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
   plasmaMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
+  serumMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
   serumMagnesiumRepletion: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
+  serumMagnesiumQtc: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
+  targetMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
   // Uric acid (1 mg/dL = 59.48 μmol/L)
   urineUricAcid: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 59.48 },
   plasmaUricAcid: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 59.48 },
@@ -209,13 +212,22 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   phosphatePTH: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
   // Urine glucose
   urineGlucose: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0555 },
+  // PTH: 1 pg/mL = 0.1061 pmol/L (intact PTH, MW ≈ 9425 Da)
+  pth: { conventional: "pg/mL", si: "pmol/L", conversionFactor: 0.1061 },
+  pthPhos: { conventional: "pg/mL", si: "pmol/L", conversionFactor: 0.1061 },
+  // Vitamin D: 1 ng/mL = 2.496 nmol/L
+  vitaminD: { conventional: "ng/mL", si: "nmol/L", conversionFactor: 2.496 },
+  // Additional calcium IDs
+  serumCalciumQtc: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
+  // LDL cholesterol (same as total cholesterol)
+  ldl: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0259 },
 };
 
 // Global unit preference key for localStorage
 const UNIT_PREF_KEY = 'nephrology-unit-preference';
 
 // BUN/Urea inputs that need 4-option toggle
-const bunUreaInputIds = ["bun", "preBUN", "postBUN", "plasmaUrea", "urineUrea", "urineaNitrogen", "bunValue"];
+const bunUreaInputIds = ["bun", "preBUN", "postBUN", "plasmaUrea", "urineUrea", "urineaNitrogen", "bunValue", "bunDialysis"];
 
 // 4-option BUN/Urea toggle options
 const bunUreaOptions = [
@@ -684,13 +696,19 @@ export default function Dashboard() {
     // Link related inputs of the same measurement type so they toggle together
     const allCreatinineIds = ["creatinine", "baselineCreatinine", "currentCreatinine", "creatinine1", "creatinine2", "preCreatinine", "postCreatinine", "plasmaCr", "urineCr", "urineCreatinine24h", "donorCreatinine", "cr1", "cr2", "cr3", "baselineCrTrajectory"];
     const allPhosphateIds = ["phosphate", "serumPhosphate", "urinePhosphate", "plasmaPhosphate", "phosphateLevel", "phosphatePTH"];
-    const allMagnesiumIds = ["urineMagnesium", "plasmaMagnesium", "serumMagnesiumRepletion"];
+    const allMagnesiumIds = ["urineMagnesium", "plasmaMagnesium", "serumMagnesium", "serumMagnesiumRepletion", "serumMagnesiumQtc", "targetMagnesium"];
     const allUricAcidIds = ["urineUricAcid", "plasmaUricAcid"];
+    const allCalciumIds = ["calcium", "calciumPTH", "calciumPhos", "measuredCa", "serumCalciumQtc"];
+    const allPTHIds = ["pth", "pthPhos"];
+    const allCholesterolIds = ["totalCholesterol", "hdl", "ldl"];
     const creatinineGroups: Record<string, string[]> = {
       ...Object.fromEntries(allCreatinineIds.map(id => [id, allCreatinineIds])),
       ...Object.fromEntries(allPhosphateIds.map(id => [id, allPhosphateIds])),
       ...Object.fromEntries(allMagnesiumIds.map(id => [id, allMagnesiumIds])),
       ...Object.fromEntries(allUricAcidIds.map(id => [id, allUricAcidIds])),
+      ...Object.fromEntries(allCalciumIds.map(id => [id, allCalciumIds])),
+      ...Object.fromEntries(allPTHIds.map(id => [id, allPTHIds])),
+      ...Object.fromEntries(allCholesterolIds.map(id => [id, allCholesterolIds])),
     };
     const linked = creatinineGroups[inputId];
     if (linked) {
@@ -851,6 +869,19 @@ export default function Dashboard() {
       phosphatePTH: { conventional: "4.5", si: "1.45" },
       // Urine glucose
       urineGlucose: { conventional: "0", si: "0" },
+      // PTH: 300 pg/mL = 31.8 pmol/L (elevated, typical CKD 5D)
+      pth: { conventional: "300", si: "32" },
+      pthPhos: { conventional: "300", si: "32" },
+      // Vitamin D: 30 ng/mL = 74.9 nmol/L (sufficient threshold)
+      vitaminD: { conventional: "30", si: "75" },
+      // Additional calcium: 9.5 mg/dL = 2.4 mmol/L (normal)
+      serumCalciumQtc: { conventional: "9.5", si: "2.4" },
+      // LDL: 130 mg/dL = 3.4 mmol/L (borderline high)
+      ldl: { conventional: "130", si: "3.4" },
+      // Magnesium (QTc context and target)
+      serumMagnesium: { conventional: "1.8", si: "0.74" },
+      serumMagnesiumQtc: { conventional: "1.8", si: "0.74" },
+      targetMagnesium: { conventional: "2.0", si: "0.82" },
     };
     
     const typicalValue = typicalValues[input.id];
@@ -1180,7 +1211,13 @@ export default function Dashboard() {
             Number(calculatorState.heartRate) || 0
           );
           const qtcVal = typeof calculationResult === "number" ? calculationResult : 0;
-          setResultInterpretation(selectedCalculator.interpretation(qtcVal, calculatorState));
+          // Pass pre-converted electrolyte values for interpretation thresholds
+          const qtcInputs = {
+            ...calculatorState,
+            serumMagnesiumQtc: String(getValue("serumMagnesiumQtc")),
+            serumCalciumQtc: String(getValue("serumCalciumQtc")),
+          };
+          setResultInterpretation(selectedCalculator.interpretation(qtcVal, qtcInputs));
           break;
         }
 
@@ -2342,14 +2379,16 @@ export default function Dashboard() {
             Number(calculatorState.targetPotassium) || 4.0
           );
           calculationResult = kResult.deficit;
+          // Pass pre-converted Mg for interpretation thresholds
+          const kInputs = { ...calculatorState, serumMagnesium: String(getValue("serumMagnesium")) };
           if (kResult.severity !== "normal") {
             setResultInterpretation(
               `${kResult.severity.charAt(0).toUpperCase() + kResult.severity.slice(1)} hypokalemia — ` +
               `estimated total body deficit: ~${kResult.deficit} mEq. ` +
-              selectedCalculator.interpretation(kResult.deficit, calculatorState)
+              selectedCalculator.interpretation(kResult.deficit, kInputs)
             );
           } else {
-            setResultInterpretation(selectedCalculator.interpretation(kResult.deficit, calculatorState));
+            setResultInterpretation(selectedCalculator.interpretation(kResult.deficit, kInputs));
           }
           break;
         }
@@ -2400,29 +2439,41 @@ export default function Dashboard() {
         // ====================================================================
 
         case "magnesium-repletion": {
+          const mgConv = getValue("serumMagnesiumRepletion");
+          const targetMgConv = getValue("targetMagnesium") || 2.0;
           const mgResult = calc.magnesiumRepletion(
-            getValue("serumMagnesiumRepletion"),
-            Number(calculatorState.targetMagnesium) || 2.0,
+            mgConv,
+            targetMgConv,
             Number(calculatorState.weight) || 70,
             (calculatorState.renalFunction as "normal" | "ckd3-4" | "dialysis") || "normal"
           );
           calculationResult = mgResult.dose;
+          // Pass pre-converted Mg value for interpretation thresholds
+          const mgInputs = { ...calculatorState, serumMagnesiumRepletion: String(mgConv), targetMagnesium: String(targetMgConv) };
           if (mgResult.severity !== "normal") {
             setResultInterpretation(
               `${mgResult.severity.charAt(0).toUpperCase() + mgResult.severity.slice(1)} hypomagnesemia — ` +
               `IV MgSO4 dose: ${mgResult.dose}g. ` +
               `Route: ${mgResult.route}\n` +
               `Monitoring: ${mgResult.monitoring}\n\n` +
-              selectedCalculator.interpretation(mgResult.dose, calculatorState)
+              selectedCalculator.interpretation(mgResult.dose, mgInputs)
             );
           }
           break;
         }
 
         case "pth-target-ckd": {
-          const pthVal = Number(calculatorState.pth) || 0;
+          const pthVal = getValue("pth");
+          // Pass pre-converted values so interpretation thresholds (conventional units) work correctly
+          const pthInputs = {
+            ...calculatorState,
+            pth: String(pthVal),
+            calciumPTH: String(getValue("calciumPTH")),
+            phosphatePTH: String(getValue("phosphatePTH")),
+            vitaminD: String(getValue("vitaminD")),
+          };
           calculationResult = pthVal;
-          setResultInterpretation(selectedCalculator.interpretation(pthVal, calculatorState));
+          setResultInterpretation(selectedCalculator.interpretation(pthVal, pthInputs));
           break;
         }
 
@@ -2430,7 +2481,14 @@ export default function Dashboard() {
           const phos = getValue("phosphateLevel");
           const ca = getValue("calciumPhos");
           calculationResult = Math.round(phos * ca * 10) / 10;
-          setResultInterpretation(selectedCalculator.interpretation(calculationResult, calculatorState));
+          // Pass pre-converted values so interpretation thresholds work correctly
+          const phosInputs = {
+            ...calculatorState,
+            phosphateLevel: String(phos),
+            calciumPhos: String(ca),
+            pthPhos: String(getValue("pthPhos")),
+          };
+          setResultInterpretation(selectedCalculator.interpretation(calculationResult, phosInputs));
           break;
         }
 
@@ -2506,7 +2564,7 @@ export default function Dashboard() {
             Number(calculatorState.potassiumDialysis) || 0,
             calculatorState.ecgChanges === "yes",
             (calculatorState.fluidOverload as "none" | "mild" | "moderate" | "refractory") || "none",
-            Number(calculatorState.bunDialysis) || 0,
+            getBunValue("bunDialysis"),
             (calculatorState.uremicSymptoms as "none" | "nausea" | "encephalopathy" | "pericarditis") || "none",
             0, // urineOutput24h — not used directly, diureticResponse covers it
             Number(calculatorState.weight) || 70,
@@ -2550,7 +2608,14 @@ export default function Dashboard() {
           // Multi-section assessment — result is albumin (drives thrombotic risk)
           const albVal = getValue("albumin");
           calculationResult = albVal;
-          setResultInterpretation(selectedCalculator.interpretation(albVal, calculatorState));
+          // Pass pre-converted values so interpretation thresholds work correctly
+          const nephInputs = {
+            ...calculatorState,
+            albumin: String(albVal),
+            totalCholesterol: String(getValue("totalCholesterol")),
+            ldl: String(getValue("ldl")),
+          };
+          setResultInterpretation(selectedCalculator.interpretation(albVal, nephInputs));
           break;
         }
 
