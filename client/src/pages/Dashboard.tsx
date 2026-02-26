@@ -3608,11 +3608,10 @@ export default function Dashboard() {
                 <Button
                   onClick={handleCalculate}
                   disabled={!allRequiredFilled}
-                  size="icon"
-                  className="lg:hidden fixed z-40 w-14 h-14 rounded-full shadow-lg"
+                  className="lg:hidden fixed z-40 w-14 h-14 rounded-full shadow-lg text-xs font-bold"
                   style={{ right: 16, bottom: Math.max(16, keyboardOffset + 16) }}
                 >
-                  <Calculator className="w-5 h-5" />
+                  Go!
                 </Button>
               )}
 
