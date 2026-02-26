@@ -3369,6 +3369,9 @@ export default function Dashboard() {
               <div className="flex items-start justify-between gap-2 sm:gap-4">
                 <div>
                   <h2 className="text-2xl max-lg:text-lg font-bold">{selectedCalculator.name}</h2>
+                  {selectedCalculator.whenToUse && (
+                    <p className="text-sm text-muted-foreground mt-1">{selectedCalculator.whenToUse}</p>
+                  )}
                   <p className="text-muted-foreground mt-1 hidden lg:block">{selectedCalculator.description}</p>
                 </div>
                 <button
