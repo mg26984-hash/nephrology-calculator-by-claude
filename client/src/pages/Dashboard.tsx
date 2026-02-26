@@ -541,9 +541,19 @@ export default function Dashboard() {
   // Scroll to result card after it renders
   useEffect(() => {
     if (calcCount === 0 || result === null) return;
-    setTimeout(() => {
-      resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
+    const scrollToResult = () => {
+      const el = resultCardRef.current || document.getElementById('result-card');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      window.scrollTo({ top: scrollTop + rect.top - 80, behavior: 'smooth' });
+    };
+    // Double rAF ensures browser has painted the result card
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToResult();
+      });
+    });
   }, [calcCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Add calculator to recent list (called when selecting a calculator)
@@ -3629,7 +3639,7 @@ export default function Dashboard() {
                   : null;
                 
                 return (
-                <Card ref={resultCardRef} className={cn(
+                <Card id="result-card" ref={resultCardRef} className={cn(
                   "border-l-4 scroll-mt-20",
                   colorCoding ? `${colorCoding.bgClass} ${colorCoding.borderClass}` : "border-primary/50 bg-primary/5"
                 )}>
