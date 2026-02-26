@@ -1046,8 +1046,8 @@ export default function Dashboard() {
             Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             Number(calculatorState.eGFR) || 0,
-            Number(calculatorState.acr) || 0,
-            (unitState.acr as "mg/g" | "mg/mmol" | "mg/mg") || (globalUnitPreference === "si" ? "mg/mmol" : "mg/g"),
+            getValue("acr"),
+            "mg/g",
             (calculatorState.years as 2 | 5) || 5
           );
           break;
@@ -1286,57 +1286,20 @@ export default function Dashboard() {
         case "24-hour-protein": {
           const inputMode = (calculatorState.inputMode as string) || "ratio";
           const testType = (calculatorState.testType as string) || "pcr";
-          console.log("24-hour-protein debug:", { inputMode, testType, calculatorState, unitState });
-          
           let ratioMgPerMg = 0;
           
           if (inputMode === "ratio") {
-            // Get ratio value and convert to mg/mg base unit
-            const rawRatio = parseFloat(String(calculatorState.ratioValue)) || 0;
-            const ratioUnit = unitState.ratioValue || (globalUnitPreference === "si" ? "mg/mmol" : "mg/mg");
-            
-            // Convert to mg/mg (base unit)
-            if (ratioUnit === "mg/mg") {
-              ratioMgPerMg = rawRatio;
-            } else if (ratioUnit === "mg/g") {
-              ratioMgPerMg = rawRatio / 1000; // mg/g to mg/mg
-            } else if (ratioUnit === "mg/mmol") {
-              ratioMgPerMg = rawRatio / 113.12; // mg/mmol to mg/mg
-            } else if (ratioUnit === "mg/L") {
-              ratioMgPerMg = rawRatio; // mg/L ratio is same as mg/mg (both in mg/L)
-            }
-            console.log("Using ratio mode, rawRatio:", rawRatio, "unit:", ratioUnit, "ratioMgPerMg:", ratioMgPerMg);
+            // getValue normalizes to conventional (mg/mg)
+            ratioMgPerMg = getValue("ratioValue");
           } else {
-            // Calculate from raw values
-            // First convert protein to mg/L
-            const rawProtein = parseFloat(String(calculatorState.proteinValue)) || 0;
-            const proteinUnit = unitState.proteinValue || "mg/dL";
-            let proteinMgL = rawProtein;
-            if (proteinUnit === "mg/dL") {
-              proteinMgL = rawProtein * 10; // mg/dL to mg/L
-            } else if (proteinUnit === "g/L") {
-              proteinMgL = rawProtein * 1000; // g/L to mg/L
-            }
-            // proteinUnit === "mg/L" stays as is
-            
-            // Convert creatinine to mg/L
-            const rawCreatinine = parseFloat(String(calculatorState.creatinineValue)) || 0;
-            const creatinineUnit = unitState.creatinineValue || "mg/dL";
-            let creatinineMgL = rawCreatinine;
-            if (creatinineUnit === "mg/dL") {
-              creatinineMgL = rawCreatinine * 10; // mg/dL to mg/L
-            } else if (creatinineUnit === "mmol/L") {
-              creatinineMgL = rawCreatinine * 113.12; // mmol/L to mg/L (MW creatinine = 113.12)
-            }
-            
-            // Calculate ratio in mg/mg (which equals mg/L / mg/L)
-            ratioMgPerMg = creatinineMgL > 0 ? proteinMgL / creatinineMgL : 0;
-            console.log("Using raw mode, protein:", proteinMgL, "mg/L, creatinine:", creatinineMgL, "mg/L, ratioMgPerMg:", ratioMgPerMg);
+            // getValue normalizes both to mg/dL — ratio is unit-independent
+            const proteinMgdL = getValue("proteinValue");
+            const creatinineMgdL = getValue("creatinineValue");
+            ratioMgPerMg = creatinineMgdL > 0 ? proteinMgdL / creatinineMgdL : 0;
           }
           
           // PCR/ACR in mg/mg equals estimated 24-hour protein/albumin excretion in g/day
           calculationResult = ratioMgPerMg;
-          console.log("Final result:", calculationResult, "g/day, testType:", testType);
           break;
         }
 
@@ -1806,18 +1769,14 @@ export default function Dashboard() {
           m2breakdown.push({ factor: `Diabetes: ${m2DiabetesLabel}`, points: m2DiabetesPoints, present: m2DiabetesPoints > 0 });
           m2Score += m2DiabetesPoints;
           
-          // 5. Hemoglobin: 0/1 points (convert from g/L if needed)
-          let m2Hb = Number(calculatorState.hemoglobin) || 0;
-          const m2HbUnit = unitState.hemoglobin || 'g/dL';
-          if (m2HbUnit === 'g/L') { m2Hb = m2Hb / 10; }
+          // 5. Hemoglobin: 0/1 points (getValue normalizes to g/dL)
+          const m2Hb = getValue("hemoglobin");
           const m2HbPoints = m2Hb < 11 ? 1 : 0;
           m2breakdown.push({ factor: `Hemoglobin ${m2Hb < 11 ? '<11' : '≥11'} g/dL (${m2Hb.toFixed(1)})`, points: m2HbPoints, present: m2HbPoints > 0 });
           m2Score += m2HbPoints;
           
-          // 6. Basal Glucose: 0/1 points (convert from mmol/L if needed)
-          let m2Glucose = Number(calculatorState.glucose) || 0;
-          const m2GlucoseUnit = unitState.glucose || 'mg/dL';
-          if (m2GlucoseUnit === 'mmol/L') { m2Glucose = m2Glucose * 18.0182; }
+          // 6. Basal Glucose: 0/1 points (getValue normalizes to mg/dL)
+          const m2Glucose = getValue("glucose");
           const m2GlucosePoints = m2Glucose >= 150 ? 1 : 0;
           m2breakdown.push({ factor: `Basal Glucose ${m2Glucose >= 150 ? '≥150' : '<150'} mg/dL (${Math.round(m2Glucose)})`, points: m2GlucosePoints, present: m2GlucosePoints > 0 });
           m2Score += m2GlucosePoints;
@@ -1903,11 +1862,7 @@ export default function Dashboard() {
           origMehranScore += origContrastPoints;
           
           // eGFR points: 2 points if 40-60, 4 points if 20-40, 6 points if <20
-          let origCreatinine = Number(calculatorState.creatinine) || 1.0;
-          // Handle unit conversion for creatinine
-          if (unitState['creatinine'] === 'μmol/L') {
-            origCreatinine = origCreatinine / 88.4;
-          }
+          const origCreatinine = getValue("creatinine") || 1.0;
           const origCinEgfr = Number(calculatorState.egfr) || 60;
           let origEgfrPoints = 0;
           let origEgfrLabel = '';
@@ -2004,13 +1959,13 @@ export default function Dashboard() {
             Number(calculatorState.pao2) || 0,
             Number(calculatorState.fio2) || 0,
             Number(calculatorState.platelets) || 0,
-            Number(calculatorState.bilirubin) || 0,
-            (unitState.bilirubin || 'μmol/L') as 'μmol/L' | 'mg/dL',
+            getValue("bilirubin"),
+            'mg/dL',
             Number(calculatorState.map) || 0,
             calculatorState.vasopressor as 'none' | 'dopa_low' | 'dopa_mid' | 'dopa_high',
             Number(calculatorState.gcs) || 0,
-            Number(calculatorState.creatinine) || 0,
-            (unitState.creatinine || 'mg/dL') as 'μmol/L' | 'mg/dL',
+            getValue("creatinine"),
+            'mg/dL',
             Number(calculatorState.urineOutput) || 0
           );
           calculationResult = sofaResult.score;
@@ -2676,7 +2631,7 @@ export default function Dashboard() {
       <div className="p-4 border-b border-border">
         <Label className="text-xs font-medium text-muted-foreground mb-2 block">Filter by Category</Label>
         <Select value={selectedCategory || "all"} onValueChange={(v) => setSelectedCategory(v === "all" ? null : v)}>
-          <SelectTrigger className="bg-secondary border-border text-sm">
+          <SelectTrigger className="bg-secondary border-border text-sm max-lg:min-h-[44px]">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
@@ -3259,7 +3214,7 @@ export default function Dashboard() {
                       <div className="mb-4 p-4 rounded-lg border border-primary/50 bg-primary/5 space-y-2">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium">Reorder Categories</span>
-                          <Button variant="ghost" size="sm" onClick={() => setShowCategoryCustomizer(false)} className="h-6 w-6 p-0">
+                          <Button variant="ghost" size="sm" onClick={() => setShowCategoryCustomizer(false)} className="h-6 w-6 max-lg:h-11 max-lg:w-11 p-0">
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
@@ -3272,8 +3227,8 @@ export default function Dashboard() {
                               <span className="text-sm font-medium">{category}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => { if (index > 0) { const newOrder = [...sortedCategories]; [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]]; setCategoryOrder(newOrder); } }} disabled={index === 0} className="h-7 w-7 p-0">↑</Button>
-                              <Button variant="ghost" size="sm" onClick={() => { if (index < sortedCategories.length - 1) { const newOrder = [...sortedCategories]; [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]; setCategoryOrder(newOrder); } }} disabled={index === sortedCategories.length - 1} className="h-7 w-7 p-0">↓</Button>
+                              <Button variant="ghost" size="sm" onClick={() => { if (index > 0) { const newOrder = [...sortedCategories]; [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]]; setCategoryOrder(newOrder); } }} disabled={index === 0} className="h-7 w-7 max-lg:h-11 max-lg:w-11 p-0">↑</Button>
+                              <Button variant="ghost" size="sm" onClick={() => { if (index < sortedCategories.length - 1) { const newOrder = [...sortedCategories]; [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]; setCategoryOrder(newOrder); } }} disabled={index === sortedCategories.length - 1} className="h-7 w-7 max-lg:h-11 max-lg:w-11 p-0">↓</Button>
                             </div>
                           </div>
                         ))}
@@ -3508,8 +3463,8 @@ export default function Dashboard() {
                         {input.type === "checkbox" && (
                           <div className="flex items-center space-x-2 pt-1">
                             <Checkbox
-                              checked={Boolean(calculatorState[input.id])}
-                              onCheckedChange={(checked) => handleInputChange(input.id, checked)}
+                              checked={calculatorState[input.id] === "on"}
+                              onCheckedChange={(checked) => handleInputChange(input.id, checked ? "on" : "")}
                             />
                             <Label htmlFor={input.id} className="text-sm font-normal cursor-pointer">
                               Yes
