@@ -184,10 +184,12 @@ export default function ConversionReferenceCard({ onClose }: ConversionReference
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
                   placeholder="Enter value"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e) => { if (/^\d*\.?\d*$/.test(e.target.value)) setInputValue(e.target.value); }}
                   className="text-center"
                 />
                 <p className="text-xs text-center text-muted-foreground mt-1">

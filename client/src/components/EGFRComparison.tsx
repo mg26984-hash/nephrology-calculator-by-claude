@@ -291,9 +291,11 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
             <Label htmlFor="comp-age">Age (years)</Label>
             <Input
               id="comp-age"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               value={age}
-              onChange={(e) => { setAge(e.target.value); setCalculated(false); }}
+              onChange={(e) => { if (/^\d*\.?\d*$/.test(e.target.value)) { setAge(e.target.value); setCalculated(false); } }}
               placeholder="55"
             />
             {isPediatric && (
@@ -307,10 +309,11 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
             <div className="flex gap-1">
               <Input
                 id="comp-creatinine"
-                type="number"
-                step="0.1"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
                 value={creatinine}
-                onChange={(e) => { setCreatinine(e.target.value); setCalculated(false); }}
+                onChange={(e) => { if (/^\d*\.?\d*$/.test(e.target.value)) { setCreatinine(e.target.value); setCalculated(false); } }}
                 placeholder={creatinineUnit === "mg/dL" ? "1.2" : "106"}
                 className="flex-1"
               />
@@ -346,9 +349,11 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
             <Label htmlFor="comp-weight">Weight (kg)</Label>
             <Input
               id="comp-weight"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               value={weight}
-              onChange={(e) => { setWeight(e.target.value); setCalculated(false); }}
+              onChange={(e) => { if (/^\d*\.?\d*$/.test(e.target.value)) { setWeight(e.target.value); setCalculated(false); } }}
               placeholder="70"
             />
             <p className="text-xs text-muted-foreground">For Cockcroft-Gault</p>
@@ -363,9 +368,11 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
               </Label>
               <Input
                 id="comp-height"
-                type="number"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
                 value={height}
-                onChange={(e) => { setHeight(e.target.value); setCalculated(false); }}
+                onChange={(e) => { if (/^\d*\.?\d*$/.test(e.target.value)) { setHeight(e.target.value); setCalculated(false); } }}
                 placeholder="120"
                 className="border-primary/50"
               />

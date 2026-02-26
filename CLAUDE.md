@@ -81,9 +81,19 @@ When passing numeric values from `calculatorState` to calculator functions:
 
 ## Mobile Numpad Inputs (CRITICAL)
 
-All calculator `type: "number"` inputs render as `<input type="text" inputMode="decimal">` in Dashboard.tsx, NOT `type="number"`. This guarantees a numpad keyboard on all mobile devices.
+ALL numeric `<Input>` fields — in Dashboard.tsx AND in sub-components (EGFRComparison, PEPathway, ConversionReferenceCard) — MUST use `type="text" inputMode="decimal" autoComplete="off"`, NOT `type="number"`. This guarantees a numpad keyboard on all mobile devices.
 
-1. **Never use `type="number"`** on calculator inputs — always `type="text"` with `inputMode="decimal"`
+1. **Never use `type="number"`** on any numeric input anywhere in the codebase — always `type="text"` with `inputMode="decimal"`
 2. **onChange uses regex validation** — `/^\d*\.?\d*$/` blocks non-numeric characters while allowing decimal typing (e.g., "5." is preserved, not truncated to "5")
 3. **Values stored as strings** — all calculation code uses `Number(val) || 0` which handles strings identically
-4. **Floating calculate button** uses `useKeyboardOffset()` hook (Visual Viewport API) to stay above the mobile keyboard
+4. **Sub-component inputs follow the same pattern** — EGFRComparison (age, creatinine, weight, height), PEPathway (patient age, D-dimer), ConversionReferenceCard (converter value) all use `type="text" inputMode="decimal"` with the regex guard in onChange
+
+## Mobile Calculate Button (CRITICAL)
+
+The calculate button uses a two-tier approach to avoid overlapping inputs on short calculators:
+
+1. **Inline button** — always visible on all screen sizes, in the natural document flow inside the card. Uses `ref={inlineCalculateRef}` for visibility tracking.
+2. **Compact circular FAB** — a 56×56px (`w-14 h-14 rounded-full`) floating action button that ONLY appears when the inline button scrolls out of view (via IntersectionObserver). Positioned bottom-right, hidden on desktop (`lg:hidden`).
+3. **No full-width fixed bar** — the old full-width fixed bottom bar is removed. Never re-add it — it overlaps inputs on short calculators (2-3 inputs).
+4. **No spacer div** — the old 80px spacer that compensated for the fixed bar is removed.
+5. **Keyboard awareness** — the FAB repositions above the mobile keyboard via `useKeyboardOffset()` hook (Visual Viewport API): `bottom: Math.max(16, keyboardOffset + 16)`

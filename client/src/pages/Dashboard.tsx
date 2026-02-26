@@ -372,7 +372,9 @@ export default function Dashboard() {
   const conversionRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultCardRef = useRef<HTMLDivElement>(null);
-  
+  const inlineCalculateRef = useRef<HTMLButtonElement>(null);
+  const [inlineButtonVisible, setInlineButtonVisible] = useState(true);
+
   // Favorites state with localStorage persistence
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem('nephrology-calculator-favorites');
@@ -522,6 +524,18 @@ export default function Dashboard() {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Track inline calculate button visibility for FAB
+  useEffect(() => {
+    const el = inlineCalculateRef.current;
+    if (!el) { setInlineButtonVisible(true); return; }
+    const observer = new IntersectionObserver(
+      ([entry]) => setInlineButtonVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [selectedCalculatorId]);
 
   // Add calculator to recent list (called when selecting a calculator)
   const addToRecent = useCallback((calcId: string) => {
@@ -3573,13 +3587,14 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <Separator className="my-6 max-lg:hidden" />
+                  <Separator className="my-6" />
 
-                  {/* Desktop Calculate Button (inline) */}
+                  {/* Inline Calculate Button (all screen sizes) */}
                   <Button
+                    ref={inlineCalculateRef}
                     onClick={handleCalculate}
                     disabled={!allRequiredFilled}
-                    className="w-full hidden lg:flex"
+                    className="w-full"
                     size="lg"
                   >
                     <Calculator className="w-4 h-4 mr-2" />
@@ -3588,20 +3603,18 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Mobile Sticky Calculate Button */}
-              <div className="lg:hidden fixed left-0 right-0 z-40 p-3 bg-background/80 backdrop-blur-lg border-t border-border" style={{ bottom: `${keyboardOffset}px`, paddingBottom: keyboardOffset > 0 ? '0.75rem' : 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+              {/* Compact FAB — appears when inline button scrolls out of view (mobile only) */}
+              {!inlineButtonVisible && (
                 <Button
                   onClick={handleCalculate}
                   disabled={!allRequiredFilled}
-                  className="w-full"
-                  size="lg"
+                  size="icon"
+                  className="lg:hidden fixed z-40 w-14 h-14 rounded-full shadow-lg"
+                  style={{ right: 16, bottom: Math.max(16, keyboardOffset + 16) }}
                 >
-                  <Calculator className="w-4 h-4 mr-2" />
-                  Calculate
+                  <Calculator className="w-5 h-5" />
                 </Button>
-              </div>
-              {/* Spacer for sticky button on mobile — grows when keyboard pushes button up */}
-              <div className="lg:hidden" style={{ height: `${80 + keyboardOffset}px` }} />
+              )}
 
               {/* Result Card */}
               {result !== null && (() => {

@@ -593,10 +593,12 @@ export function PEPathway({ onClose }: PEPathwayProps) {
             </Label>
             <Input
               id="pe-age"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               placeholder="e.g. 55"
               value={patientAge}
-              onChange={(e) => setPatientAge(e.target.value)}
+              onChange={(e) => { if (/^\d*\.?\d*$/.test(e.target.value)) setPatientAge(e.target.value); }}
             />
           </div>
           <div>
@@ -605,10 +607,12 @@ export function PEPathway({ onClose }: PEPathwayProps) {
             </Label>
             <Input
               id="pe-ddimer"
-              type="number"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               placeholder="e.g. 600"
               value={ddimerValue}
-              onChange={(e) => setDdimerValue(e.target.value)}
+              onChange={(e) => { if (/^\d*\.?\d*$/.test(e.target.value)) setDdimerValue(e.target.value); }}
             />
           </div>
         </div>
