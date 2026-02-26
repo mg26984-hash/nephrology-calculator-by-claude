@@ -127,3 +127,36 @@ The EGFRComparison component uses a responsive layout for equation result cards:
 ## Result Color Coding IDs (CRITICAL)
 
 Calculator IDs in `resultColorCoding.ts` switch cases MUST exactly match the calculator IDs in `calculatorData.ts`. Use hyphens (e.g., `'curb-65'` not `'curb65'`). Always verify the case string matches the calculator's `id` field.
+
+## Fuzzy Search System
+
+Search is powered by `client/src/lib/fuzzySearch.ts` with Damerau-Levenshtein distance. Used in both the sidebar search and Cmd+K command palette.
+
+### Scoring Tiers (scoreCalculator)
+```
+100 — exact searchTerm match
+ 80 — searchTerm starts with query
+ 60 — searchTerm contains query
+ 50 — name contains query
+ 45 — ID contains query
+ 40 — all query tokens found across searchable text
+ 20 — description contains query
+ 10 — category contains query
+  8 — fuzzy 1-edit on searchTerm (fallback, only when score=0)
+  5 — fuzzy 1-edit on name word or ID
+  3 — fuzzy 2-edit on searchTerm (query ≥ 4 chars)
+```
+
+### searchTerms Convention
+Every calculator MUST have a `searchTerms` array in calculatorData.ts. Include:
+1. **Abbreviations** — "fena", "egfr", "ktv", "uacr"
+2. **Clinical synonyms** — "prerenal workup", "sepsis 3", "stage 3a"
+3. **Drug names** — "apixaban reversal", "venofer", "solumedrol"
+4. **Common misspellings** — "schwarz", "bazet", "cockroft"
+5. **Related concepts** — "tbi" for GCS, "d-dimer" for Wells PE
+
+### Rules
+- Fuzzy matching only fires when substring score is 0 (never outranks exact matches)
+- 2-edit fuzzy requires query ≥ 4 chars (e.g., "kdpe" → "kdpi")
+- `normalizeForSearch` strips `-_/()₂²`, lowercases, collapses whitespace
+- Cmd+K uses `cmdkFuzzyFilter` (binary 0/1), sidebar uses `scoreCalculator` (ranked)
