@@ -540,12 +540,12 @@ export default function Dashboard() {
 
   // Scroll to result card after it renders
   useEffect(() => {
-    if (shouldScrollToResult && result !== null) {
-      setShouldScrollToResult(false);
-      requestAnimationFrame(() => {
-        resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
+    if (!shouldScrollToResult || result === null) return;
+    setShouldScrollToResult(false);
+    const timer = setTimeout(() => {
+      resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+    return () => clearTimeout(timer);
   }, [shouldScrollToResult, result]);
 
   // Add calculator to recent list (called when selecting a calculator)
