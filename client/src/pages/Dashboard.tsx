@@ -3372,7 +3372,6 @@ export default function Dashboard() {
                   {selectedCalculator.whenToUse && (
                     <p className="text-sm text-muted-foreground mt-1">{selectedCalculator.whenToUse}</p>
                   )}
-                  <p className="text-muted-foreground mt-1 hidden lg:block">{selectedCalculator.description}</p>
                 </div>
                 <button
                   onClick={(e) => toggleFavorite(selectedCalculator.id, e)}
