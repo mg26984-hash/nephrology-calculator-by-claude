@@ -238,7 +238,7 @@ export const calculators: Calculator[] = [
       ">20% decline in 1 year suggests acute process",
       ">30% acute dip acceptable after RAAS inhibitor initiation",
     ],
-    references: ["KDIGO 2024 CKD Guideline, Practice Point 2.1.3"],
+    references: ["KDIGO CKD Work Group. KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of Chronic Kidney Disease. Kidney Int. 2024;105(4S):S117-S314"],
   },
   {
     id: "kfre",
@@ -302,7 +302,10 @@ export const calculators: Calculator[] = [
       "Unreliable in diuretic use, CKD, contrast nephropathy, pigment nephropathy",
       "Must interpret with clinical context (volume status, urine sediment)",
     ],
-    references: ["Steiner RW. Am J Med. 1984;77(4):699-702"],
+    references: [
+      "Espinel CH. The FENa test: use in the differential diagnosis of acute renal failure. JAMA. 1976;236(6):579-581",
+      "Steiner RW. Interpreting the fractional excretion of sodium. Am J Med. 1984;77(4):699-702",
+    ],
   },
   {
     id: "feurea",
@@ -421,7 +424,10 @@ export const calculators: Calculator[] = [
       "Use with clinical context: volume status, medications (NSAIDs, ACE-I), urine output",
       "Auto-converts urea to BUN: BUN = urea / 2.14 (for mg/dL values)",
     ],
-    references: ["Levey AS et al. Kidney Int. 2005;67(6):2089-2100"],
+    references: [
+      "Morgan DB et al. Renal failure as a cause of a raised BUN/creatinine ratio. Br Med J. 1977;2(6092):929-932",
+      "Hosten AO. BUN and Creatinine. In: Walker HK, Hall WD, Hurst JW, eds. Clinical Methods. 3rd ed. Butterworths; 1990:874-878",
+    ],
   },
   {
     id: "osmolal-gap",
@@ -506,7 +512,10 @@ export const calculators: Calculator[] = [
       "Normal on regular diet: 8-9",
       "Utility debated; some experts recommend direct urine K measurement",
     ],
-    references: ["Ethier JH et al. Am J Kidney Dis. 1990;15(4):309-315"],
+    references: [
+      "Ethier JH et al. The transtubular potassium concentration in patients with hypokalemia and hyperkalemia. Am J Kidney Dis. 1990;15(4):309-315",
+      "Kamel KS, Halperin ML. Intrarenal urea recycling leads to a higher rate of renal excretion of potassium: an hypothesis with clinical implications. Curr Opin Nephrol Hypertens. 2011;20(5):547-554",
+    ],
   },
   {
     id: "water-deficit-hypernatremia",
@@ -533,7 +542,7 @@ export const calculators: Calculator[] = [
       "Rapid correction risks cerebral edema",
       "Address underlying cause (diabetes insipidus, insensible losses)",
     ],
-    references: ["Adrogue HJ, Madias NE. N Engl J Med. 2000;342(20):1493-1499"],
+    references: ["Adrogué HJ, Madias NE. N Engl J Med. 2000;342(20):1493-1499"],
   },
   {
     id: "corrected-sodium-hyperglycemia",
@@ -558,7 +567,10 @@ export const calculators: Calculator[] = [
       "Critical in DKA and HHS management",
       "Corrected Na guides treatment decisions",
     ],
-    references: ["Katz MA. N Engl J Med. 1973;289(16):843-844"],
+    references: [
+      "Katz MA. Hyperglycemia-induced hyponatremia — calculation of expected serum sodium depression. N Engl J Med. 1973;289(16):843-844",
+      "Hillier TA et al. Hyponatremia: evaluating the correction factor for hyperglycemia. Am J Med. 1999;106(4):399-403",
+    ],
   },
   {
     id: "sodium-correction-rate",
@@ -608,7 +620,7 @@ export const calculators: Calculator[] = [
       "Chronic hyponatremia (>48h or unknown duration) requires slower correction",
       "Adrogue-Madias formula: ΔNa per 1L infusate = (Infusate Na − Serum Na) / (TBW + 1)",
     ],
-    references: ["Adrogue HJ, Madias NE. N Engl J Med. 2000;342(20):1493-1499"],
+    references: ["Adrogué HJ, Madias NE. N Engl J Med. 2000;342(20):1493-1499"],
   },
   {
     id: "sodium-deficit",
@@ -635,7 +647,7 @@ export const calculators: Calculator[] = [
       "Acute hyponatremia (<48 hours) needs faster correction",
       "Chronic hyponatremia needs slower correction",
     ],
-    references: ["Adrogue HJ, Madias NE. N Engl J Med. 2000;342(20):1493-1499"],
+    references: ["Adrogué HJ, Madias NE. N Engl J Med. 2000;342(20):1493-1499"],
   },
   {
     id: "corrected-calcium",
@@ -716,7 +728,7 @@ export const calculators: Calculator[] = [
       "Use first morning void when possible",
       "Target: 30-50% reduction with treatment",
     ],
-    references: ["KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of CKD"],
+    references: ["KDIGO CKD Work Group. KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of Chronic Kidney Disease. Kidney Int. 2024;105(4S):S117-S314"],
   },
   {
     id: "upcr",
@@ -744,7 +756,10 @@ export const calculators: Calculator[] = [
       "UPCR (g/g) ≈ 24-hour proteinuria (g/24h)",
       "GN monitoring: target <0.5-1 g/g with immunosuppression",
     ],
-    references: ["Levey AS et al. UpToDate 2024"],
+    references: [
+      "Ginsberg JM et al. Use of single voided urine samples to estimate quantitative proteinuria. N Engl J Med. 1983;309(25):1543-1546",
+      "KDIGO CKD Work Group. KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of Chronic Kidney Disease. Kidney Int. 2024;105(4S):S117-S314",
+    ],
   },
   {
     id: "acr-from-pcr",
@@ -804,7 +819,7 @@ export const calculators: Calculator[] = [
       "Timed 24-hour collection recommended for clinical decisions in edge cases",
       "Less accurate with tubular or overflow proteinuria",
     ],
-    references: ["KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of CKD"],
+    references: ["KDIGO CKD Work Group. KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of Chronic Kidney Disease. Kidney Int. 2024;105(4S):S117-S314"],
   },
   {
     id: "igan-prediction",
@@ -870,7 +885,7 @@ export const calculators: Calculator[] = [
       "Does not account for residual kidney function",
       "Post-BUN must be drawn correctly (slow flow or stop pump 15 sec before)",
     ],
-    references: ["KDOQI Hemodialysis Adequacy Guidelines 2015"],
+    references: ["National Kidney Foundation. KDOQI Clinical Practice Guideline for Hemodialysis Adequacy: 2015 Update. Am J Kidney Dis. 2015;66(5):884-930"],
   },
   {
     id: "total-body-water",
@@ -926,7 +941,7 @@ export const calculators: Calculator[] = [
       "TBW can be estimated using Watson formula (approx. 60% of body weight for men, 50% for women)",
       "Target Kt/V ≥1.4 for thrice-weekly HD (minimum 1.2)",
     ],
-    references: ["Daugirdas JT. Adv Ren Replace Ther. 1995;2(4):295-304", "KDOQI Clinical Practice Guideline for Hemodialysis Adequacy: 2015 Update"],
+    references: ["Daugirdas JT. Adv Ren Replace Ther. 1995;2(4):295-304", "National Kidney Foundation. KDOQI Clinical Practice Guideline for Hemodialysis Adequacy: 2015 Update. Am J Kidney Dis. 2015;66(5):884-930"],
   },
   {
     id: "pd-weekly-ktv",
@@ -956,7 +971,7 @@ export const calculators: Calculator[] = [
       "Low Kt/V associated with malnutrition, inflammation, mortality",
       "Preserve residual kidney function",
     ],
-    references: ["ISPD Guidelines 2020: Peritoneal Dialysis Adequacy"],
+    references: ["Brown EA et al. Survival of functionally anuric patients on automated peritoneal dialysis: the European APD Outcome Study. J Am Soc Nephrol. 2003;14(11):2948-2957", "Brown EA et al. ISPD practice recommendations: prescribing high-quality goal-directed peritoneal dialysis. Perit Dial Int. 2020;40(3):244-253"],
   },
   {
     id: "residual-rkf-ktv",
@@ -1038,7 +1053,7 @@ export const calculators: Calculator[] = [
       "Recommended by KDOQI as preferred adequacy measure",
       "Complex calculation - use HD machine software",
     ],
-    references: ["KDOQI Clinical Practice Guideline for Hemodialysis Adequacy: 2015 Update"],
+    references: ["National Kidney Foundation. KDOQI Clinical Practice Guideline for Hemodialysis Adequacy: 2015 Update. Am J Kidney Dis. 2015;66(5):884-930"],
   },
   {
     id: "urr",
@@ -1064,7 +1079,7 @@ export const calculators: Calculator[] = [
       "URR 65% ≈ Kt/V 1.2; URR 70% ≈ Kt/V 1.4",
       "Post-BUN must be drawn correctly (slow flow or stop pump 15 sec)",
     ],
-    references: ["KDOQI Hemodialysis Adequacy Guidelines 2015"],
+    references: ["National Kidney Foundation. KDOQI Clinical Practice Guideline for Hemodialysis Adequacy: 2015 Update. Am J Kidney Dis. 2015;66(5):884-930"],
   },
   {
     id: "iron-deficit",
@@ -1178,7 +1193,10 @@ export const calculators: Calculator[] = [
       "EPTS ≤20% candidates get priority for KDPI ≤20% kidneys nationally",
       "Important for patient counseling on accepting organ offers",
     ],
-    references: ["OPTN/UNOS Kidney Allocation System. Final Rule 2014"],
+    references: [
+      "OPTN. A Guide to Calculating and Interpreting the Estimated Post-Transplant Survival (EPTS) Score. HRSA. 2024",
+      "Massie AB et al. A risk index for living donor kidney transplantation. Am J Transplant. 2016;16(7):2077-2084",
+    ],
   },
   {
     id: "banff-classification",
@@ -1404,7 +1422,10 @@ export const calculators: Calculator[] = [
       "CKD patients: obesity increases CVD risk",
       "Use adjusted body weight for drug dosing in obesity",
     ],
-    references: ["WHO BMI Classification"],
+    references: [
+      "WHO Expert Consultation. Appropriate body-mass index for Asian populations and its implications for policy and intervention strategies. Lancet. 2004;363(9403):157-163",
+      "World Health Organization. Obesity: preventing and managing the global epidemic. WHO Technical Report Series 894. Geneva: WHO; 2000",
+    ],
   },
   {
     id: "bsa-dubois",
@@ -1559,7 +1580,7 @@ export const calculators: Calculator[] = [
       "Associated with cardiovascular mortality in CKD and dialysis",
       "Management: phosphate binders, dietary restriction, dialysis adequacy, calcimimetics",
     ],
-    references: ["KDIGO 2017 Clinical Practice Guideline Update for CKD-MBD"],
+    references: ["KDIGO CKD-MBD Work Group. KDIGO 2017 Clinical Practice Guideline Update for the Diagnosis, Evaluation, Prevention, and Treatment of CKD-MBD. Kidney Int Suppl. 2017;7(1):1-59"],
   },
   // ============================================================================
   // SYSTEMIC DISEASES & SCORES
@@ -1727,7 +1748,10 @@ export const calculators: Calculator[] = [
       "Guides treatment intensity and goals of care",
       "Useful in transplant candidate evaluation",
     ],
-    references: ["Fried LP et al. J Gerontol A Biol Sci Med Sci. 2001;56(3):M146-M156"],
+    references: [
+      "Morley JE et al. A simple frailty questionnaire (FRAIL) predicts outcomes in middle aged African Americans. J Nutr Health Aging. 2012;16(7):601-608",
+      "van Kan GA et al. The IANA Task Force on frailty assessment of older people in clinical practice. J Nutr Health Aging. 2008;12(1):29-37",
+    ],
   },
   {
     id: "prisma-7",
@@ -1826,7 +1850,7 @@ export const calculators: Calculator[] = [
       "Male gender, previous stone, family history increase risk",
       "Obesity increases recurrence risk",
     ],
-    references: ["Siener R, Hesse A. Urol Res. 2003;31(3):169-173"],
+    references: ["Rule AD et al. The ROKS nomogram for predicting a second symptomatic stone episode. J Am Soc Nephrol. 2014;25(12):2878-2886"],
   },
   // ============================================================================
   // BONE & FRACTURE RISK
@@ -1949,9 +1973,9 @@ export const calculators: Calculator[] = [
       "Statins may have a protective effect — continue if patient is already on therapy",
     ],
     references: [
-      "Mehran R, et al. A contemporary simple risk score for prediction of contrast-associated acute kidney injury after percutaneous coronary intervention: derivation and validation from an observational registry. Lancet. 2021;398(10315):1974-1983",
-      "Mehran R, et al. A simple risk score for prediction of contrast-induced nephropathy after percutaneous coronary intervention. J Am Coll Cardiol. 2004;44(7):1393-1399",
-      "Weisbord SD, et al. Outcomes after Angiography with Sodium Bicarbonate and Acetylcysteine. N Engl J Med. 2018;378(7):603-614 (PRESERVE trial)",
+      "Mehran R et al. A contemporary simple risk score for prediction of contrast-associated acute kidney injury after percutaneous coronary intervention: derivation and validation from an observational registry. Lancet. 2021;398(10315):1974-1983",
+      "Mehran R et al. A simple risk score for prediction of contrast-induced nephropathy after percutaneous coronary intervention. J Am Coll Cardiol. 2004;44(7):1393-1399",
+      "Weisbord SD et al. Outcomes after Angiography with Sodium Bicarbonate and Acetylcysteine. N Engl J Med. 2018;378(7):603-614 (PRESERVE trial)",
       "KDIGO Clinical Practice Guideline for AKI. Kidney Int Suppl. 2012;2:1-138",
     ],
   },
@@ -2233,7 +2257,8 @@ export const calculators: Calculator[] = [
       "In transplant patients: immunosuppression may blunt fever response",
     ],
     references: [
-      "Royal College of Physicians. NEWS2 (2017)",
+      "Royal College of Physicians. National Early Warning Score (NEWS) 2: Standardising the assessment of acute-illness severity in the NHS. London: RCP; 2017",
+      "Smith GB et al. The ability of the National Early Warning Score (NEWS) to discriminate patients at risk of early cardiac arrest, unanticipated intensive care unit admission, and death. Resuscitation. 2013;84(4):465-470",
       "NICE NG51: Sepsis recognition, diagnosis and early management (2024)",
     ],
   },
