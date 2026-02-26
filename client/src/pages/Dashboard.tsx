@@ -2483,13 +2483,14 @@ export default function Dashboard() {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
           }
         }
-        // Scroll to result after DOM updates
-        scrollToResultCard();
       }
     } catch (error) {
       console.error("Calculation error:", error);
       setResult(null);
       setResultInterpretation("Error in calculation. Please check your inputs.");
+    } finally {
+      // Always scroll to result after any calculation (including early-return calculators like Banff, KDPI, FRAX, Mehran)
+      scrollToResultCard();
     }
   }, [selectedCalculator, calculatorState, normalizeValue, scrollToResultCard]);
 
