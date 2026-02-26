@@ -3617,7 +3617,7 @@ export default function Dashboard() {
                 <Button
                   onClick={handleCalculate}
                   disabled={!allRequiredFilled}
-                  className="lg:hidden fixed z-40 w-14 h-14 rounded-full shadow-lg text-xs font-bold"
+                  className="lg:hidden fixed z-40 w-14 h-14 rounded-full shadow-lg text-xs font-bold animate-pulse"
                   style={{ right: 16, bottom: Math.max(16, keyboardOffset + 16) }}
                 >
                   Go!
