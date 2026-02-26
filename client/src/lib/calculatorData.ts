@@ -51,7 +51,7 @@ export const calculators: Calculator[] = [
   {
     id: "ckd-epi-creatinine",
     name: "CKD-EPI Creatinine (2021)",
-    searchTerms: ["ckd epi", "ckdepi", "egfr", "gfr", "creatinine clearance", "estimated gfr", "ckd-epi 2021", "epi"],
+    searchTerms: ["ckd epi", "ckdepi", "egfr", "gfr", "creatinine clearance", "estimated gfr", "ckd-epi 2021", "epi", "stage 3", "stage 3a", "stage 3b", "stage 4", "stage 5", "ckd staging", "kidney function"],
     description: "Estimated GFR using serum creatinine (most commonly used)",
     whenToUse: "Use for routine eGFR estimation in adults with stable kidney function.",
     category: "Kidney Function & CKD Risk",
@@ -90,7 +90,7 @@ export const calculators: Calculator[] = [
   {
     id: "cockcroft-gault",
     name: "Cockcroft-Gault Creatinine Clearance",
-    searchTerms: ["cg", "cockcroft", "gault", "crcl", "creatinine clearance", "drug dosing", "cockroft"],
+    searchTerms: ["cg", "cockcroft", "gault", "crcl", "creatinine clearance", "drug dosing", "cockroft", "medication dosing", "dose adjustment", "renal dosing"],
     description: "Estimates creatinine clearance; still used for drug dosing",
     whenToUse: "Use when drug dosing requires creatinine clearance rather than eGFR.",
     category: "Kidney Function & CKD Risk",
@@ -124,7 +124,7 @@ export const calculators: Calculator[] = [
   {
     id: "schwartz-pediatric",
     name: "Schwartz Pediatric eGFR",
-    searchTerms: ["schwartz", "pediatric", "children", "kids", "bedside schwartz", "peds egfr", "paediatric"],
+    searchTerms: ["schwartz", "pediatric", "children", "kids", "bedside schwartz", "peds egfr", "paediatric", "neonatal", "adolescent", "child gfr", "schwarz"],
     description: "Estimates GFR in children and adolescents",
     whenToUse: "Use to estimate kidney function in children and adolescents under 18.",
     category: "Kidney Function & CKD Risk",
@@ -150,7 +150,7 @@ export const calculators: Calculator[] = [
   {
     id: "kinetic-egfr",
     name: "Kinetic eGFR (KeGFR)",
-    searchTerms: ["kegfr", "kinetic", "acute kidney injury", "aki egfr", "rapidly changing creatinine", "dynamic egfr"],
+    searchTerms: ["kegfr", "kinetic", "acute kidney injury", "aki egfr", "rapidly changing creatinine", "dynamic egfr", "rising creatinine", "trending creatinine", "real time gfr"],
     description: "Estimates GFR when creatinine is rapidly changing (AKI or recovery)",
     whenToUse: "Use when serum creatinine is acutely rising or falling, such as in AKI or recovery.",
     category: "Kidney Function & CKD Risk",
@@ -188,7 +188,7 @@ export const calculators: Calculator[] = [
   {
     id: "ckd-epi-cystatin-c",
     name: "CKD-EPI Creatinine-Cystatin C Combined",
-    searchTerms: ["cystatin", "cystatin c", "combined egfr", "ckd epi cystatin", "cysc"],
+    searchTerms: ["cystatin", "cystatin c", "combined egfr", "ckd epi cystatin", "cysc", "cystatin c egfr", "cr cysc", "muscle mass egfr"],
     description: "More accurate eGFR using both creatinine and cystatin C",
     whenToUse: "Use when creatinine-based eGFR may be inaccurate, such as in extremes of muscle mass or diet.",
     category: "Kidney Function & CKD Risk",
@@ -216,7 +216,7 @@ export const calculators: Calculator[] = [
   {
     id: "egfr-slope",
     name: "Annual eGFR Decline (Slope)",
-    searchTerms: ["slope", "decline", "progression", "egfr slope", "rate of decline", "kidney function decline"],
+    searchTerms: ["slope", "decline", "progression", "egfr slope", "rate of decline", "kidney function decline", "ckd progression", "rapid decliner", "gfr trajectory"],
     description: "Calculates rate of kidney function decline over time",
     whenToUse: "Use to assess CKD progression rate and guide referral timing.",
     category: "Kidney Function & CKD Risk",
@@ -243,7 +243,7 @@ export const calculators: Calculator[] = [
   {
     id: "kfre",
     name: "Kidney Failure Risk Equation (KFRE)",
-    searchTerms: ["kfre", "kidney failure risk", "esrd risk", "dialysis risk", "tangri"],
+    searchTerms: ["kfre", "kidney failure risk", "esrd risk", "dialysis risk", "tangri", "kidney failure risk equation", "5 year risk", "2 year risk", "esrd prediction"],
     description: "Predicts 2 and 5-year probability of kidney failure",
     whenToUse: "Use in CKD stages 3\u20135 to predict risk of needing dialysis or transplant.",
     category: "Kidney Function & CKD Risk",
@@ -276,7 +276,7 @@ export const calculators: Calculator[] = [
   {
     id: "fena",
     name: "Fractional Excretion of Sodium (FENa)",
-    searchTerms: ["fena", "fe na", "fractional sodium", "prerenal", "aki workup"],
+    searchTerms: ["fena", "fe na", "fractional sodium", "prerenal", "aki workup", "prerenal workup", "fractional excretion sodium", "prerenal vs intrinsic", "atn vs prerenal"],
     description: "Differentiates prerenal from intrinsic AKI",
     whenToUse: "Use to differentiate prerenal AKI from acute tubular necrosis in oliguric patients.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -310,7 +310,7 @@ export const calculators: Calculator[] = [
   {
     id: "feurea",
     name: "Fractional Excretion of Urea (FEUrea)",
-    searchTerms: ["feurea", "fe urea", "fractional urea", "diuretic", "prerenal diuretics"],
+    searchTerms: ["feurea", "fe urea", "fractional urea", "diuretic", "prerenal diuretics", "fractional excretion urea", "on diuretics aki", "diuretic prerenal"],
     description: "Alternative to FENa, more reliable with diuretic use",
     whenToUse: "Use instead of FENa when the patient is on diuretics.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -337,7 +337,7 @@ export const calculators: Calculator[] = [
   {
     id: "anion-gap",
     name: "Serum Anion Gap",
-    searchTerms: ["ag", "anion gap", "metabolic acidosis", "nagma", "hagma", "gap"],
+    searchTerms: ["ag", "anion gap", "metabolic acidosis", "nagma", "hagma", "gap", "high anion gap", "non anion gap", "mudpiles", "goldmark"],
     description: "First step in metabolic acidosis workup",
     whenToUse: "Use as the first step when evaluating metabolic acidosis.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -368,7 +368,7 @@ export const calculators: Calculator[] = [
   {
     id: "delta-gap",
     name: "Delta Gap (Delta-Delta Ratio)",
-    searchTerms: ["delta delta", "delta ratio", "mixed acid base", "delta gap"],
+    searchTerms: ["delta delta", "delta ratio", "mixed acid base", "delta gap", "delta delta ratio", "mixed metabolic acidosis", "concurrent nagma"],
     description: "Identifies mixed acid-base disorders",
     whenToUse: "Use to detect a concurrent non-anion-gap metabolic acidosis or metabolic alkalosis.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -395,7 +395,7 @@ export const calculators: Calculator[] = [
   {
     id: "bun-creatinine-ratio",
     name: "BUN/Creatinine Ratio",
-    searchTerms: ["bun cr", "bun creatinine", "prerenal azotemia", "bun ratio"],
+    searchTerms: ["bun cr", "bun creatinine", "prerenal azotemia", "bun ratio", "bun cr ratio", "gi bleed bun", "upper gi bleed"],
     description: "Differentiates prerenal azotemia from intrinsic renal disease; supports AKI workup",
     whenToUse: "Use to help differentiate prerenal azotemia from intrinsic kidney disease.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -432,7 +432,7 @@ export const calculators: Calculator[] = [
   {
     id: "osmolal-gap",
     name: "Serum Osmolal Gap",
-    searchTerms: ["osmolar gap", "osmolal", "toxic alcohol", "methanol", "ethylene glycol", "osm gap"],
+    searchTerms: ["osmolar gap", "osmolal", "toxic alcohol", "methanol", "ethylene glycol", "osm gap", "toxic ingestion", "alcohol poisoning", "isopropanol"],
     description: "Screens for toxic alcohol ingestion",
     whenToUse: "Use when toxic alcohol ingestion (methanol, ethylene glycol) is suspected.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -460,7 +460,7 @@ export const calculators: Calculator[] = [
   {
     id: "urine-anion-gap",
     name: "Urine Anion Gap (for RTA diagnosis)",
-    searchTerms: ["urine ag", "rta", "renal tubular acidosis", "urine anion", "uag"],
+    searchTerms: ["urine ag", "rta", "renal tubular acidosis", "urine anion", "uag", "type 1 rta", "type 2 rta", "type 4 rta", "distal rta", "proximal rta", "nagma workup"],
     description: "Differentiates renal vs. GI causes of normal AG acidosis",
     whenToUse: "Use to differentiate renal tubular acidosis from GI bicarbonate losses in non-anion-gap metabolic acidosis.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -489,7 +489,7 @@ export const calculators: Calculator[] = [
   {
     id: "ttkg",
     name: "Transtubular Potassium Gradient (TTKG)",
-    searchTerms: ["ttkg", "potassium gradient", "hyperkalemia workup", "hypokalemia workup", "potassium disorder"],
+    searchTerms: ["ttkg", "potassium gradient", "hyperkalemia workup", "hypokalemia workup", "potassium disorder", "aldosterone", "transtubular potassium", "cortical collecting duct"],
     description: "Helps distinguish renal vs. extrarenal causes of K disorders",
     whenToUse: "Use to assess whether the kidney is appropriately excreting or retaining potassium.",
     category: "Electrolytes & Acid-Base",
@@ -520,7 +520,7 @@ export const calculators: Calculator[] = [
   {
     id: "water-deficit-hypernatremia",
     name: "Water Deficit in Hypernatremia",
-    searchTerms: ["water deficit", "free water", "hypernatremia", "high sodium", "dehydration"],
+    searchTerms: ["water deficit", "free water", "hypernatremia", "high sodium", "dehydration", "hypernatremia treatment", "hypernatremia correction", "free water deficit"],
     description: "Calculates free water needed to correct hypernatremia",
     whenToUse: "Use to calculate the free water deficit when correcting hypernatremia.",
     category: "Electrolytes & Acid-Base",
@@ -547,7 +547,7 @@ export const calculators: Calculator[] = [
   {
     id: "corrected-sodium-hyperglycemia",
     name: "Corrected Sodium in Hyperglycemia",
-    searchTerms: ["corrected sodium", "corrected na", "hyperglycemia sodium", "dka sodium", "pseudohyponatremia"],
+    searchTerms: ["corrected sodium", "corrected na", "hyperglycemia sodium", "dka sodium", "pseudohyponatremia", "glucose correction sodium", "dka hyponatremia", "katz formula"],
     description: "Adjusts sodium for osmotic effect of hyperglycemia",
     whenToUse: "Use to determine the true sodium level when blood glucose is significantly elevated.",
     category: "Electrolytes & Acid-Base",
@@ -575,7 +575,7 @@ export const calculators: Calculator[] = [
   {
     id: "sodium-correction-rate",
     name: "Sodium Correction Rate in Hyponatremia",
-    searchTerms: ["sodium correction", "na correction", "hyponatremia rate", "saline infusion", "ods", "osmotic demyelination"],
+    searchTerms: ["sodium correction", "na correction", "hyponatremia rate", "saline infusion", "ods", "osmotic demyelination", "cpm", "central pontine myelinolysis", "hyponatremia treatment", "adrogue madias", "3 percent saline"],
     description: "Calculates rate of sodium change with fluid administration",
     whenToUse: "Use to monitor safe sodium correction rate and avoid osmotic demyelination syndrome.",
     category: "Electrolytes & Acid-Base",
@@ -625,7 +625,7 @@ export const calculators: Calculator[] = [
   {
     id: "sodium-deficit",
     name: "Sodium Deficit in Hyponatremia",
-    searchTerms: ["sodium deficit", "na deficit", "hyponatremia replacement", "low sodium"],
+    searchTerms: ["sodium deficit", "na deficit", "hyponatremia replacement", "low sodium", "hyponatremia treatment", "sodium replacement"],
     description: "Calculates total sodium needed to correct hyponatremia",
     whenToUse: "Use to estimate the amount of sodium needed to correct symptomatic hyponatremia.",
     category: "Electrolytes & Acid-Base",
@@ -652,7 +652,7 @@ export const calculators: Calculator[] = [
   {
     id: "corrected-calcium",
     name: "Corrected Calcium for Albumin",
-    searchTerms: ["corrected calcium", "corrected ca", "albumin calcium", "calcium correction", "hypocalcemia", "low albumin calcium"],
+    searchTerms: ["corrected calcium", "corrected ca", "albumin calcium", "calcium correction", "hypocalcemia", "low albumin calcium", "adjusted calcium", "true calcium"],
     description: "Adjusts total calcium for hypoalbuminemia",
     whenToUse: "Use to adjust total calcium when serum albumin is low.",
     category: "Electrolytes & Acid-Base",
@@ -677,7 +677,7 @@ export const calculators: Calculator[] = [
   {
     id: "qtc-bazett",
     name: "Corrected QT Interval (QTc - Bazett)",
-    searchTerms: ["qtc", "qt interval", "bazett", "long qt", "qt prolongation", "corrected qt"],
+    searchTerms: ["qtc", "qt interval", "bazett", "long qt", "qt prolongation", "corrected qt", "qtc calculation", "torsades risk", "drug qt prolongation", "bazet"],
     description: "Calculates heart rate-corrected QT interval",
     whenToUse: "Use to screen for QT prolongation before starting QT-prolonging medications.",
     category: "Electrolytes & Acid-Base",
@@ -706,7 +706,7 @@ export const calculators: Calculator[] = [
   {
     id: "uacr",
     name: "Urine Albumin-to-Creatinine Ratio (uACR)",
-    searchTerms: ["uacr", "acr", "albumin creatinine ratio", "albuminuria", "microalbuminuria", "macroalbuminuria"],
+    searchTerms: ["uacr", "acr", "albumin creatinine ratio", "albuminuria", "microalbuminuria", "macroalbuminuria", "a1", "a2", "a3", "diabetic nephropathy screening", "urine albumin"],
     description: "Quantifies albuminuria - key CKD marker",
     whenToUse: "Use for CKD screening and staging of albuminuria per KDIGO guidelines.",
     category: "Proteinuria & Glomerular Disease",
@@ -733,7 +733,7 @@ export const calculators: Calculator[] = [
   {
     id: "upcr",
     name: "Urine Protein-to-Creatinine Ratio (UPCR)",
-    searchTerms: ["upcr", "pcr", "protein creatinine ratio", "proteinuria", "nephrotic", "spot urine protein"],
+    searchTerms: ["upcr", "pcr", "protein creatinine ratio", "proteinuria", "nephrotic", "spot urine protein", "nephrotic range", "urine protein", "proteinuria quantification"],
     description: "Quantifies total proteinuria - preferred in nephrotic syndrome",
     whenToUse: "Use to quantify proteinuria, especially when monitoring nephrotic-range protein loss.",
     category: "Proteinuria & Glomerular Disease",
@@ -764,7 +764,7 @@ export const calculators: Calculator[] = [
   {
     id: "acr-from-pcr",
     name: "Estimated ACR from PCR (conversion)",
-    searchTerms: ["acr from pcr", "pcr to acr", "convert pcr", "protein to albumin"],
+    searchTerms: ["acr from pcr", "pcr to acr", "convert pcr", "protein to albumin", "acr conversion", "pcr conversion", "proteinuria conversion"],
     description: "Estimates albumin-creatinine ratio from total protein",
     whenToUse: "Use to estimate albumin-creatinine ratio when only total protein-creatinine ratio is available.",
     category: "Proteinuria & Glomerular Disease",
@@ -788,7 +788,7 @@ export const calculators: Calculator[] = [
   {
     id: "24-hour-protein",
     name: "24-Hour Protein Excretion Estimator",
-    searchTerms: ["24 hour", "24 hr", "24h protein", "24-hour", "24hr", "daily protein", "protein excretion", "spot to 24"],
+    searchTerms: ["24 hour", "24 hr", "24h protein", "24-hour", "24hr", "daily protein", "protein excretion", "spot to 24", "daily proteinuria", "protein quantification", "24 hour urine protein"],
     description: "Converts spot urine PCR/ACR to estimated 24-hour protein excretion",
     whenToUse: "Use to convert spot urine protein ratios to estimated daily protein excretion.",
     category: "Proteinuria & Glomerular Disease",
@@ -824,7 +824,7 @@ export const calculators: Calculator[] = [
   {
     id: "igan-prediction",
     name: "International IgA Nephropathy (IgAN) Prediction Tool",
-    searchTerms: ["igan", "iga", "iga nephropathy", "berger", "bergers disease", "iga prediction"],
+    searchTerms: ["igan", "iga", "iga nephropathy", "berger", "bergers disease", "iga prediction", "igan risk", "mesangial", "iga prognosis"],
     description: "Predicts 2, 5, and 7-year risk of kidney failure in IgAN",
     whenToUse: "Use after biopsy-confirmed IgA nephropathy to predict kidney failure risk.",
     category: "Proteinuria & Glomerular Disease",
@@ -856,7 +856,7 @@ export const calculators: Calculator[] = [
   {
     id: "ktv-hemodialysis",
     name: "Kt/V (Hemodialysis Adequacy)",
-    searchTerms: ["ktv", "kt/v", "kt v", "dialysis adequacy", "daugirdas", "hemodialysis dose", "hd adequacy"],
+    searchTerms: ["ktv", "kt/v", "kt v", "dialysis adequacy", "daugirdas", "hemodialysis dose", "hd adequacy", "kdoqi target", "dialysis dose", "urea clearance"],
     description: "Measures dialysis dose - most important adequacy parameter",
     whenToUse: "Use to assess hemodialysis adequacy per KDOQI guidelines.",
     category: "Dialysis Adequacy",
@@ -890,7 +890,7 @@ export const calculators: Calculator[] = [
   {
     id: "total-body-water",
     name: "Total Body Water (Watson Formula)",
-    searchTerms: ["tbw", "total body water", "watson", "body water"],
+    searchTerms: ["tbw", "total body water", "watson", "body water", "watson formula", "body water estimation"],
     description: "Estimates total body water for Kt/V calculations",
     whenToUse: "Use to estimate total body water for Kt/V and sodium correction calculations.",
     category: "Dialysis Adequacy",
@@ -917,7 +917,7 @@ export const calculators: Calculator[] = [
   {
     id: "hd-session-duration",
     name: "Hemodialysis Session Duration from Target Kt/V",
-    searchTerms: ["hd duration", "session time", "dialysis time", "hd session", "hemodialysis duration"],
+    searchTerms: ["hd duration", "session time", "dialysis time", "hd session", "hemodialysis duration", "dialysis prescription", "time on dialysis"],
     description: "Calculates required session time to achieve target Kt/V based on dialyzer clearance and total body water",
     whenToUse: "Use to calculate the hemodialysis session time needed to reach a target Kt/V.",
     category: "Dialysis Adequacy",
@@ -946,7 +946,7 @@ export const calculators: Calculator[] = [
   {
     id: "pd-weekly-ktv",
     name: "Peritoneal Dialysis Weekly Kt/V",
-    searchTerms: ["pd", "peritoneal", "capd", "apd", "pd ktv", "peritoneal dialysis", "pd adequacy"],
+    searchTerms: ["pd", "peritoneal", "capd", "apd", "pd ktv", "peritoneal dialysis", "pd adequacy", "ccpd", "automated pd", "continuous ambulatory", "pd dose"],
     description: "Assesses solute clearance adequacy in CAPD/APD",
     whenToUse: "Use to assess solute clearance adequacy in peritoneal dialysis patients.",
     category: "Dialysis Adequacy",
@@ -976,7 +976,7 @@ export const calculators: Calculator[] = [
   {
     id: "residual-rkf-ktv",
     name: "Residual Kidney Function (RKF) Kt/V Component",
-    searchTerms: ["rkf", "residual kidney", "residual function", "residual renal"],
+    searchTerms: ["rkf", "residual kidney", "residual function", "residual renal", "residual urine output", "residual clearance"],
     description: "Quantifies contribution of residual kidney function to clearance",
     whenToUse: "Use to quantify residual kidney function contribution to dialysis adequacy.",
     category: "Dialysis Adequacy",
@@ -1004,7 +1004,7 @@ export const calculators: Calculator[] = [
   {
     id: "equilibrated-ktv",
     name: "Equilibrated Kt/V (eKt/V) for Hemodialysis",
-    searchTerms: ["ektv", "equilibrated", "urea rebound", "ekt/v", "post dialysis rebound"],
+    searchTerms: ["ektv", "equilibrated", "urea rebound", "ekt/v", "post dialysis rebound", "equilibrated kt/v", "true ktv", "rebound correction"],
     description: "Accounts for post-dialysis urea rebound",
     whenToUse: "Use to account for post-dialysis urea rebound when assessing HD adequacy.",
     category: "Dialysis Adequacy",
@@ -1030,7 +1030,7 @@ export const calculators: Calculator[] = [
   {
     id: "standard-ktv",
     name: "Standard Kt/V (stdKt/V) - Weekly Normalized Dose",
-    searchTerms: ["stdktv", "standard ktv", "weekly ktv", "std kt/v", "weekly clearance"],
+    searchTerms: ["stdktv", "standard ktv", "weekly ktv", "std kt/v", "weekly clearance", "casino lopez", "continuous equivalent"],
     description: "Converts intermittent HD dose to continuous equivalent clearance",
     whenToUse: "Use to compare dialysis doses across different modalities and schedules.",
     category: "Dialysis Adequacy",
@@ -1058,7 +1058,7 @@ export const calculators: Calculator[] = [
   {
     id: "urr",
     name: "Urea Reduction Ratio (URR)",
-    searchTerms: ["urr", "urea reduction", "dialysis adequacy simple"],
+    searchTerms: ["urr", "urea reduction", "dialysis adequacy simple", "urea reduction ratio", "simple dialysis adequacy"],
     description: "Simplest measure of hemodialysis adequacy",
     whenToUse: "Use as a quick bedside check of hemodialysis adequacy.",
     category: "Dialysis Adequacy",
@@ -1084,7 +1084,7 @@ export const calculators: Calculator[] = [
   {
     id: "iron-deficit",
     name: "Iron Deficit (Ganzoni Formula)",
-    searchTerms: ["iron", "ganzoni", "iron deficiency", "anemia", "iron replacement", "iv iron"],
+    searchTerms: ["iron", "ganzoni", "iron deficiency", "anemia", "iron replacement", "iv iron", "iron sucrose", "ferric carboxymaltose", "venofer", "injectafer", "feraheme", "ckd anemia"],
     description: "Calculates total iron needed to correct anemia",
     whenToUse: "Use to calculate IV iron replacement dose for iron deficiency anemia.",
     category: "Dialysis Adequacy",
@@ -1115,7 +1115,7 @@ export const calculators: Calculator[] = [
   {
     id: "kdpi",
     name: "Kidney Donor Profile Index (KDPI)",
-    searchTerms: ["kdpi", "donor profile", "donor quality", "optn", "donor index", "kidney donor"],
+    searchTerms: ["kdpi", "donor profile", "donor quality", "optn", "donor index", "kidney donor", "donor risk index", "dri", "deceased donor", "kdri"],
     description: "OPTN 2024 Refit formula (8 factors, no race/HCV) - predicts donor kidney quality and graft survival",
     whenToUse: "Use to assess deceased donor kidney quality and guide organ allocation decisions.",
     category: "Transplantation",
@@ -1171,7 +1171,7 @@ export const calculators: Calculator[] = [
   {
     id: "epts",
     name: "Estimated Post-Transplant Survival (EPTS)",
-    searchTerms: ["epts", "post transplant survival", "transplant survival", "recipient survival"],
+    searchTerms: ["epts", "post transplant survival", "transplant survival", "recipient survival", "recipient score", "longevity matching", "epts score"],
     description: "Predicts recipient longevity after transplant",
     whenToUse: "Use to estimate recipient longevity benefit and guide organ allocation.",
     category: "Transplantation",
@@ -1201,7 +1201,7 @@ export const calculators: Calculator[] = [
   {
     id: "banff-classification",
     name: "Banff Classification for Kidney Transplant Rejection",
-    searchTerms: ["banff", "rejection", "transplant rejection", "biopsy", "allograft", "abmr", "tcmr", "antibody mediated"],
+    searchTerms: ["banff", "rejection", "transplant rejection", "biopsy", "allograft", "abmr", "tcmr", "antibody mediated", "ifta", "interstitial fibrosis", "tubular atrophy", "banff 2022", "banff 2023", "t cell mediated", "borderline rejection", "c4d", "dsa", "donor specific antibody"],
     description: "Banff 2022 Renal Allograft Biopsy Analyzer - Comprehensive diagnostic tool based on updated Banff classification criteria",
     whenToUse: "Use to classify kidney transplant biopsy findings per Banff 2022 criteria.",
     category: "Transplantation",
@@ -1303,7 +1303,7 @@ export const calculators: Calculator[] = [
   {
     id: "ascvd-risk",
     name: "ASCVD Risk Calculator (with CKD Considerations)",
-    searchTerms: ["ascvd", "cardiovascular risk", "cv risk", "heart risk", "statin", "10 year risk", "cholesterol risk"],
+    searchTerms: ["ascvd", "cardiovascular risk", "cv risk", "heart risk", "statin", "10 year risk", "cholesterol risk", "pooled cohort", "pce", "statin indication", "lipid management"],
     description: "Estimates 10-year cardiovascular disease risk",
     whenToUse: "Use to estimate 10-year cardiovascular risk in CKD patients for statin and aspirin decisions.",
     category: "Cardiovascular Risk",
@@ -1337,7 +1337,7 @@ export const calculators: Calculator[] = [
   {
     id: "cha2ds2-vasc",
     name: "CHA\u2082DS\u2082-VASc Score",
-    searchTerms: ["chad", "chads", "chadvasc", "chad vasc", "chadsvasc", "chads2", "cha2ds2", "cha2ds2vasc", "chads vasc", "afib", "af", "atrial fibrillation", "stroke risk", "anticoagulation"],
+    searchTerms: ["chad", "chads", "chadvasc", "chad vasc", "chadsvasc", "chads2", "cha2ds2", "cha2ds2vasc", "chads vasc", "afib", "af", "atrial fibrillation", "stroke risk", "anticoagulation", "afib stroke", "anticoag indication"],
     description: "Stroke risk stratification in atrial fibrillation",
     whenToUse: "Use to determine if anticoagulation is indicated in patients with atrial fibrillation.",
     category: "Cardiovascular Risk",
@@ -1390,7 +1390,7 @@ export const calculators: Calculator[] = [
   {
     id: "bmi",
     name: "Body Mass Index (BMI)",
-    searchTerms: ["bmi", "body mass", "obesity", "overweight", "underweight", "weight status"],
+    searchTerms: ["bmi", "body mass", "obesity", "overweight", "underweight", "weight status", "obesity class", "morbid obesity", "body mass index"],
     description: "Calculates BMI from height and weight",
     whenToUse: "Use to classify weight status and guide nutritional or surgical interventions.",
     category: "Anthropometric & Body Composition",
@@ -1430,7 +1430,7 @@ export const calculators: Calculator[] = [
   {
     id: "bsa-dubois",
     name: "BSA – Du Bois & Du Bois Formula",
-    searchTerms: ["bsa", "body surface area", "dubois", "du bois", "surface area"],
+    searchTerms: ["bsa", "body surface area", "dubois", "du bois", "surface area", "bsa dosing", "chemo dosing"],
     description: "Calculates body surface area (traditional formula)",
     whenToUse: "Use when drug dosing or clinical parameters require body surface area.",
     category: "Anthropometric & Body Composition",
@@ -1456,7 +1456,7 @@ export const calculators: Calculator[] = [
   {
     id: "bsa-mosteller",
     name: "Body Surface Area - Mosteller Formula",
-    searchTerms: ["mosteller", "bsa mosteller", "surface area simple"],
+    searchTerms: ["mosteller", "bsa mosteller", "surface area simple", "simple bsa"],
     description: "Calculates BSA using simplified Mosteller formula",
     whenToUse: "Use as a simplified alternative for BSA calculation in clinical practice.",
     category: "Anthropometric & Body Composition",
@@ -1481,7 +1481,7 @@ export const calculators: Calculator[] = [
   {
     id: "devine-ibw",
     name: "Devine Ideal Body Weight",
-    searchTerms: ["ibw", "ideal body weight", "devine", "ideal weight"],
+    searchTerms: ["ibw", "ideal body weight", "devine", "ideal weight", "tidal volume weight", "ardsnet weight"],
     description: "Calculates ideal body weight for height and sex",
     whenToUse: "Use for weight-based drug dosing and ventilator tidal volume settings.",
     category: "Anthropometric & Body Composition",
@@ -1506,7 +1506,7 @@ export const calculators: Calculator[] = [
   {
     id: "lean-body-weight",
     name: "Lean Body Weight (Janmahasatian)",
-    searchTerms: ["lbw", "lean body", "lean weight", "lean mass", "janmahasatian"],
+    searchTerms: ["lbw", "lean body", "lean weight", "lean mass", "janmahasatian", "fat free mass"],
     description: "Estimates lean body mass for drug dosing",
     whenToUse: "Use for drug dosing in obese patients where lean mass is more appropriate.",
     category: "Anthropometric & Body Composition",
@@ -1531,7 +1531,7 @@ export const calculators: Calculator[] = [
   {
     id: "adjusted-body-weight",
     name: "Adjusted Body Weight (for Obese Patients)",
-    searchTerms: ["abw", "adjusted weight", "obese weight", "adjusted body weight", "dosing weight"],
+    searchTerms: ["abw", "adjusted weight", "obese weight", "adjusted body weight", "dosing weight", "obese dosing", "obese drug dosing"],
     description: "Calculates adjusted weight for drug dosing in obesity",
     whenToUse: "Use for aminoglycoside and vancomycin dosing in obese patients.",
     category: "Anthropometric & Body Composition",
@@ -1559,7 +1559,7 @@ export const calculators: Calculator[] = [
   {
     id: "ca-pho-product",
     name: "Calcium-Phosphate Product (CKD-MBD)",
-    searchTerms: ["ca pho", "calcium phosphate", "ca x p", "cap", "ckd mbd", "vascular calcification", "mineral bone"],
+    searchTerms: ["ca pho", "calcium phosphate", "ca x p", "cap", "ckd mbd", "vascular calcification", "mineral bone", "calcium phosphorus", "calciphylaxis risk", "ckd mineral bone disease"],
     description: "Calculates risk of vascular calcification",
     whenToUse: "Use to assess vascular calcification risk in CKD-MBD patients.",
     category: "CKD-Mineral Bone Disease",
@@ -1588,7 +1588,7 @@ export const calculators: Calculator[] = [
   {
     id: "sledai-2k",
     name: "SLEDAI-2K Disease-Activity Score",
-    searchTerms: ["sledai", "sle", "lupus", "lupus activity", "disease activity"],
+    searchTerms: ["sledai", "sle", "lupus", "lupus activity", "disease activity", "flare", "lupus flare", "sledai score", "lupus nephritis activity"],
     description: "Measures SLE disease activity",
     whenToUse: "Use to quantify SLE disease activity and guide treatment escalation or tapering.",
     category: "Systemic Diseases & Scores",
@@ -1638,7 +1638,7 @@ export const calculators: Calculator[] = [
   {
     id: "slicc-2012",
     name: "SLICC 2012 SLE Classification Criteria",
-    searchTerms: ["slicc", "sle classification", "lupus criteria", "lupus diagnosis"],
+    searchTerms: ["slicc", "sle classification", "lupus criteria", "lupus diagnosis", "lupus classification", "slicc criteria"],
     description: "Classifies patients as having SLE",
     whenToUse: "Use to formally classify whether a patient meets criteria for systemic lupus erythematosus.",
     category: "Systemic Diseases & Scores",
@@ -1681,7 +1681,7 @@ export const calculators: Calculator[] = [
   {
     id: "das28-esr",
     name: "DAS28-ESR (Disease Activity Score)",
-    searchTerms: ["das28", "das 28", "disease activity score", "rheumatoid arthritis", "ra disease activity", "das28 esr", "ra score"],
+    searchTerms: ["das28", "das 28", "disease activity score", "rheumatoid arthritis", "ra disease activity", "das28 esr", "ra score", "remission", "ra remission", "das28 score", "treat to target"],
     description: "Measures rheumatoid arthritis disease activity using 28 joint counts, ESR, and patient global assessment",
     whenToUse: "Use to measure rheumatoid arthritis disease activity and guide DMARD therapy.",
     category: "Systemic Diseases & Scores",
@@ -1723,7 +1723,7 @@ export const calculators: Calculator[] = [
   {
     id: "frail-scale",
     name: "FRAIL Scale",
-    searchTerms: ["frail", "frailty", "elderly", "geriatric", "frail scale"],
+    searchTerms: ["frail", "frailty", "elderly", "geriatric", "frail scale", "frailty screening", "preoperative frailty"],
     description: "Assesses frailty in older adults",
     whenToUse: "Use to screen for frailty in older adults before major interventions or surgery.",
     category: "Systemic Diseases & Scores",
@@ -1756,7 +1756,7 @@ export const calculators: Calculator[] = [
   {
     id: "prisma-7",
     name: "PRISMA-7 Frailty Score",
-    searchTerms: ["prisma", "prisma7", "frailty screening"],
+    searchTerms: ["prisma", "prisma7", "frailty screening", "prisma score", "frailty assessment"],
     description: "Brief frailty screening tool",
     whenToUse: "Use as a brief frailty screening tool in community or primary care settings.",
     category: "Systemic Diseases & Scores",
@@ -1794,7 +1794,7 @@ export const calculators: Calculator[] = [
   {
     id: "curb-65",
     name: "CURB-65 Pneumonia Severity Score",
-    searchTerms: ["curb", "curb65", "curb 65", "pneumonia", "pneumonia severity", "cap"],
+    searchTerms: ["curb", "curb65", "curb 65", "pneumonia", "pneumonia severity", "cap", "community acquired pneumonia", "pneumonia score", "pneumonia admission"],
     description: "Predicts pneumonia severity and mortality",
     whenToUse: "Use to assess pneumonia severity and decide between outpatient vs. inpatient management.",
     category: "Systemic Diseases & Scores",
@@ -1858,7 +1858,7 @@ export const calculators: Calculator[] = [
   {
     id: "frax-simplified",
     name: "FRAX Fracture Risk Assessment",
-    searchTerms: ["frax", "fracture risk", "osteoporosis", "bone fracture", "hip fracture", "dexa"],
+    searchTerms: ["frax", "fracture risk", "osteoporosis", "bone fracture", "hip fracture", "dexa", "bone density", "t score", "bmd"],
     description: "Estimates 10-year probability of major osteoporotic and hip fractures",
     whenToUse: "Use to estimate fracture risk and guide osteoporosis treatment decisions.",
     category: "Bone & Fracture Risk",
@@ -1903,7 +1903,7 @@ export const calculators: Calculator[] = [
   {
     id: "cin-mehran-score",
     name: "Contrast-Associated AKI Risk - Mehran 2 Score (Model 1)",
-    searchTerms: ["mehran", "mehran 2", "contrast aki", "ca-aki", "cin", "contrast nephropathy", "pci risk", "contrast risk"],
+    searchTerms: ["mehran", "mehran 2", "contrast aki", "ca-aki", "cin", "contrast nephropathy", "pci risk", "contrast risk", "contrast induced nephropathy", "pre pci"],
     description: "Predicts risk of contrast-associated acute kidney injury (CA-AKI) after percutaneous coronary intervention using the updated Mehran 2 pre-procedural risk score (2021)",
     whenToUse: "Use before PCI to stratify contrast-associated AKI risk and guide prevention.",
     category: "Contrast-Induced Nephropathy",
@@ -1982,7 +1982,7 @@ export const calculators: Calculator[] = [
   {
     id: "cin-mehran-original-score",
     name: "Contrast-Induced Nephropathy (CIN) Risk - Original Mehran Score",
-    searchTerms: ["mehran original", "mehran 2004", "cin risk", "contrast induced nephropathy", "original mehran"],
+    searchTerms: ["mehran original", "mehran 2004", "cin risk", "contrast induced nephropathy", "original mehran", "classic mehran"],
     description: "Predicts risk of contrast-induced nephropathy after percutaneous coronary intervention using the original Mehran score (2004)",
     whenToUse: "Use to estimate contrast-induced nephropathy risk using the original 2004 scoring model.",
     category: "Contrast-Induced Nephropathy",
@@ -2056,7 +2056,7 @@ export const calculators: Calculator[] = [
   {
     id: "lund-malmo-revised",
     name: "Lund-Malmö Revised (LMR)",
-    searchTerms: ["lmr", "lund malmo", "lund malmö", "swedish egfr", "european egfr"],
+    searchTerms: ["lmr", "lund malmo", "lund malmö", "swedish egfr", "european egfr", "lund malmo revised", "scandinavian egfr"],
     description: "Swedish equation with improved accuracy across GFR, age, and BMI intervals",
     whenToUse: "Use as an alternative eGFR equation with improved accuracy across BMI ranges.",
     category: "Kidney Function & CKD Risk",
@@ -2098,7 +2098,7 @@ export const calculators: Calculator[] = [
   {
     id: "bis1-elderly",
     name: "BIS1 (Berlin Initiative Study)",
-    searchTerms: ["bis1", "bis 1", "berlin initiative", "elderly egfr", "geriatric egfr", "older adults egfr"],
+    searchTerms: ["bis1", "bis 1", "berlin initiative", "elderly egfr", "geriatric egfr", "older adults egfr", "over 70 egfr", "aged egfr"],
     description: "Optimized for elderly patients ≥70 years old",
     whenToUse: "Use for eGFR estimation in patients aged 70 years and older.",
     category: "Kidney Function & CKD Risk",
@@ -2143,7 +2143,7 @@ export const calculators: Calculator[] = [
   {
     id: "fas-full-age-spectrum",
     name: "FAS (Full Age Spectrum)",
-    searchTerms: ["fas", "full age spectrum", "all ages egfr", "pediatric adult egfr"],
+    searchTerms: ["fas", "full age spectrum", "all ages egfr", "pediatric adult egfr", "fas egfr", "any age egfr"],
     description: "Works across all ages from children (2+) to elderly without discontinuity",
     whenToUse: "Use when a single eGFR equation is needed across pediatric and adult age ranges.",
     category: "Kidney Function & CKD Risk",
@@ -2197,7 +2197,7 @@ export const calculators: Calculator[] = [
   {
     id: "qsofa",
     name: "qSOFA (Quick SOFA)",
-    searchTerms: ["qsofa", "quick sofa", "sepsis screening", "sepsis bedside", "q sofa"],
+    searchTerms: ["qsofa", "quick sofa", "sepsis screening", "sepsis bedside", "q sofa", "bedside sepsis", "quick sepsis", "qsofa score"],
     description: "Quick bedside sepsis screening tool using vital signs and mental status",
     whenToUse: "Use for rapid bedside sepsis screening outside the ICU.",
     category: "Critical Care",
@@ -2228,7 +2228,7 @@ export const calculators: Calculator[] = [
   {
     id: "news2",
     name: "NEWS2 (National Early Warning Score 2)",
-    searchTerms: ["news", "news2", "early warning", "deterioration", "ews", "national early warning"],
+    searchTerms: ["news", "news2", "early warning", "deterioration", "ews", "national early warning", "news score", "vital signs score", "ward deterioration"],
     description: "Standardized early warning score for detecting clinical deterioration",
     whenToUse: "Use for standardized clinical deterioration monitoring on general wards.",
     category: "Critical Care",
@@ -2265,7 +2265,7 @@ export const calculators: Calculator[] = [
   {
     id: "sofa",
     name: "SOFA (Sequential Organ Failure Assessment)",
-    searchTerms: ["sofa", "organ failure", "sepsis score", "icu score", "sequential organ"],
+    searchTerms: ["sofa", "organ failure", "sepsis score", "icu score", "sequential organ", "sepsis 3", "organ dysfunction", "sofa score"],
     description: "Assesses organ dysfunction in critically ill patients; defines sepsis-3",
     whenToUse: "Use to quantify organ dysfunction severity and define sepsis in ICU patients.",
     category: "Critical Care",
@@ -2303,7 +2303,7 @@ export const calculators: Calculator[] = [
   {
     id: "wells-pe",
     name: "Wells Score for Pulmonary Embolism (PE)",
-    searchTerms: ["wells pe", "pulmonary embolism", "pe score", "pe risk", "wells criteria pe"],
+    searchTerms: ["wells pe", "pulmonary embolism", "pe score", "pe risk", "wells criteria pe", "d-dimer", "cta", "pe workup", "pe probability"],
     description: "Clinical prediction rule for estimating probability of PE",
     whenToUse: "Use to estimate clinical probability of pulmonary embolism before imaging.",
     category: "Critical Care",
@@ -2338,7 +2338,7 @@ export const calculators: Calculator[] = [
   {
     id: "wells-dvt",
     name: "Wells Score for Deep Vein Thrombosis (DVT)",
-    searchTerms: ["wells dvt", "deep vein thrombosis", "dvt score", "dvt risk", "wells criteria dvt"],
+    searchTerms: ["wells dvt", "deep vein thrombosis", "dvt score", "dvt risk", "wells criteria dvt", "dvt workup", "leg swelling", "dvt probability"],
     description: "Clinical prediction rule for estimating probability of DVT",
     whenToUse: "Use to estimate clinical probability of deep vein thrombosis before ultrasound.",
     category: "Critical Care",
@@ -2377,7 +2377,7 @@ export const calculators: Calculator[] = [
   {
     id: "gcs",
     name: "Glasgow Coma Scale (GCS)",
-    searchTerms: ["gcs", "glasgow", "coma scale", "consciousness", "neuro score"],
+    searchTerms: ["gcs", "glasgow", "coma scale", "consciousness", "neuro score", "tbi", "head injury", "traumatic brain injury", "level of consciousness"],
     description: "Standardized neurological assessment for level of consciousness",
     whenToUse: "Use to assess and communicate level of consciousness in acute neurological injury.",
     category: "Critical Care",
@@ -2427,7 +2427,7 @@ export const calculators: Calculator[] = [
   {
     id: "pesi",
     name: "PESI (Pulmonary Embolism Severity Index)",
-    searchTerms: ["pesi", "pe severity", "pulmonary embolism severity", "pe prognosis"],
+    searchTerms: ["pesi", "pe severity", "pulmonary embolism severity", "pe prognosis", "pe mortality", "pe risk stratification", "spesi"],
     description: "Risk stratification for 30-day mortality in confirmed PE",
     whenToUse: "Use to risk-stratify confirmed pulmonary embolism for outpatient vs. inpatient management.",
     category: "Critical Care",
@@ -2469,7 +2469,7 @@ export const calculators: Calculator[] = [
   {
     id: "apache2",
     name: "APACHE II Score",
-    searchTerms: ["apache", "apache ii", "apache 2", "icu mortality", "icu severity", "critical care score"],
+    searchTerms: ["apache", "apache ii", "apache 2", "icu mortality", "icu severity", "critical care score", "acute physiology", "icu prognosis", "apache score"],
     description: "ICU mortality prediction based on acute physiology and chronic health",
     whenToUse: "Use to predict ICU mortality and benchmark severity of illness on admission.",
     category: "Critical Care",
@@ -2521,7 +2521,7 @@ export const calculators: Calculator[] = [
   {
     id: "sirs",
     name: "SIRS Criteria",
-    searchTerms: ["sirs", "systemic inflammatory", "inflammatory response", "sepsis criteria"],
+    searchTerms: ["sirs", "systemic inflammatory", "inflammatory response", "sepsis criteria", "sepsis 1", "old sepsis criteria", "sirs criteria"],
     description: "Systemic Inflammatory Response Syndrome criteria for sepsis screening",
     whenToUse: "Use to screen for systemic inflammatory response as part of sepsis evaluation.",
     category: "Critical Care",
@@ -2565,7 +2565,7 @@ export const calculators: Calculator[] = [
   {
     id: "genevaRevised",
     name: "Revised Geneva Score",
-    searchTerms: ["geneva", "revised geneva", "pe probability", "pe clinical probability"],
+    searchTerms: ["geneva", "revised geneva", "pe probability", "pe clinical probability", "geneva score", "pe prediction"],
     description: "Clinical prediction rule for pulmonary embolism probability",
     whenToUse: "Use as an alternative to Wells score for PE probability assessment.",
     category: "Critical Care",
@@ -2627,7 +2627,7 @@ export const calculators: Calculator[] = [
   {
     id: "hasbled",
     name: "HAS-BLED Score",
-    searchTerms: ["hasbled", "has bled", "has-bled", "bleeding risk", "anticoagulation bleeding", "bleed risk"],
+    searchTerms: ["hasbled", "has bled", "has-bled", "bleeding risk", "anticoagulation bleeding", "bleed risk", "bleeding score", "anticoag bleeding risk"],
     description: "Bleeding risk assessment for patients on anticoagulation",
     whenToUse: "Use to assess bleeding risk before initiating or continuing anticoagulation.",
     category: "Critical Care",
@@ -2693,7 +2693,7 @@ export const calculators: Calculator[] = [
   {
     id: "perc",
     name: "PERC Rule",
-    searchTerms: ["perc", "pe rule out", "pulmonary embolism rule out", "perc rule"],
+    searchTerms: ["perc", "pe rule out", "pulmonary embolism rule out", "perc rule", "low risk pe", "pe exclusion", "perc criteria"],
     description: "Pulmonary Embolism Rule-out Criteria for low-risk patients",
     whenToUse: "Use to safely rule out PE in low-risk patients without further testing.",
     category: "Critical Care",
@@ -2755,7 +2755,7 @@ export const calculators: Calculator[] = [
   {
     id: "anticoagReversal",
     name: "Anticoagulation Reversal Guide",
-    searchTerms: ["anticoag reversal", "warfarin reversal", "doac reversal", "inr reversal", "bleeding reversal", "idarucizumab", "andexanet"],
+    searchTerms: ["anticoag reversal", "warfarin reversal", "doac reversal", "inr reversal", "bleeding reversal", "idarucizumab", "andexanet", "apixaban reversal", "rivaroxaban reversal", "dabigatran reversal", "praxbind", "andexxa", "kcentra", "pcc", "coumadin reversal"],
     description: "Evidence-based reversal strategies for major bleeding",
     whenToUse: "Use to determine the appropriate reversal agent and dosing for major bleeding on anticoagulants.",
     category: "Critical Care",
@@ -2814,7 +2814,7 @@ export const calculators: Calculator[] = [
   {
     id: "steroid-conversion",
     name: "Steroid Conversion Calculator",
-    searchTerms: ["steroid", "steroid conversion", "prednisone", "prednisolone", "methylpred", "dexamethasone", "hydrocortisone", "corticosteroid"],
+    searchTerms: ["steroid", "steroid conversion", "prednisone", "prednisolone", "methylpred", "dexamethasone", "hydrocortisone", "corticosteroid", "glucocorticoid", "steroid equivalency", "steroid equivalent", "solumedrol", "medrol", "decadron"],
     description: "Convert between equivalent doses of corticosteroids",
     whenToUse: "Use to convert between equivalent doses when switching corticosteroids.",
     category: "Miscellaneous",
@@ -2853,7 +2853,7 @@ export const calculators: Calculator[] = [
   {
     id: "plasma-exchange",
     name: "Plasma Exchange (PLEX) Dosing",
-    searchTerms: ["plex", "plasmapheresis", "plasma exchange", "tpe", "therapeutic plasma exchange"],
+    searchTerms: ["plex", "plasmapheresis", "plasma exchange", "tpe", "therapeutic plasma exchange", "plex dosing", "ttp treatment", "anti gbm treatment"],
     description: "Calculate plasma volume and exchange parameters for plasmapheresis",
     whenToUse: "Use to calculate plasma volume and replacement fluid for therapeutic plasma exchange.",
     category: "Miscellaneous",
@@ -2913,7 +2913,7 @@ export const calculators: Calculator[] = [
   {
     id: "albumin-corrected-ag",
     name: "Albumin-Corrected Anion Gap",
-    searchTerms: ["corrected ag", "albumin ag", "albumin corrected anion gap", "adjusted anion gap"],
+    searchTerms: ["corrected ag", "albumin ag", "albumin corrected anion gap", "adjusted anion gap", "figge", "hypoalbuminemia anion gap", "true anion gap"],
     description: "Anion gap corrected for hypoalbuminemia (more accurate)",
     whenToUse: "Use when serum albumin is low to get a more accurate anion gap.",
     category: "Electrolytes & Acid-Base",
@@ -2950,7 +2950,7 @@ export const calculators: Calculator[] = [
   {
     id: "bicarbonate-deficit",
     name: "Bicarbonate Deficit",
-    searchTerms: ["bicarb deficit", "hco3 deficit", "bicarbonate replacement", "bicarb replacement", "sodium bicarbonate"],
+    searchTerms: ["bicarb deficit", "hco3 deficit", "bicarbonate replacement", "bicarb replacement", "sodium bicarbonate", "metabolic acidosis treatment", "bicarb drip", "nahco3"],
     description: "Estimated HCO₃⁻ deficit for metabolic acidosis correction",
     whenToUse: "Use to estimate the bicarbonate dose needed to partially correct severe metabolic acidosis.",
     category: "Electrolytes & Acid-Base",
@@ -2982,7 +2982,7 @@ export const calculators: Calculator[] = [
   {
     id: "calculated-osmolality",
     name: "Calculated Serum Osmolality",
-    searchTerms: ["osmolality", "serum osm", "calculated osm", "osmolarity"],
+    searchTerms: ["osmolality", "serum osm", "calculated osm", "osmolarity", "serum osmolality", "plasma osmolality"],
     description: "Estimated serum osmolality from sodium, glucose, and BUN",
     whenToUse: "Use to calculate expected serum osmolality and compare with measured values for osmolar gap.",
     category: "Electrolytes & Acid-Base",
@@ -3018,7 +3018,7 @@ export const calculators: Calculator[] = [
   {
     id: "creatinine-clearance-24h",
     name: "Creatinine Clearance (24h Urine)",
-    searchTerms: ["24h crcl", "24 hour creatinine", "measured crcl", "24h urine", "urine creatinine clearance"],
+    searchTerms: ["24h crcl", "24 hour creatinine", "measured crcl", "24h urine", "urine creatinine clearance", "measured gfr", "24 hour urine", "urine collection"],
     description: "Measured creatinine clearance from 24-hour urine collection",
     whenToUse: "Use when a measured creatinine clearance from 24-hour urine collection is needed.",
     category: "Kidney Function & CKD Risk",
@@ -3058,7 +3058,7 @@ export const calculators: Calculator[] = [
   {
     id: "ekfc-creatinine",
     name: "EKFC (European Kidney Function Consortium)",
-    searchTerms: ["ekfc", "european kidney", "european egfr"],
+    searchTerms: ["ekfc", "european kidney", "european egfr", "european kidney function consortium", "ekfc egfr"],
     description: "Advanced full age spectrum eGFR with population-specific Q values and smooth polynomial transitions",
     whenToUse: "Use as an alternative eGFR equation with smooth transitions across all age groups.",
     category: "Kidney Function & CKD Risk",
@@ -3108,7 +3108,7 @@ export const calculators: Calculator[] = [
   {
     id: "electrolyte-free-water-clearance",
     name: "Electrolyte-Free Water Clearance",
-    searchTerms: ["efwc", "electrolyte free water", "free water clearance", "hyponatremia workup"],
+    searchTerms: ["efwc", "electrolyte free water", "free water clearance", "hyponatremia workup", "siadh workup", "dilutional hyponatremia"],
     description: "EFWC: more accurate than osmolar free water clearance for dysnatremia",
     whenToUse: "Use to assess renal free water handling in hyponatremia or hypernatremia.",
     category: "Electrolytes & Acid-Base",
@@ -3140,7 +3140,7 @@ export const calculators: Calculator[] = [
   {
     id: "fe-magnesium",
     name: "Fractional Excretion of Magnesium",
-    searchTerms: ["fe mg", "femg", "fractional magnesium", "magnesium wasting", "hypomagnesemia workup"],
+    searchTerms: ["fe mg", "femg", "fractional magnesium", "magnesium wasting", "hypomagnesemia workup", "renal magnesium wasting", "low magnesium workup"],
     description: "FEMg: differentiates renal vs extrarenal magnesium wasting",
     whenToUse: "Use to differentiate renal magnesium wasting from extrarenal causes of hypomagnesemia.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -3177,7 +3177,7 @@ export const calculators: Calculator[] = [
   {
     id: "fe-uric-acid",
     name: "Fractional Excretion of Uric Acid",
-    searchTerms: ["feua", "fe uric acid", "fractional uric acid", "uric acid excretion", "gout workup"],
+    searchTerms: ["feua", "fe uric acid", "fractional uric acid", "uric acid excretion", "gout workup", "urate excretion", "hyperuricemia workup"],
     description: "FEUA: key test for differentiating SIADH from cerebral salt wasting",
     whenToUse: "Use to differentiate SIADH from cerebral salt wasting or assess uric acid handling.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -3216,7 +3216,7 @@ export const calculators: Calculator[] = [
   {
     id: "free-water-clearance",
     name: "Free Water Clearance (CH₂O)",
-    searchTerms: ["ch2o", "free water", "free water clearance", "water excretion"],
+    searchTerms: ["ch2o", "free water", "free water clearance", "water excretion", "solute free water", "water handling"],
     description: "Renal free water clearance for assessing water handling",
     whenToUse: "Use to evaluate renal water excretion capacity in dysnatremia workup.",
     category: "Electrolytes & Acid-Base",
@@ -3246,7 +3246,7 @@ export const calculators: Calculator[] = [
   {
     id: "henderson-hasselbalch",
     name: "Henderson-Hasselbalch Equation",
-    searchTerms: ["henderson", "hasselbalch", "ph equation", "acid base equation", "hh equation", "ph calculation"],
+    searchTerms: ["henderson", "hasselbalch", "ph equation", "acid base equation", "hh equation", "ph calculation", "abg interpretation", "blood gas", "ph from bicarb"],
     description: "Calculates blood pH from bicarbonate and pCO2",
     whenToUse: "Use to calculate expected pH from known bicarbonate and pCO2 values.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -3273,7 +3273,7 @@ export const calculators: Calculator[] = [
   {
     id: "kdigo-aki-staging",
     name: "KDIGO AKI Staging",
-    searchTerms: ["kdigo", "aki staging", "aki stage", "acute kidney injury stage", "aki criteria", "rifle", "akin", "acute kidney injury classification"],
+    searchTerms: ["kdigo", "aki staging", "aki stage", "acute kidney injury stage", "aki criteria", "rifle", "akin", "acute kidney injury classification", "kdigo aki", "creatinine rise", "aki definition"],
     description: "Creatinine-based AKI staging per KDIGO 2012 criteria with clinical management guidance",
     whenToUse: "Use to stage AKI severity per KDIGO criteria and guide clinical management.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -3313,7 +3313,7 @@ export const calculators: Calculator[] = [
   {
     id: "mdrd",
     name: "MDRD eGFR (4-Variable)",
-    searchTerms: ["mdrd", "mdrd4", "4 variable egfr", "mdrd egfr", "modification of diet"],
+    searchTerms: ["mdrd", "mdrd4", "4 variable egfr", "mdrd egfr", "modification of diet", "legacy egfr", "old egfr formula"],
     description: "Modification of Diet in Renal Disease study equation for eGFR",
     whenToUse: "Use when CKD-EPI is unavailable or for comparison with historical eGFR values.",
     category: "Kidney Function & CKD Risk",
@@ -3356,7 +3356,7 @@ export const calculators: Calculator[] = [
   {
     id: "phosphate-repletion",
     name: "Phosphate Repletion Calculator",
-    searchTerms: ["phosphate repletion", "phos replacement", "hypophosphatemia", "low phosphate", "phosphorus replacement"],
+    searchTerms: ["phosphate repletion", "phos replacement", "hypophosphatemia", "low phosphate", "phosphorus replacement", "hypophosphatemia treatment", "iv phosphate", "refeeding"],
     description: "Weight-based IV phosphate dosing for hypophosphatemia",
     whenToUse: "Use to calculate IV phosphate replacement dose for symptomatic hypophosphatemia.",
     category: "Electrolytes & Acid-Base",
@@ -3388,7 +3388,7 @@ export const calculators: Calculator[] = [
   {
     id: "potassium-repletion",
     name: "Potassium Repletion Estimation",
-    searchTerms: ["potassium repletion", "k replacement", "hypokalemia", "low potassium", "kcl dosing", "potassium replacement"],
+    searchTerms: ["potassium repletion", "k replacement", "hypokalemia", "low potassium", "kcl dosing", "potassium replacement", "hypokalemia treatment", "kcl dose", "potassium correction"],
     description: "Estimates total body potassium deficit and repletion needs",
     whenToUse: "Use to estimate potassium replacement needs in hypokalemia.",
     category: "Electrolytes & Acid-Base",
@@ -3421,7 +3421,7 @@ export const calculators: Calculator[] = [
   {
     id: "stool-osmolar-gap",
     name: "Stool Osmolar Gap",
-    searchTerms: ["stool osm", "stool osmolar", "diarrhea workup", "secretory diarrhea", "osmotic diarrhea"],
+    searchTerms: ["stool osm", "stool osmolar", "diarrhea workup", "secretory diarrhea", "osmotic diarrhea", "chronic diarrhea workup", "stool electrolytes"],
     description: "Differentiates osmotic vs. secretory diarrhea",
     whenToUse: "Use to differentiate osmotic diarrhea from secretory diarrhea.",
     category: "Electrolytes & Acid-Base",
@@ -3448,7 +3448,7 @@ export const calculators: Calculator[] = [
   {
     id: "trp-tmp-gfr",
     name: "TRP & TmP/GFR (Phosphate)",
-    searchTerms: ["trp", "tmp gfr", "tmp/gfr", "tubular reabsorption", "phosphate reabsorption", "phosphate handling"],
+    searchTerms: ["trp", "tmp gfr", "tmp/gfr", "tubular reabsorption", "phosphate reabsorption", "phosphate handling", "phosphate wasting", "tmp", "hypophosphatemia workup", "fanconi"],
     description: "Tubular reabsorption of phosphate and renal phosphate threshold",
     whenToUse: "Use to evaluate renal phosphate handling in hypophosphatemia or hyperphosphatemia workup.",
     category: "Acute Kidney Injury (AKI) Workup",
@@ -3485,7 +3485,7 @@ export const calculators: Calculator[] = [
   {
     id: "urine-osmolal-gap",
     name: "Urine Osmolal Gap",
-    searchTerms: ["urine osm gap", "urine osmolal gap", "ammonium excretion", "nh4", "rta workup"],
+    searchTerms: ["urine osm gap", "urine osmolal gap", "ammonium excretion", "nh4", "rta workup", "urine ammonium", "acid excretion", "metabolic acidosis workup"],
     description: "Estimates urine ammonium excretion for metabolic acidosis workup",
     whenToUse: "Use to estimate urine ammonium and assess renal acid excretion in metabolic acidosis.",
     category: "Electrolytes & Acid-Base",
@@ -3523,7 +3523,7 @@ export const calculators: Calculator[] = [
   {
     id: "winters-formula",
     name: "Winters' Formula (Expected pCO2)",
-    searchTerms: ["winters", "expected pco2", "respiratory compensation", "metabolic acidosis compensation", "winters formula"],
+    searchTerms: ["winters", "expected pco2", "respiratory compensation", "metabolic acidosis compensation", "winters formula", "predicted pco2", "abg compensation", "adequate compensation"],
     description: "Predicts expected respiratory compensation in metabolic acidosis",
     whenToUse: "Use to check if respiratory compensation is appropriate in metabolic acidosis.",
     category: "Acute Kidney Injury (AKI) Workup",
