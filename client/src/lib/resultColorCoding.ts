@@ -233,6 +233,45 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'perc':
       return getPERCColor(value);
 
+    // ============================================================================
+    // NEW CALCULATORS
+    // ============================================================================
+    case 'magnesium-repletion':
+      return getMagnesiumRepletionColor(value, inputs);
+
+    case 'pth-target-ckd':
+      return getPTHColor(value, inputs);
+
+    case 'phosphate-management':
+      return getPhosphateManagementColor(value);
+
+    case 'vancomycin-auc':
+      return getVancomycinAUCColor(value);
+
+    case 'tacrolimus-target':
+      return null; // Dynamic target — color handled by interpretation
+
+    case 'bk-virus-assessment':
+      return getBKVirusColor(value);
+
+    case 'bvas-v3':
+      return getBVASColor(value);
+
+    case 'dialysis-urgency':
+      return getDialysisUrgencyColor(value);
+
+    case 'complement-gn':
+      return getComplementColor(value);
+
+    case 'recurrence-risk-transplant':
+      return getRecurrenceRiskColor(value);
+
+    case 'nephrotic-assessment':
+      return getNephroticAssessmentColor(value);
+
+    case 'creatinine-trajectory':
+      return getCreatinineTrajectoryColor(value);
+
     default:
       return null;
   }
@@ -890,7 +929,7 @@ function getUPCRColor(value: number): ColorResult {
       severity: 'success'
     };
   }
-  if (value < 1) {
+  if (value < 1.0) {
     return {
       bgClass: 'bg-yellow-500/10',
       textClass: 'text-yellow-600 dark:text-yellow-400',
@@ -899,20 +938,29 @@ function getUPCRColor(value: number): ColorResult {
       severity: 'warning'
     };
   }
-  if (value < 3) {
+  if (value < 3.5) {
     return {
       bgClass: 'bg-orange-500/10',
       textClass: 'text-orange-600 dark:text-orange-400',
       borderClass: 'border-orange-500',
-      label: 'Heavy',
+      label: 'Subnephrotic',
       severity: 'warning'
     };
   }
+  if (value < 10) {
+    return {
+      bgClass: 'bg-red-500/10',
+      textClass: 'text-red-600 dark:text-red-400',
+      borderClass: 'border-red-500',
+      label: 'Nephrotic Range',
+      severity: 'danger'
+    };
+  }
   return {
-    bgClass: 'bg-red-500/10',
-    textClass: 'text-red-600 dark:text-red-400',
-    borderClass: 'border-red-500',
-    label: 'Nephrotic Range',
+    bgClass: 'bg-red-600/15',
+    textClass: 'text-red-700 dark:text-red-300',
+    borderClass: 'border-red-600',
+    label: 'Massive Proteinuria',
     severity: 'danger'
   };
 }
@@ -2071,4 +2119,95 @@ export function getPERCColor(value: number): ColorResult {
     label: 'PERC Positive - Cannot Rule Out PE',
     severity: 'danger'
   };
+}
+
+// ============================================================================
+// NEW CALCULATOR COLOR FUNCTIONS
+// ============================================================================
+
+function getMagnesiumRepletionColor(value: number, inputs?: Record<string, unknown>): ColorResult {
+  const mg = Number(inputs?.serumMagnesiumRepletion) || 0;
+  if (mg >= 1.8) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Normal', severity: 'success' };
+  if (mg >= 1.6) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Mild Hypomagnesemia', severity: 'warning' };
+  if (mg >= 1.2) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'Moderate Hypomagnesemia', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Severe Hypomagnesemia', severity: 'danger' };
+}
+
+function getPTHColor(value: number, inputs?: Record<string, unknown>): ColorResult {
+  const stage = inputs?.ckdStage || "5D";
+  if (stage === "3" || stage === "4") {
+    if (value <= 65) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Within Target', severity: 'success' };
+    if (value <= 130) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Mildly Elevated', severity: 'warning' };
+    return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'Elevated', severity: 'warning' };
+  }
+  // CKD 5/5D
+  if (value < 130) return { bgClass: 'bg-blue-500/10', textClass: 'text-blue-600 dark:text-blue-400', borderClass: 'border-blue-500', label: 'Below Target (Adynamic Risk)', severity: 'info' };
+  if (value <= 585) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Within KDIGO Target', severity: 'success' };
+  if (value <= 800) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'Above Target', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Severe SHPT', severity: 'danger' };
+}
+
+function getPhosphateManagementColor(value: number): ColorResult {
+  // value is Ca×PO4 product
+  if (value < 40) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Normal Product', severity: 'success' };
+  if (value < 50) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Borderline', severity: 'warning' };
+  if (value < 55) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'Elevated Product', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'High Risk (>55)', severity: 'danger' };
+}
+
+function getVancomycinAUCColor(value: number): ColorResult {
+  if (value < 400) return { bgClass: 'bg-blue-500/10', textClass: 'text-blue-600 dark:text-blue-400', borderClass: 'border-blue-500', label: 'Subtherapeutic', severity: 'info' };
+  if (value <= 600) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Therapeutic (400-600)', severity: 'success' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Supratherapeutic (Nephrotoxic)', severity: 'danger' };
+}
+
+function getBKVirusColor(value: number): ColorResult {
+  if (value < 1000) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Low-Level Viremia', severity: 'success' };
+  if (value < 10000) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Moderate Viremia', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'High Viremia (Presumptive BKVN)', severity: 'danger' };
+}
+
+function getBVASColor(value: number): ColorResult {
+  if (value === 0) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Remission', severity: 'success' };
+  if (value <= 9) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Low Activity', severity: 'warning' };
+  if (value <= 19) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'Moderate Activity', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Severe Activity', severity: 'danger' };
+}
+
+function getDialysisUrgencyColor(value: number): ColorResult {
+  if (value <= 2) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Low Urgency', severity: 'success' };
+  if (value <= 5) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Moderate', severity: 'warning' };
+  if (value <= 8) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'High Urgency', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Emergent', severity: 'danger' };
+}
+
+function getComplementColor(value: number): ColorResult {
+  // 0=normal/normal, 1=normalC3/lowC4, 2=lowC3/normalC4, 3=lowC3/lowC4
+  if (value === 0) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Normal Complement', severity: 'success' };
+  if (value === 1) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Low C4 Only', severity: 'warning' };
+  if (value === 2) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'Low C3 Only', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Low C3 + Low C4', severity: 'danger' };
+}
+
+function getRecurrenceRiskColor(value: number): ColorResult {
+  if (value <= 10) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Low Recurrence Risk', severity: 'success' };
+  if (value <= 30) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Moderate Risk', severity: 'warning' };
+  if (value <= 60) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'High Risk', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Very High Risk', severity: 'danger' };
+}
+
+function getNephroticAssessmentColor(value: number): ColorResult {
+  // value is albumin (g/dL)
+  if (value >= 3.5) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Normal Albumin', severity: 'success' };
+  if (value >= 2.5) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Low Albumin', severity: 'warning' };
+  if (value >= 2.0) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'High Thrombotic Risk', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Very High Thrombotic Risk', severity: 'danger' };
+}
+
+function getCreatinineTrajectoryColor(value: number): ColorResult {
+  // value is slope in mg/dL/day
+  if (value < -0.1) return { bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-600 dark:text-emerald-400', borderClass: 'border-emerald-500', label: 'Falling (Recovering)', severity: 'success' };
+  if (Math.abs(value) <= 0.1) return { bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-600 dark:text-yellow-400', borderClass: 'border-yellow-500', label: 'Plateau', severity: 'warning' };
+  if (value <= 0.5) return { bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400', borderClass: 'border-orange-500', label: 'Rising', severity: 'warning' };
+  return { bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400', borderClass: 'border-red-500', label: 'Rapidly Rising', severity: 'danger' };
 }

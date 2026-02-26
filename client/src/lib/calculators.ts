@@ -4169,3 +4169,276 @@ export function wintersFormula(
     upper: Math.round((expectedPCO2 + 2) * 10) / 10,
   };
 }
+
+// ============================================================================
+// NEW CALCULATORS — PHASE 2
+// ============================================================================
+
+/**
+ * Magnesium Repletion Calculator
+ * Estimates IV MgSO4 dose based on serum Mg level and renal function
+ */
+export function magnesiumRepletion(
+  serumMg: number,
+  targetMg: number = 2.0,
+  weight: number = 70,
+  renalFunction: "normal" | "ckd3-4" | "dialysis" = "normal"
+): { dose: number; severity: string; route: string; monitoring: string } {
+  if (serumMg >= targetMg) {
+    return { dose: 0, severity: "normal", route: "none", monitoring: "Routine" };
+  }
+  let dose: number;
+  let severity: string;
+  let route: string;
+  let monitoring: string;
+
+  if (serumMg >= 1.6) {
+    severity = "mild";
+    dose = 2; // grams MgSO4
+    route = "Oral MgO 400–800 mg/day OR IV MgSO4 1–2g over 1h";
+    monitoring = "Recheck Mg in 24–48h";
+  } else if (serumMg >= 1.2) {
+    severity = "moderate";
+    dose = 4;
+    route = "IV MgSO4 2–4g over 4–8h";
+    monitoring = "Recheck Mg in 6–12h. Monitor deep tendon reflexes.";
+  } else if (serumMg >= 1.0) {
+    severity = "severe";
+    dose = 6;
+    route = "IV MgSO4 4–6g over 8–12h. Consider ICU monitoring.";
+    monitoring = "Continuous telemetry. Recheck Mg every 4–6h. Monitor DTRs and respiratory rate.";
+  } else {
+    severity = "critical";
+    dose = 8;
+    route = "IV MgSO4 4–8g over 8–24h. ICU admission recommended.";
+    monitoring = "Continuous telemetry mandatory. Check Mg every 2–4h. Monitor respiratory status.";
+  }
+
+  // CKD adjustment
+  if (renalFunction === "ckd3-4") {
+    dose = Math.round(dose * 0.5 * 10) / 10;
+    monitoring += " Reduce dose 50% for eGFR <30 — risk of hypermagnesemia.";
+  } else if (renalFunction === "dialysis") {
+    dose = Math.round(dose * 0.25 * 10) / 10;
+    monitoring += " Dialysis: use 25% dose, will be cleared by next session. Avoid Mg-containing binders.";
+  }
+
+  return { dose: Math.round(dose * 10) / 10, severity, route, monitoring };
+}
+
+/**
+ * Vancomycin AUC/MIC Calculator (Sawchuk-Zaske method)
+ * Target AUC/MIC 400–600 per ASHP/IDSA 2020
+ */
+export function vancomycinAuc(
+  dose: number,
+  interval: number,
+  troughLevel: number,
+  peakLevel: number,
+  infusionTime: number,
+  timeToPeak: number,
+  timeToTrough: number,
+  mic: number = 1.0,
+  weight: number = 70
+): { aucMic: number; auc24: number; ke: number; halfLife: number; vd: number; adjustedDose: string } {
+  let ke: number;
+  let vd: number;
+  let auc24: number;
+
+  if (peakLevel > 0 && troughLevel > 0 && timeToPeak > 0 && timeToTrough > 0) {
+    // Two-level Sawchuk-Zaske
+    const timeBetween = timeToTrough - timeToPeak;
+    ke = Math.log(peakLevel / troughLevel) / timeBetween;
+    vd = dose / (peakLevel - troughLevel * Math.exp(-ke * infusionTime));
+    if (vd <= 0) vd = 0.7 * weight; // fallback
+  } else {
+    // Trough-only estimation using population Vd
+    vd = 0.7 * weight;
+    // Estimate ke from the trough: assume peak = dose/Vd + trough
+    const estimatedPeak = dose / vd + troughLevel;
+    const decayTime = interval - infusionTime;
+    if (estimatedPeak > troughLevel && decayTime > 0) {
+      ke = Math.log(estimatedPeak / troughLevel) / decayTime;
+    } else {
+      ke = 0.1; // fallback population ke
+    }
+  }
+
+  const halfLife = 0.693 / ke;
+  const dosesPerDay = 24 / interval;
+  auc24 = (dose * dosesPerDay) / (ke * vd);
+  const aucMic = auc24 / mic;
+
+  let adjustedDose: string;
+  if (aucMic < 400) {
+    const factor = 400 / aucMic;
+    adjustedDose = `AUC/MIC below target. Consider increasing dose by ~${Math.round((factor - 1) * 100)}% or shortening interval.`;
+  } else if (aucMic > 600) {
+    const factor = aucMic / 600;
+    adjustedDose = `AUC/MIC above target — nephrotoxicity risk. Consider reducing dose by ~${Math.round((1 - 1 / factor) * 100)}%.`;
+  } else {
+    adjustedDose = "AUC/MIC within target range (400–600). Continue current dosing.";
+  }
+
+  return {
+    aucMic: Math.round(aucMic * 10) / 10,
+    auc24: Math.round(auc24 * 10) / 10,
+    ke: Math.round(ke * 10000) / 10000,
+    halfLife: Math.round(halfLife * 10) / 10,
+    vd: Math.round(vd * 10) / 10,
+    adjustedDose,
+  };
+}
+
+/**
+ * BVAS v3 (Birmingham Vasculitis Activity Score)
+ * 9 organ systems, ~40 items. Returns total score.
+ */
+export function bvasV3(items: Record<string, boolean>): { total: number; organScores: Record<string, number> } {
+  const scoring: Record<string, { items: string[]; maxPoints: number[] }> = {
+    general: { items: ["myalgia", "arthralgia", "fever", "weightLoss"], maxPoints: [1, 1, 2, 2] },
+    cutaneous: { items: ["infarct", "purpura", "ulcer", "gangrene", "otherSkinVasculitis"], maxPoints: [2, 2, 4, 6, 2] },
+    mucousMembranes: { items: ["mouthUlcers", "genitalUlcers"], maxPoints: [2, 1] },
+    eyes: { items: ["conjunctivitis", "episcleritis", "uveitis", "retinalVasculitis", "proptosis", "scleritis", "retinalExudate", "suddenVisualLoss"], maxPoints: [1, 2, 6, 6, 4, 6, 6, 6] },
+    ent: { items: ["nasalDischarge", "sinusitis", "nasalCrusting", "hearingLoss", "subglotticStenosis", "conductiveHearingLoss"], maxPoints: [2, 2, 4, 6, 6, 3] },
+    chest: { items: ["wheeze", "nodules", "pleuralEffusion", "infiltrate", "massiveMoptysis", "alveolarHemorrhage", "respiratoryFailure"], maxPoints: [2, 3, 4, 4, 6, 6, 6] },
+    cardiovascular: { items: ["lossOfPulses", "valvularHeartDisease", "pericarditis", "ischemicCardiacPain", "cardiomyopathy", "congestiveHeartFailure"], maxPoints: [4, 4, 3, 6, 6, 6] },
+    abdominal: { items: ["peritonitis", "bloodyDiarrhea", "ischemicAbdominalPain"], maxPoints: [6, 6, 9] },
+    renal: { items: ["hypertension", "proteinuria", "hematuria", "creatinineRise", "creatinineRiseRapid", "rrtOrDialysis"], maxPoints: [4, 4, 6, 6, 6, 6] },
+    nervousSystem: { items: ["headache", "meningitis", "organicConfusion", "seizures", "stroke", "cranialNervePalsy", "sensorNeuropathy", "motorNeuropathy"], maxPoints: [1, 6, 6, 9, 9, 6, 6, 9] },
+  };
+
+  const organScores: Record<string, number> = {};
+  let total = 0;
+
+  for (const [organ, config] of Object.entries(scoring)) {
+    let organTotal = 0;
+    for (let i = 0; i < config.items.length; i++) {
+      if (items[config.items[i]]) {
+        organTotal += config.maxPoints[i];
+      }
+    }
+    organScores[organ] = organTotal;
+    total += organTotal;
+  }
+
+  return { total, organScores };
+}
+
+/**
+ * Dialysis Initiation Urgency Score
+ * AEIOU weighted scoring for dialysis initiation urgency
+ */
+export function dialysisUrgency(
+  pH: number,
+  bicarbonate: number,
+  potassium: number,
+  ecgChanges: boolean,
+  fluidOverload: "none" | "mild" | "moderate" | "refractory",
+  bun: number,
+  uremicSymptoms: "none" | "nausea" | "encephalopathy" | "pericarditis",
+  urineOutput24h: number,
+  weight: number,
+  toxicIngestion: boolean,
+  diureticResponse: "responsive" | "resistant" | "anuric"
+): { score: number; urgency: string; indications: string[] } {
+  let score = 0;
+  const indications: string[] = [];
+
+  // Acidosis
+  if (pH > 0 && pH < 7.1) { score += 4; indications.push("Severe acidosis (pH <7.1)"); }
+  else if (pH > 0 && pH < 7.2) { score += 2; indications.push("Moderate acidosis (pH 7.1–7.2)"); }
+  else if (bicarbonate > 0 && bicarbonate < 10) { score += 2; indications.push("Severe metabolic acidosis (HCO3 <10)"); }
+
+  // Electrolytes (potassium)
+  if (potassium > 6.5 && ecgChanges) { score += 4; indications.push("Hyperkalemia >6.5 + ECG changes"); }
+  else if (potassium > 6.5) { score += 3; indications.push("Hyperkalemia >6.5 (no ECG changes)"); }
+  else if (potassium > 6.0) { score += 1; indications.push("Hyperkalemia 6.0–6.5"); }
+
+  // Intoxication
+  if (toxicIngestion) { score += 4; indications.push("Toxic ingestion (dialyzable)"); }
+
+  // Overload
+  if (fluidOverload === "refractory") { score += 4; indications.push("Refractory pulmonary edema"); }
+  else if (fluidOverload === "moderate") { score += 2; indications.push("Moderate fluid overload"); }
+  else if (fluidOverload === "mild") { score += 1; indications.push("Mild fluid overload"); }
+
+  // Uremia
+  if (uremicSymptoms === "pericarditis") { score += 4; indications.push("Uremic pericarditis"); }
+  else if (uremicSymptoms === "encephalopathy") { score += 4; indications.push("Uremic encephalopathy"); }
+  else if (uremicSymptoms === "nausea") { score += 1; indications.push("Uremic nausea/vomiting"); }
+
+  // BUN
+  if (bun > 100) { score += 2; indications.push("BUN >100 mg/dL"); }
+
+  // Oliguria/Anuria
+  if (diureticResponse === "anuric") { score += 3; indications.push("Anuria"); }
+  else if (diureticResponse === "resistant") { score += 2; indications.push("Diuretic resistance"); }
+  else if (weight > 0 && urineOutput24h > 0) {
+    const uoRate = urineOutput24h / (weight * 24);
+    if (uoRate < 0.3) { score += 2; indications.push(`Severe oliguria (${uoRate.toFixed(2)} mL/kg/h)`); }
+  }
+
+  let urgency: string;
+  if (score >= 9) urgency = "Emergent — immediate dialysis";
+  else if (score >= 6) urgency = "High — dialysis within hours";
+  else if (score >= 3) urgency = "Moderate — plan dialysis within 24h";
+  else urgency = "Low — conservative management, monitor closely";
+
+  return { score, urgency, indications };
+}
+
+/**
+ * Creatinine Trajectory (AKI Recovery)
+ * Linear regression on 2-3 creatinine values to determine trend
+ */
+export function creatinineTrajectory(
+  values: { creatinine: number; hoursFromFirst: number }[],
+  baselineCreatinine: number = 0
+): { slope: number; trend: string; projectedBaseline: number; projectedDialysis: number } {
+  if (values.length < 2) {
+    return { slope: 0, trend: "Insufficient data", projectedBaseline: -1, projectedDialysis: -1 };
+  }
+
+  // Linear regression
+  const n = values.length;
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (const v of values) {
+    sumX += v.hoursFromFirst;
+    sumY += v.creatinine;
+    sumXY += v.hoursFromFirst * v.creatinine;
+    sumX2 += v.hoursFromFirst * v.hoursFromFirst;
+  }
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  // Slope in mg/dL per 24h
+  const slopePerDay = slope * 24;
+  const lastTime = values[values.length - 1].hoursFromFirst;
+  const lastCr = intercept + slope * lastTime;
+
+  let trend: string;
+  if (Math.abs(slopePerDay) < 0.1) trend = "Plateau";
+  else if (slopePerDay > 0) trend = "Rising";
+  else trend = "Falling";
+
+  // Project time to baseline (hours from last value)
+  let projectedBaseline = -1;
+  const target = baselineCreatinine > 0 ? baselineCreatinine : 1.0;
+  if (slope < 0 && lastCr > target) {
+    projectedBaseline = Math.round((target - lastCr) / slope); // hours
+  }
+
+  // Project time to dialysis threshold (6.0 mg/dL)
+  let projectedDialysis = -1;
+  if (slope > 0 && lastCr < 6.0) {
+    projectedDialysis = Math.round((6.0 - lastCr) / slope);
+  }
+
+  return {
+    slope: Math.round(slopePerDay * 100) / 100,
+    trend,
+    projectedBaseline,
+    projectedDialysis,
+  };
+}

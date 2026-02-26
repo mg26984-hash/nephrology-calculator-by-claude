@@ -285,13 +285,23 @@ export const calculators: Calculator[] = [
       { id: "plasmaCr", label: "Plasma Creatinine", type: "number", unit: "mg/dL", placeholder: "2.0", required: true },
       { id: "plasmaNa", label: "Plasma Sodium", type: "number", unit: "mEq/L", placeholder: "140", required: true },
       { id: "urineCr", label: "Urine Creatinine", type: "number", unit: "mg/dL", placeholder: "80", required: true },
+      { id: "onDiuretics", label: "On Diuretics?", type: "select", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }] },
+      { id: "baselineEgfr", label: "Baseline eGFR (optional)", type: "number", unit: "mL/min", placeholder: "60" },
     ],
     resultLabel: "FENa",
     resultUnit: "%",
-    interpretation: (value) => {
-      if (value < 1) return "Prerenal azotemia (volume depletion, heart failure, cirrhosis)";
-      if (value <= 2) return "Indeterminate - consider clinical context";
-      return "Intrinsic AKI (acute tubular necrosis most likely)";
+    interpretation: (value, inputs) => {
+      const onDiuretics = inputs?.onDiuretics === "yes";
+      const baselineEgfr = Number(inputs?.baselineEgfr) || 0;
+      let base: string;
+      if (value < 1) base = "Prerenal azotemia (volume depletion, heart failure, cirrhosis)";
+      else if (value <= 2) base = "Indeterminate — consider clinical context";
+      else base = "Intrinsic AKI (acute tubular necrosis most likely)";
+
+      const warnings: string[] = [];
+      if (onDiuretics) warnings.push("⚠ Patient on diuretics — FENa is unreliable. Use FEUrea instead (threshold <35% = prerenal).");
+      if (baselineEgfr > 0 && baselineEgfr < 30 && value > 1) warnings.push("⚠ Baseline eGFR <30: FENa >1% may be normal in advanced CKD due to impaired tubular reabsorption — does not necessarily indicate ATN.");
+      return warnings.length > 0 ? base + "\n\n" + warnings.join("\n") : base;
     },
     referenceRanges: [
       { label: "Prerenal azotemia", max: 1, unit: "%", note: "Volume depletion, heart failure, cirrhosis" },
@@ -299,7 +309,9 @@ export const calculators: Calculator[] = [
     ],
     clinicalPearls: [
       "FENa <1% suggests prerenal azotemia",
-      "Unreliable in diuretic use, CKD, contrast nephropathy, pigment nephropathy",
+      "Unreliable in diuretic use — use FEUrea instead (threshold <35%)",
+      "In CKD (eGFR <30), baseline FENa is often >1% — interpret cautiously",
+      "Also unreliable in contrast nephropathy, pigment nephropathy, early obstruction",
       "Must interpret with clinical context (volume status, urine sediment)",
     ],
     references: [
@@ -684,19 +696,36 @@ export const calculators: Calculator[] = [
     inputs: [
       { id: "qtInterval", label: "QT Interval", type: "number", unit: "ms", placeholder: "400", required: true },
       { id: "heartRate", label: "Heart Rate", type: "number", unit: "bpm", placeholder: "80", required: true, min: 40, max: 200 },
+      { id: "serumPotassium", label: "Serum K⁺ (optional)", type: "number", unit: "mEq/L", placeholder: "4.0" },
+      { id: "serumMagnesiumQtc", label: "Serum Mg²⁺ (optional)", type: "number", unit: "mg/dL", placeholder: "2.0" },
+      { id: "serumCalciumQtc", label: "Serum Ca²⁺ (optional)", type: "number", unit: "mg/dL", placeholder: "9.0" },
     ],
     resultLabel: "QTc",
     resultUnit: "ms",
-    interpretation: (value) => {
-      if (value <= 450) return "Normal (men)";
-      if (value <= 460) return "Normal (women)";
-      if (value <= 500) return "Prolonged - monitor, correct electrolytes";
-      return "Severely prolonged - risk of torsades de pointes, urgent intervention needed";
+    interpretation: (value, inputs) => {
+      const k = Number(inputs?.serumPotassium) || 0;
+      const mg = Number(inputs?.serumMagnesiumQtc) || 0;
+      const ca = Number(inputs?.serumCalciumQtc) || 0;
+      let base: string;
+      if (value <= 450) base = "Normal QTc (men <450 ms)";
+      else if (value <= 460) base = "Normal QTc (women <460 ms)";
+      else if (value <= 500) base = "Prolonged QTc — monitor, review QT-prolonging medications, correct electrolytes";
+      else base = "Severely prolonged QTc (>500 ms) — HIGH risk of Torsades de Pointes. Urgent intervention needed.";
+
+      const alerts: string[] = [];
+      if (k > 0 && k < 3.5) alerts.push(`K⁺ ${k} mEq/L (LOW) — hypokalemia prolongs QT. Replete urgently to >4.0.`);
+      if (mg > 0 && mg < 1.8) alerts.push(`Mg²⁺ ${mg} mg/dL (LOW) — hypomagnesemia prolongs QT and is a direct Torsades trigger. Give IV MgSO4 2g even if QTc borderline.`);
+      if (ca > 0 && ca < 8.5) alerts.push(`Ca²⁺ ${ca} mg/dL (LOW) — hypocalcemia prolongs QT. Correct calcium, check albumin.`);
+      if (value > 500 && alerts.length > 0) alerts.push("⚠ TORSADES RISK: QTc >500 ms + electrolyte abnormalities = highest risk. Correct ALL electrolyte derangements simultaneously. IV MgSO4 2g is first-line even if Mg normal.");
+      return alerts.length > 0 ? base + "\n\n" + alerts.join("\n") : base;
     },
     clinicalPearls: [
-      "Normal: Men <450 ms, Women <460 ms",
-      "Causes: hypokalemia, hypocalcemia, hypomagnesemia, medications",
-      "Correct electrolytes urgently if QTc >500 ms",
+      "Normal: Men <450 ms, Women <460 ms. Borderline: 450–500 ms.",
+      "QTc >500 ms: Torsades risk ~5–10%, stop ALL QT-prolonging drugs",
+      "Hypokalemia, hypomagnesemia, and hypocalcemia all prolong QT independently",
+      "Dialysis patients: QTc shifts with electrolyte flux — check pre- and post-dialysis",
+      "IV MgSO4 2g is first-line treatment for Torsades even if Mg is normal",
+      "Common QT-prolonging drugs: methadone, haloperidol, ondansetron, fluoroquinolones, azithromycin",
     ],
     references: ["Rautaharju PM et al. Circulation. 2009;119(10):e241-e250"],
   },
@@ -717,16 +746,19 @@ export const calculators: Calculator[] = [
     resultLabel: "uACR",
     resultUnit: "mg/g",
     interpretation: (value) => {
-      if (value < 30) return "A1: Normal to mildly increased albuminuria";
-      if (value < 300) return "A2: Moderately increased albuminuria (formerly microalbuminuria)";
-      if (value < 2200) return "A3: Severely increased albuminuria (formerly macroalbuminuria)";
-      return "Nephrotic range albuminuria - requires aggressive treatment";
+      if (value < 30) return "A1: Normal to mildly increased albuminuria (<30 mg/g). Low risk of CKD progression. Repeat annually if risk factors present (diabetes, hypertension).";
+      if (value < 300) return "A2: Moderately increased albuminuria (30–300 mg/g, formerly 'microalbuminuria'). KDIGO: increased risk of CKD progression and CVD. Optimize RAAS blockade (ACEi/ARB), add SGLT2i if diabetic. Target ≥30% reduction. Repeat in 3–6 months.";
+      if (value < 2200) return "A3: Severely increased albuminuria (>300 mg/g, formerly 'macroalbuminuria'). KDIGO: high/very high risk. Maximize RAAS blockade + SGLT2i. If >500 mg/g and unexplained, consider kidney biopsy. Required for KFRE risk calculation.";
+      return "Nephrotic-range albuminuria (>2200 mg/g ≈ >3.5 g/24h albumin). Kidney biopsy strongly indicated. Full nephrotic workup: serum albumin, lipids, thrombotic risk assessment. Consider anticoagulation if albumin <2.5 g/dL.";
     },
     clinicalPearls: [
-      "Key CKD marker; predicts progression and CVD events",
-      "Required for KFRE calculation",
-      "Use first morning void when possible",
-      "Target: 30-50% reduction with treatment",
+      "KDIGO A1/A2/A3 staging: <30 / 30–300 / >300 mg/g",
+      "Key CKD marker — predicts progression and CVD events independently of eGFR",
+      "Required for KFRE (Kidney Failure Risk Equation) calculation",
+      "Use first morning void when possible; confirm with repeat if A2/A3",
+      "Target: ≥30% reduction with RAAS blockade + SGLT2i",
+      "Nephrotic-range albuminuria: >2200 mg/g (≈3.5 g/day albumin excretion)",
+      "A2 + diabetes: start SGLT2i regardless of eGFR (KDIGO 2024)",
     ],
     references: ["KDIGO CKD Work Group. KDIGO 2024 Clinical Practice Guideline for the Evaluation and Management of Chronic Kidney Disease. Kidney Int. 2024;105(4S):S117-S314"],
   },
@@ -744,17 +776,21 @@ export const calculators: Calculator[] = [
     resultLabel: "UPCR",
     resultUnit: "g/g",
     interpretation: (value) => {
-      if (value < 0.15) return "Normal proteinuria";
-      if (value < 0.5) return "Mild proteinuria";
-      if (value < 1) return "Moderate proteinuria";
-      if (value < 3) return "Heavy proteinuria";
-      return "Nephrotic range proteinuria (>3 g/g)";
+      if (value < 0.15) return "Normal proteinuria (<0.15 g/g)";
+      if (value < 0.5) return "Mild proteinuria (0.15–0.5 g/g) — monitor, optimize RAAS blockade";
+      if (value < 1.0) return "Moderate proteinuria (0.5–1.0 g/g) — nephrology referral recommended, consider biopsy if unexplained";
+      if (value < 3.5) return "Subnephrotic proteinuria (1.0–3.5 g/g) — kidney biopsy indicated if etiology unclear. Aggressive RAAS blockade + SGLT2i. Monitor for progression to nephrotic range.";
+      if (value < 10) return "Nephrotic-range proteinuria (≥3.5 g/g) — kidney biopsy strongly indicated. Assess for complications: edema, hypoalbuminemia, hyperlipidemia, thrombotic risk (albumin <2.5 g/dL = high VTE risk). Consider anticoagulation if albumin <2.0.";
+      return "Massive proteinuria (≥10 g/g) — severe nephrotic syndrome. Urgent biopsy. High thrombotic risk — consider prophylactic anticoagulation. Aggressive edema management (loop diuretics + albumin if needed). Rule out amyloidosis, membranous, FSGS, diabetic nephropathy.";
     },
     clinicalPearls: [
       "Replaces 24-hour urine collection in most cases",
-      "Preferred in nephrotic syndrome, amyloidosis, myeloma",
       "UPCR (g/g) ≈ 24-hour proteinuria (g/24h)",
-      "GN monitoring: target <0.5-1 g/g with immunosuppression",
+      "Nephrotic range: ≥3.5 g/g (not 3.0) — corresponds to ≥3.5 g/24h",
+      "Subnephrotic (1.0–3.5 g/g): biopsy yield is high for treatable GN",
+      "GN monitoring target: <0.5–1 g/g with immunosuppression",
+      "Biopsy indications by tier: unexplained >1 g/g, all nephrotic-range, rapid increase",
+      "Thrombotic risk rises sharply when albumin <2.5 g/dL (nephrotic syndrome)",
     ],
     references: [
       "Ginsberg JM et al. Use of single voided urine samples to estimate quantitative proteinuria. N Engl J Med. 1983;309(25):1543-1546",
@@ -1087,25 +1123,50 @@ export const calculators: Calculator[] = [
     searchTerms: ["iron", "ganzoni", "iron deficiency", "anemia", "iron replacement", "iv iron", "iron sucrose", "ferric carboxymaltose", "venofer", "injectafer", "feraheme", "ckd anemia"],
     description: "Calculates total iron needed to correct anemia",
     whenToUse: "Use to calculate IV iron replacement dose for iron deficiency anemia.",
-    category: "Dialysis Adequacy",
+    category: "Drug Dosing & Toxicity",
     inputs: [
       { id: "targetHemoglobin", label: "Target Hemoglobin", type: "number", unit: "g/dL", placeholder: "11", required: true },
       { id: "currentHemoglobin", label: "Current Hemoglobin", type: "number", unit: "g/dL", placeholder: "8", required: true },
       { id: "weight", label: "Body Weight", type: "number", unit: "kg", placeholder: "70", required: true },
       { id: "sex", label: "Sex", type: "select", options: [{ value: "M", label: "Male" }, { value: "F", label: "Female" }], required: true },
+      { id: "tsat", label: "TSAT (optional)", type: "number", unit: "%", placeholder: "20" },
+      { id: "ferritin", label: "Ferritin (optional)", type: "number", unit: "ng/mL", placeholder: "200" },
+      { id: "dialysisStatus", label: "Dialysis Status", type: "select", options: [{ value: "nondialysis", label: "Non-Dialysis CKD" }, { value: "hemodialysis", label: "Hemodialysis" }, { value: "peritoneal", label: "Peritoneal Dialysis" }] },
     ],
     resultLabel: "Total Iron Needed",
     resultUnit: "mg",
-    interpretation: (value) => {
-      if (value <= 500) return "Mild iron deficit - oral iron may suffice";
-      if (value <= 1000) return "Moderate deficit - IV iron likely needed";
-      return "Severe deficit - significant IV iron supplementation required";
+    interpretation: (value, inputs) => {
+      const tsat = Number(inputs?.tsat) || 0;
+      const ferritin = Number(inputs?.ferritin) || 0;
+      const dialysis = inputs?.dialysisStatus || "nondialysis";
+      let base: string;
+      if (value <= 500) base = "Mild iron deficit — oral iron may suffice for non-dialysis CKD";
+      else if (value <= 1000) base = "Moderate deficit — IV iron likely needed";
+      else base = "Severe deficit — significant IV iron supplementation required";
+
+      const details: string[] = [];
+      if (tsat > 0 || ferritin > 0) {
+        if (tsat > 0 && tsat <= 30 && ferritin > 0 && ferritin <= 500)
+          details.push(`KDIGO: TSAT ${tsat}% (≤30%) and ferritin ${ferritin} ng/mL (≤500) → trial of IV iron recommended.`);
+        else if (tsat > 30 && ferritin > 500)
+          details.push(`TSAT ${tsat}% and ferritin ${ferritin} ng/mL — iron stores appear adequate. Reassess ESA dosing if anemia persists.`);
+        else if (ferritin > 500)
+          details.push(`Ferritin ${ferritin} ng/mL (>500) — avoid further iron loading without clear indication. Rule out inflammation/infection.`);
+        if (tsat > 0 && tsat < 20) details.push(`TSAT ${tsat}% (<20%) — functional iron deficiency likely even if ferritin normal.`);
+      }
+      if (dialysis === "hemodialysis") details.push("HD patients: IV iron sucrose 100mg/session × 10 sessions or ferric carboxymaltose 750mg × 2. Maintenance: 50–100mg/week.");
+      else if (dialysis === "peritoneal") details.push("PD patients: IV iron preferred over oral. Ferric carboxymaltose 750mg or iron sucrose 200mg × 5 sessions.");
+      else details.push("Non-dialysis CKD: oral iron first (ferrous sulfate 325mg TID). If intolerant/ineffective → IV ferric carboxymaltose 750mg × 2 or ferumoxytol 510mg × 2.");
+      return details.length > 0 ? base + "\n\n" + details.join("\n") : base;
     },
     clinicalPearls: [
-      "Accounts for hemoglobin deficit + iron stores",
-      "Iron stores: ~500 mg (men), ~300 mg (women)",
-      "IV iron preferred in dialysis patients",
-      "Monitor ferritin and TSAT during repletion",
+      "KDIGO: trial IV iron if TSAT ≤30% AND ferritin ≤500 ng/mL",
+      "Do NOT give IV iron if ferritin >500 without clear deficiency",
+      "TSAT <20% = functional iron deficiency (even if ferritin elevated by inflammation)",
+      "IV iron products: iron sucrose (100mg/dose), ferric carboxymaltose (750mg/dose), ferumoxytol (510mg/dose)",
+      "HD maintenance: 50–100mg IV iron/week to maintain TSAT 20–30% and ferritin 200–500",
+      "Oral iron poorly absorbed in CKD (hepcidin elevation) — IV preferred in dialysis",
+      "Ganzoni formula accounts for hemoglobin deficit + 500mg iron stores",
     ],
     references: ["Ganzoni AM. Schweiz Med Wochenschr. 1970;100(7):301-303"],
   },
@@ -2758,7 +2819,7 @@ export const calculators: Calculator[] = [
     searchTerms: ["anticoag reversal", "warfarin reversal", "doac reversal", "inr reversal", "bleeding reversal", "idarucizumab", "andexanet", "apixaban reversal", "rivaroxaban reversal", "dabigatran reversal", "praxbind", "andexxa", "kcentra", "pcc", "coumadin reversal"],
     description: "Evidence-based reversal strategies for major bleeding",
     whenToUse: "Use to determine the appropriate reversal agent and dosing for major bleeding on anticoagulants.",
-    category: "Critical Care",
+    category: "Drug Dosing & Toxicity",
     inputs: [
       { id: "anticoagulant", label: "Anticoagulant", type: "select", options: [
         { value: "warfarin", label: "Warfarin (Coumadin)" },
@@ -2817,7 +2878,7 @@ export const calculators: Calculator[] = [
     searchTerms: ["steroid", "steroid conversion", "prednisone", "prednisolone", "methylpred", "dexamethasone", "hydrocortisone", "corticosteroid", "glucocorticoid", "steroid equivalency", "steroid equivalent", "solumedrol", "medrol", "decadron"],
     description: "Convert between equivalent doses of corticosteroids",
     whenToUse: "Use to convert between equivalent doses when switching corticosteroids.",
-    category: "Miscellaneous",
+    category: "Drug Dosing & Toxicity",
     inputs: [
       { id: "fromSteroid", label: "From Steroid", type: "select", options: [
         { value: "hydrocortisone", label: "Hydrocortisone (Cortef)" },
@@ -2856,7 +2917,7 @@ export const calculators: Calculator[] = [
     searchTerms: ["plex", "plasmapheresis", "plasma exchange", "tpe", "therapeutic plasma exchange", "plex dosing", "ttp treatment", "anti gbm treatment"],
     description: "Calculate plasma volume and exchange parameters for plasmapheresis",
     whenToUse: "Use to calculate plasma volume and replacement fluid for therapeutic plasma exchange.",
-    category: "Miscellaneous",
+    category: "Systemic Diseases & Scores",
     inputs: [
       { id: "weight", label: "Weight", type: "number", unit: "kg", placeholder: "70", required: true, min: 1 },
       { id: "height", label: "Height", type: "number", unit: "cm", placeholder: "170", required: true, min: 50 },
@@ -3280,14 +3341,39 @@ export const calculators: Calculator[] = [
     inputs: [
       { id: "baselineCreatinine", label: "Baseline Creatinine", type: "number", unit: "mg/dL", placeholder: "1.0", required: true },
       { id: "currentCreatinine", label: "Current Creatinine", type: "number", unit: "mg/dL", placeholder: "2.5", required: true },
+      { id: "weight", label: "Body Weight (for UO criteria)", type: "number", unit: "kg", placeholder: "70" },
+      { id: "urineOutput6h", label: "Urine Output (past 6h)", type: "number", unit: "mL", placeholder: "180" },
+      { id: "urineOutput12h", label: "Urine Output (past 12h)", type: "number", unit: "mL", placeholder: "400" },
+      { id: "urineOutput24h", label: "Urine Output (past 24h)", type: "number", unit: "mL", placeholder: "800" },
     ],
     resultLabel: "AKI Stage",
     resultUnit: "",
-    interpretation: (value) => {
-      if (value === 0) return "No AKI — Creatinine <1.5× baseline and absolute increase <0.3 mg/dL within 48h. Continue monitoring if clinical suspicion persists; consider urine output criteria.";
-      if (value === 1) return "Stage 1 AKI — SCr 1.5–1.9× baseline OR ≥0.3 mg/dL increase within 48h. Management: identify and treat underlying cause, optimize volume status, avoid nephrotoxins (NSAIDs, aminoglycosides, IV contrast), monitor urine output and SCr every 12–24h. Consider nephrology consult if no clear etiology.";
-      if (value === 2) return "Stage 2 AKI — SCr 2.0–2.9× baseline. Management: nephrology consult recommended, aggressive cause-directed therapy, strict I&O monitoring, hold ACEi/ARB, renally adjust all medications, monitor for fluid overload and hyperkalemia. Consider ICU transfer if hemodynamically unstable.";
-      return "Stage 3 AKI — SCr ≥3.0× baseline OR absolute SCr ≥4.0 mg/dL with acute rise OR initiation of RRT. Management: urgent nephrology consult, evaluate for RRT indications (refractory hyperkalemia >6.5 mEq/L, metabolic acidosis pH <7.1, fluid overload unresponsive to diuretics, uremic encephalopathy/pericarditis), ICU-level care, daily labs (K⁺, bicarb, phosphate, CBC).";
+    interpretation: (value, inputs) => {
+      const weight = Number(inputs?.weight) || 0;
+      const uo6h = Number(inputs?.urineOutput6h) || 0;
+      const uo12h = Number(inputs?.urineOutput12h) || 0;
+      const uo24h = Number(inputs?.urineOutput24h) || 0;
+      let uoStage = 0;
+      let uoDetail = "";
+      if (weight > 0) {
+        const rate6h = uo6h / (weight * 6);
+        const rate12h = uo12h / (weight * 12);
+        const rate24h = uo24h / (weight * 24);
+        if (uo12h > 0 && uo12h < 1 && uo24h === 0) { uoStage = 3; uoDetail = `Anuria ≥12h`; }
+        else if (uo24h > 0 && rate24h < 0.3) { uoStage = 3; uoDetail = `UO ${rate24h.toFixed(2)} mL/kg/h over 24h (<0.3)`; }
+        else if (uo12h > 0 && rate12h < 0.5) { uoStage = 2; uoDetail = `UO ${rate12h.toFixed(2)} mL/kg/h over 12h (<0.5 for ≥12h)`; }
+        else if (uo6h > 0 && rate6h < 0.5) { uoStage = 1; uoDetail = `UO ${rate6h.toFixed(2)} mL/kg/h over 6h (<0.5 for 6–12h)`; }
+      }
+      const crStage = value;
+      const finalStage = Math.max(crStage, uoStage);
+      let stageText: string;
+      if (finalStage === 0) stageText = "No AKI — Creatinine <1.5× baseline and absolute increase <0.3 mg/dL within 48h. Continue monitoring if clinical suspicion persists.";
+      else if (finalStage === 1) stageText = "Stage 1 AKI — SCr 1.5–1.9× baseline OR ≥0.3 mg/dL increase within 48h OR UO <0.5 mL/kg/h for 6–12h. Management: identify and treat underlying cause, optimize volume status, avoid nephrotoxins, monitor SCr every 12–24h.";
+      else if (finalStage === 2) stageText = "Stage 2 AKI — SCr 2.0–2.9× baseline OR UO <0.5 mL/kg/h for ≥12h. Management: nephrology consult recommended, strict I&O, hold ACEi/ARB, renally adjust medications.";
+      else stageText = "Stage 3 AKI — SCr ≥3.0× baseline OR SCr ≥4.0 mg/dL OR RRT initiation OR UO <0.3 mL/kg/h for ≥24h OR anuria ≥12h. Urgent nephrology consult, evaluate RRT indications.";
+      if (uoStage > 0 && uoStage > crStage) stageText += `\n\n⚠ Urine output criteria upstaged AKI: ${uoDetail}. UO-based staging: Stage ${uoStage}, Creatinine-based: Stage ${crStage}.`;
+      else if (uoStage > 0) stageText += `\n\nUrine output staging concordant: Stage ${uoStage} (${uoDetail}).`;
+      return stageText;
     },
     referenceRanges: [
       { label: "No AKI", max: 0, unit: "", note: "<1.5× baseline and <0.3 rise" },
@@ -3395,23 +3481,30 @@ export const calculators: Calculator[] = [
     inputs: [
       { id: "serumPotassium", label: "Serum Potassium", type: "number", unit: "mEq/L", placeholder: "3.2", required: true, min: 1, max: 7 },
       { id: "targetPotassium", label: "Target Potassium", type: "number", unit: "mEq/L", placeholder: "4.0", required: false, min: 3.5, max: 5.0 },
+      { id: "serumMagnesium", label: "Serum Magnesium (optional)", type: "number", unit: "mg/dL", placeholder: "1.8" },
     ],
     resultLabel: "Estimated K⁺ Deficit",
     resultUnit: "mEq",
-    interpretation: (value) => {
-      if (value <= 0) return "K⁺ at or above target — no repletion needed";
-      if (value <= 200) return "Mild deficit (~100-200 mEq) — oral KCl 40-80 mEq should suffice";
-      if (value <= 400) return "Moderate deficit (~200-400 mEq) — oral + IV repletion recommended";
-      return "Severe deficit (>400 mEq) — aggressive IV repletion needed with cardiac monitoring";
+    interpretation: (value, inputs) => {
+      const mg = Number(inputs?.serumMagnesium) || 0;
+      let base: string;
+      if (value <= 0) base = "K⁺ at or above target — no repletion needed";
+      else if (value <= 200) base = "Mild deficit (~100–200 mEq) — oral KCl 40–80 mEq should suffice";
+      else if (value <= 400) base = "Moderate deficit (~200–400 mEq) — oral + IV repletion recommended";
+      else base = "Severe deficit (>400 mEq) — aggressive IV repletion needed with cardiac monitoring";
+
+      if (mg > 0 && mg < 1.8) base += `\n\n⚠ CRITICAL: Serum Mg ${mg} mg/dL is LOW (<1.8). Potassium repletion will be ineffective until magnesium is corrected first. Give IV MgSO4 2–4g, then replete K⁺. Mechanism: hypomagnesemia increases ROMK channel activity → renal K⁺ wasting.`;
+      else if (mg >= 1.8 && mg <= 2.0) base += `\n\nMagnesium ${mg} mg/dL is borderline-low. Consider concurrent Mg repletion to optimize K⁺ retention.`;
+      return base;
     },
     clinicalPearls: [
       "Rough rule: each 0.27 mEq/L drop ≈ 100 mEq total body deficit",
       "Actual deficit varies widely — may underestimate in chronic depletion",
-      "Max IV rate: 10-20 mEq/hr peripherally, 40 mEq/hr centrally (with monitoring)",
+      "Max IV rate: 10–20 mEq/hr peripherally, 40 mEq/hr centrally (with monitoring)",
       "Max concentration: 40 mEq/L peripheral, 80 mEq/L central",
-      "Correct concurrent hypomagnesemia (Mg <1.8) — K repletion will fail otherwise",
-      "Recheck K⁺ after each 40-60 mEq given",
-      "Oral KCl 40 mEq raises serum K by ~0.3-0.5 mEq/L in most patients",
+      "ALWAYS check Mg: K⁺ repletion fails if Mg <1.8 mg/dL (renal K wasting via ROMK)",
+      "Recheck K⁺ after each 40–60 mEq given",
+      "Oral KCl 40 mEq raises serum K by ~0.3–0.5 mEq/L in most patients",
     ],
     references: [
       "Sterns RH et al. Am J Med. 1981;71(5):811-818",
@@ -3451,7 +3544,7 @@ export const calculators: Calculator[] = [
     searchTerms: ["trp", "tmp gfr", "tmp/gfr", "tubular reabsorption", "phosphate reabsorption", "phosphate handling", "phosphate wasting", "tmp", "hypophosphatemia workup", "fanconi"],
     description: "Tubular reabsorption of phosphate and renal phosphate threshold",
     whenToUse: "Use to evaluate renal phosphate handling in hypophosphatemia or hyperphosphatemia workup.",
-    category: "Acute Kidney Injury (AKI) Workup",
+    category: "CKD-Mineral Bone Disease",
     inputs: [
       { id: "urinePhosphate", label: "Urine Phosphate", type: "number", unit: "mg/dL", placeholder: "40", required: true },
       { id: "plasmaPhosphate", label: "Serum Phosphate", type: "number", unit: "mg/dL", placeholder: "3.0", required: true },
@@ -3544,6 +3637,715 @@ export const calculators: Calculator[] = [
       "Only valid in primary metabolic acidosis (not mixed disorders)",
     ],
     references: ["Albert MS, Dell RB, Winters RW. Ann Intern Med. 1967;66(2):312-322"],
+  },
+  // ============================================================================
+  // NEW — MAGNESIUM REPLETION
+  // ============================================================================
+  {
+    id: "magnesium-repletion",
+    name: "Magnesium Repletion Calculator",
+    searchTerms: ["magnesium", "mg repletion", "hypomagnesemia", "low magnesium", "mgso4", "magnesium sulfate", "mg replacement", "magnesium oxide", "mg correction", "refractory hypokalemia"],
+    description: "Weight-based IV/oral magnesium dosing for hypomagnesemia with CKD adjustment",
+    whenToUse: "Use to calculate magnesium replacement dose for hypomagnesemia. Critical when K⁺ repletion is failing.",
+    category: "Electrolytes & Acid-Base",
+    inputs: [
+      { id: "serumMagnesiumRepletion", label: "Serum Magnesium", type: "number", unit: "mg/dL", placeholder: "1.4", required: true },
+      { id: "targetMagnesium", label: "Target Magnesium", type: "number", unit: "mg/dL", placeholder: "2.0" },
+      { id: "weight", label: "Body Weight", type: "number", unit: "kg", placeholder: "70", required: true },
+      { id: "renalFunction", label: "Renal Function", type: "select", options: [{ value: "normal", label: "Normal / CKD 1-2" }, { value: "ckd3-4", label: "CKD 3-4 (eGFR 15-59)" }, { value: "dialysis", label: "Dialysis" }] },
+    ],
+    resultLabel: "IV MgSO4 Dose",
+    resultUnit: "g",
+    interpretation: (value, inputs) => {
+      const mg = Number(inputs?.serumMagnesiumRepletion) || 0;
+      if (mg >= 2.0) return "Magnesium ≥2.0 mg/dL — repletion likely not needed.";
+      if (mg >= 1.6) return "Mild hypomagnesemia (1.6–1.9 mg/dL) — oral replacement preferred: MgO 400–800 mg/day. IV MgSO4 1–2g if oral not tolerated or concurrent hypokalemia.";
+      if (mg >= 1.2) return "Moderate hypomagnesemia (1.2–1.5 mg/dL) — IV MgSO4 2–4g over 4–8h. Recheck in 6–12h. Each 1g MgSO4 ≈ raises serum Mg 0.1–0.15 mg/dL.";
+      if (mg >= 1.0) return "Severe hypomagnesemia (1.0–1.1 mg/dL) — IV MgSO4 4–6g over 8–12h with cardiac monitoring. High risk of cardiac arrhythmias.";
+      return "Critical hypomagnesemia (<1.0 mg/dL) — IV MgSO4 4–8g over 8–24h. ICU monitoring recommended. Immediate risk: ventricular arrhythmias, seizures, Torsades.";
+    },
+    referenceRanges: [
+      { label: "Normal", min: 1.8, max: 2.4, unit: "mg/dL" },
+      { label: "Mild hypomagnesemia", min: 1.6, max: 1.8, unit: "mg/dL" },
+      { label: "Moderate", min: 1.2, max: 1.6, unit: "mg/dL" },
+      { label: "Severe", max: 1.2, unit: "mg/dL" },
+    ],
+    clinicalPearls: [
+      "Each 1g MgSO4 IV ≈ raises serum Mg by 0.1–0.15 mg/dL",
+      "ALWAYS check Mg in refractory hypokalemia — K repletion fails if Mg <1.8",
+      "Reduce dose 50% if eGFR <30, 75% if on dialysis (Mg cleared by dialysis)",
+      "Oral options: MgO (most Mg per tablet), Mg gluconate (best tolerated GI)",
+      "Max IV rate: 2g/hr for peripheral, faster for central with monitoring",
+      "PPI/diuretic use = common cause of chronic Mg depletion",
+      "Diarrhea is the dose-limiting side effect of oral Mg — split doses TID",
+    ],
+    references: [
+      "Cheungpasitporn W et al. Hosp Pract. 2015;43(2):79-83",
+      "Blaine J et al. Clin J Am Soc Nephrol. 2015;10(7):1257-1267",
+    ],
+  },
+  // ============================================================================
+  // NEW — PTH TARGET (CKD-MBD)
+  // ============================================================================
+  {
+    id: "pth-target-ckd",
+    name: "KDIGO PTH Target Assessment",
+    searchTerms: ["pth", "parathyroid", "ipth", "intact pth", "secondary hyperparathyroidism", "shpt", "pth target", "kdigo mbd", "adynamic bone", "ckd mbd", "pth goal"],
+    description: "Assesses PTH against KDIGO CKD-MBD targets with treatment guidance",
+    whenToUse: "Use to evaluate if PTH is within KDIGO target range for the patient's CKD stage and guide vitamin D/calcimimetic therapy.",
+    category: "CKD-Mineral Bone Disease",
+    inputs: [
+      { id: "pth", label: "Intact PTH", type: "number", unit: "pg/mL", placeholder: "300", required: true },
+      { id: "ckdStage", label: "CKD Stage", type: "select", options: [{ value: "3", label: "CKD 3" }, { value: "4", label: "CKD 4" }, { value: "5", label: "CKD 5 (not on dialysis)" }, { value: "5D", label: "CKD 5D (Dialysis)" }], required: true },
+      { id: "calciumPTH", label: "Serum Calcium", type: "number", unit: "mg/dL", placeholder: "9.5", required: true },
+      { id: "phosphatePTH", label: "Serum Phosphate", type: "number", unit: "mg/dL", placeholder: "4.5" },
+      { id: "vitaminD", label: "25-OH Vitamin D", type: "number", unit: "ng/mL", placeholder: "30" },
+      { id: "currentTherapy", label: "Current Therapy", type: "select", options: [{ value: "none", label: "None" }, { value: "vitD-nutritional", label: "Nutritional Vitamin D" }, { value: "vitD-active", label: "Active Vitamin D (calcitriol/alfacalcidol)" }, { value: "calcimimetic", label: "Calcimimetic (cinacalcet)" }, { value: "combination", label: "Active VitD + Calcimimetic" }] },
+    ],
+    resultLabel: "PTH",
+    resultUnit: "pg/mL",
+    interpretation: (value, inputs) => {
+      const stage = inputs?.ckdStage || "5D";
+      const ca = Number(inputs?.calciumPTH) || 0;
+      const vitD = Number(inputs?.vitaminD) || 0;
+      const phos = Number(inputs?.phosphatePTH) || 0;
+
+      if (stage === "3" || stage === "4") {
+        // CKD 3-4: maintain within normal range (10-65 pg/mL)
+        if (value < 10) return "PTH very low — possible hypoparathyroidism or over-suppression. Hold active vitamin D. Risk: adynamic bone disease.";
+        if (value <= 65) return "PTH within normal range for CKD 3-4. KDIGO recommends maintaining within laboratory reference range. Continue current management.";
+        if (value <= 130) return "PTH mildly elevated for CKD 3-4. Check and correct: 25-OH VitD ≥30 ng/mL, phosphate in normal range. Consider nutritional vitamin D first.";
+        return `PTH ${value} pg/mL — significantly elevated for CKD 3-4. Ensure 25-OH VitD ≥30 ng/mL. If elevated despite vitamin D repletion, consider active vitamin D (calcitriol). Check calcium before starting.`;
+      }
+
+      // CKD 5/5D: KDIGO target 2-9× ULN (≈130-585 pg/mL)
+      const parts: string[] = [];
+      if (value < 130) {
+        parts.push(`PTH ${value} pg/mL — BELOW target (<2× ULN). Risk: adynamic bone disease. Reduce or stop active vitamin D/calcimimetic.`);
+      } else if (value <= 585) {
+        parts.push(`PTH ${value} pg/mL — within KDIGO target (2–9× ULN, 130–585 pg/mL). Continue current therapy. Monitor trends rather than single values.`);
+      } else {
+        parts.push(`PTH ${value} pg/mL — ABOVE target (>9× ULN). Significant secondary hyperparathyroidism.`);
+        if (ca > 10.2) parts.push("Calcium elevated — start or increase calcimimetic (cinacalcet). Avoid active vitamin D.");
+        else if (ca < 8.4) parts.push("Calcium low — start active vitamin D (calcitriol/alfacalcidol). Avoid calcimimetics.");
+        else parts.push("Calcium normal — consider active vitamin D or calcimimetic based on phosphate trend.");
+        if (value > 800) parts.push("PTH >800: consider parathyroidectomy if refractory to medical therapy.");
+      }
+      if (vitD > 0 && vitD < 30) parts.push(`⚠ 25-OH VitD ${vitD} ng/mL (<30) — replete nutritional vitamin D FIRST before active vitamin D analogs.`);
+      if (phos > 0 && phos > 5.5) parts.push(`⚠ Phosphate ${phos} mg/dL (elevated) — optimize phosphate control before escalating PTH therapy.`);
+      return parts.join("\n");
+    },
+    referenceRanges: [
+      { label: "Normal lab range", min: 10, max: 65, unit: "pg/mL" },
+      { label: "CKD 5D target (KDIGO)", min: 130, max: 585, unit: "pg/mL", note: "2–9× ULN" },
+    ],
+    clinicalPearls: [
+      "CKD 3-4: keep PTH within normal lab range (10–65 pg/mL)",
+      "CKD 5D: KDIGO target 2–9× ULN (≈130–585 pg/mL). Trend matters more than single value.",
+      "PTH <2× ULN on dialysis → adynamic bone disease risk (low bone turnover)",
+      "ALWAYS check and correct 25-OH VitD ≥30 ng/mL before starting active vitamin D",
+      "High PTH + high Ca → calcimimetic; High PTH + low Ca → active vitamin D",
+      "PTH >800 pg/mL refractory to medical therapy → consider parathyroidectomy",
+      "PTH assay variability: same patient can differ 20–40% between labs",
+    ],
+    references: [
+      "KDIGO CKD-MBD Update. Kidney Int. 2017;92(1):26-36",
+      "KDIGO CKD-MBD Guideline. Kidney Int Suppl. 2009;76(Suppl 113):S1-S130",
+    ],
+  },
+  // ============================================================================
+  // NEW — PHOSPHATE MANAGEMENT (CKD-MBD)
+  // ============================================================================
+  {
+    id: "phosphate-management",
+    name: "Phosphate Management Advisor",
+    searchTerms: ["phosphate management", "hyperphosphatemia", "phosphate binder", "sevelamer", "lanthanum", "calcium binder", "phosphorus control", "phos management", "high phosphorus", "ckd phosphate"],
+    description: "CKD phosphate target assessment with binder guidance and Ca×PO4 product",
+    whenToUse: "Use to guide phosphate management in CKD, including binder selection and target assessment.",
+    category: "CKD-Mineral Bone Disease",
+    inputs: [
+      { id: "phosphateLevel", label: "Serum Phosphate", type: "number", unit: "mg/dL", placeholder: "5.5", required: true },
+      { id: "ckdStagePhos", label: "CKD Stage", type: "select", options: [{ value: "3-5", label: "CKD 3-5 (not on dialysis)" }, { value: "5D", label: "CKD 5D (Dialysis)" }], required: true },
+      { id: "calciumPhos", label: "Serum Calcium", type: "number", unit: "mg/dL", placeholder: "9.5", required: true },
+      { id: "pthPhos", label: "Intact PTH", type: "number", unit: "pg/mL", placeholder: "300" },
+      { id: "currentBinder", label: "Current Binder", type: "select", options: [{ value: "none", label: "None" }, { value: "calcium", label: "Calcium-based (CaCO3, Ca acetate)" }, { value: "sevelamer", label: "Sevelamer (Renagel/Renvela)" }, { value: "lanthanum", label: "Lanthanum (Fosrenol)" }, { value: "sucroferric", label: "Sucroferric oxyhydroxide (Velphoro)" }, { value: "ironCitrate", label: "Ferric citrate (Auryxia)" }] },
+    ],
+    resultLabel: "Ca×PO4 Product",
+    resultUnit: "mg²/dL²",
+    interpretation: (value, inputs) => {
+      const phos = Number(inputs?.phosphateLevel) || 0;
+      const ca = Number(inputs?.calciumPhos) || 0;
+      const stage = inputs?.ckdStagePhos || "5D";
+      const binder = inputs?.currentBinder || "none";
+      const product = ca * phos;
+      const parts: string[] = [];
+
+      // Phosphate assessment
+      if (phos <= 4.5) parts.push(`Phosphate ${phos} mg/dL — within target. Continue current management.`);
+      else if (phos <= 5.5) parts.push(`Phosphate ${phos} mg/dL — mildly elevated. Reinforce dietary phosphate restriction (800–1000 mg/day). Consider binder initiation if trend rising.`);
+      else if (phos <= 7.0) parts.push(`Phosphate ${phos} mg/dL — moderately elevated. Start or uptitrate phosphate binder. Review dietary compliance. Ensure adequate dialysis dose.`);
+      else parts.push(`Phosphate ${phos} mg/dL — severely elevated (>7.0). URGENT: high risk of metastatic calcification, cardiovascular events. Aggressive binder therapy + dietary restriction. Consider intensified dialysis.`);
+
+      // Ca×PO4 product
+      if (product > 55) parts.push(`⚠ Ca×PO4 product ${product.toFixed(1)} mg²/dL² (>55) — HIGH risk of metastatic calcification and cardiovascular mortality.`);
+      else if (product > 50) parts.push(`Ca×PO4 product ${product.toFixed(1)} — borderline. Target <55.`);
+
+      // Binder guidance
+      if (ca > 10.2 && (binder === "calcium" || binder === "none")) {
+        parts.push(`Calcium ${ca} mg/dL (elevated) — AVOID calcium-based binders. Switch to sevelamer, lanthanum, or sucroferric oxyhydroxide.`);
+      }
+      if (binder === "none" && phos > 5.5) {
+        parts.push("No current binder — initiate: sevelamer 800mg TID with meals (first-line non-calcium) or sucroferric oxyhydroxide 500mg TID (fewer pills, also provides iron).");
+      }
+
+      return parts.join("\n");
+    },
+    clinicalPearls: [
+      "CKD 3-5: target phosphate within normal range (2.5–4.5 mg/dL)",
+      "CKD 5D: lower phosphate toward normal; avoid >5.5 mg/dL",
+      "Ca×PO4 product >55 mg²/dL² = high risk of vascular calcification",
+      "If Ca >10.2: avoid calcium-based binders, use sevelamer/lanthanum/sucroferric",
+      "Ferric citrate (Auryxia): dual benefit — binds phosphate AND provides iron",
+      "Dietary phosphate restriction: 800–1000 mg/day, focus on avoiding processed foods (phosphate additives)",
+      "Inadequate dialysis is a common overlooked cause of hyperphosphatemia",
+    ],
+    references: [
+      "KDIGO CKD-MBD Update. Kidney Int. 2017;92(1):26-36",
+      "Block GA et al. Kidney Int. 2012;81(3):293-299",
+    ],
+  },
+  // ============================================================================
+  // NEW — VANCOMYCIN AUC/MIC (Drug Dosing)
+  // ============================================================================
+  {
+    id: "vancomycin-auc",
+    name: "Vancomycin AUC/MIC Calculator",
+    searchTerms: ["vancomycin", "vanco", "auc mic", "vanc dosing", "vancomycin trough", "vancomycin peak", "sawchuk zaske", "auc 400", "vancomycin nephrotoxicity", "ashp idsa", "vancomycin monitoring"],
+    description: "AUC/MIC-guided vancomycin dosing (ASHP/IDSA 2020 guidelines)",
+    whenToUse: "Use for AUC-guided vancomycin monitoring. Target AUC/MIC 400–600 per ASHP/IDSA 2020 consensus.",
+    category: "Drug Dosing & Toxicity",
+    inputs: [
+      { id: "vancDose", label: "Vancomycin Dose", type: "number", unit: "mg", placeholder: "1000", required: true },
+      { id: "vancInterval", label: "Dosing Interval", type: "number", unit: "hours", placeholder: "12", required: true },
+      { id: "vancTrough", label: "Trough Level", type: "number", unit: "mcg/mL", placeholder: "15", required: true },
+      { id: "vancPeak", label: "Peak Level (optional)", type: "number", unit: "mcg/mL", placeholder: "30" },
+      { id: "vancInfusionTime", label: "Infusion Time", type: "number", unit: "hours", placeholder: "1", required: true },
+      { id: "timeToPeak", label: "Time to Peak (from end of infusion)", type: "number", unit: "hours", placeholder: "1" },
+      { id: "timeToTrough", label: "Time to Trough (from end of infusion)", type: "number", unit: "hours", placeholder: "11" },
+      { id: "vancMIC", label: "MIC", type: "select", options: [{ value: "0.5", label: "0.5 mcg/mL" }, { value: "1", label: "1.0 mcg/mL" }, { value: "1.5", label: "1.5 mcg/mL" }, { value: "2", label: "2.0 mcg/mL" }] },
+      { id: "weight", label: "Body Weight", type: "number", unit: "kg", placeholder: "70", required: true },
+    ],
+    resultLabel: "AUC/MIC",
+    resultUnit: "",
+    interpretation: (value) => {
+      if (value < 400) return "AUC/MIC <400 — subtherapeutic. Increase dose or shorten interval. Risk of treatment failure and resistance emergence.";
+      if (value <= 600) return "AUC/MIC 400–600 — within ASHP/IDSA 2020 target. Continue current regimen. Recheck levels in 3–5 days or with renal function change.";
+      return "AUC/MIC >600 — supratherapeutic. Reduce dose. Risk of nephrotoxicity (AKI risk increases linearly above AUC/MIC 600).";
+    },
+    clinicalPearls: [
+      "ASHP/IDSA 2020: AUC/MIC 400–600 replaces trough-only monitoring",
+      "Two-level (peak + trough) is most accurate; trough-only uses population estimates",
+      "Nephrotoxicity risk increases linearly when AUC/MIC >600",
+      "MIC ≥2: consider alternative agent (daptomycin, linezolid) — target AUC difficult to achieve safely",
+      "Renal dose adjustment: extend interval (q24h, q48h) rather than reducing dose",
+      "In HD patients: redose after dialysis (vancomycin is partially dialyzed)",
+      "Bayesian software (e.g., PrecisePK) preferred over manual calculation when available",
+    ],
+    references: [
+      "Rybak MJ et al. ASHP/IDSA/SIDP Vancomycin Therapeutic Monitoring Guidelines. Am J Health Syst Pharm. 2020;77(11):835-864",
+      "Neely MN et al. Clin Infect Dis. 2018;67(3):303-309",
+    ],
+  },
+  // ============================================================================
+  // NEW — TACROLIMUS TARGET (Transplantation)
+  // ============================================================================
+  {
+    id: "tacrolimus-target",
+    name: "Tacrolimus Target Range Advisor",
+    searchTerms: ["tacrolimus", "fk506", "prograf", "tacro level", "tacrolimus target", "tac level", "immunosuppression target", "tacrolimus trough", "fk level", "transplant drug level"],
+    description: "Post-transplant tacrolimus target range based on time, risk, and BK status",
+    whenToUse: "Use to determine target tacrolimus trough level based on transplant timing, immunologic risk, and BK viremia status.",
+    category: "Transplantation",
+    inputs: [
+      { id: "tacroLevel", label: "Current Tacrolimus Level", type: "number", unit: "ng/mL", placeholder: "8.0", required: true },
+      { id: "monthsPostTx", label: "Months Post-Transplant", type: "number", unit: "months", placeholder: "6", required: true },
+      { id: "immunologicRisk", label: "Immunologic Risk", type: "select", options: [{ value: "standard", label: "Standard Risk" }, { value: "high", label: "High Risk (sensitized, retransplant, AA)" }], required: true },
+      { id: "concomitantIS", label: "Concomitant IS", type: "select", options: [{ value: "mmf", label: "MMF/MPA" }, { value: "aza", label: "Azathioprine" }, { value: "none", label: "CNI monotherapy" }] },
+      { id: "recentRejection", label: "Recent Rejection", type: "select", options: [{ value: "no", label: "No" }, { value: "yes-3mo", label: "Yes, within 3 months" }, { value: "yes-6mo", label: "Yes, within 6 months" }] },
+      { id: "bkViremia", label: "BK Viremia", type: "select", options: [{ value: "none", label: "None/Negative" }, { value: "low", label: "Low (<1,000 copies)" }, { value: "moderate", label: "Moderate (1,000–10,000)" }, { value: "high", label: "High (>10,000)" }] },
+    ],
+    resultLabel: "Tacrolimus Level",
+    resultUnit: "ng/mL",
+    interpretation: (value, inputs) => {
+      const months = Number(inputs?.monthsPostTx) || 0;
+      const risk = inputs?.immunologicRisk || "standard";
+      const rejection = inputs?.recentRejection || "no";
+      const bk = inputs?.bkViremia || "none";
+
+      // Determine target range
+      let lowTarget: number, highTarget: number;
+      if (months <= 3) { lowTarget = risk === "high" ? 10 : 8; highTarget = risk === "high" ? 15 : 12; }
+      else if (months <= 6) { lowTarget = 6; highTarget = 10; }
+      else if (months <= 12) { lowTarget = 5; highTarget = 8; }
+      else { lowTarget = 4; highTarget = 7; }
+
+      // Adjust for rejection
+      if (rejection === "yes-3mo") { lowTarget += 2; highTarget += 2; }
+      else if (rejection === "yes-6mo") { lowTarget += 1; highTarget += 1; }
+
+      // Adjust for BK
+      let bkNote = "";
+      if (bk === "moderate" || bk === "high") {
+        lowTarget -= 2; highTarget -= 3;
+        if (lowTarget < 3) lowTarget = 3;
+        bkNote = `\n⚠ BK viremia detected — target reduced to ${lowTarget}–${highTarget} ng/mL. Reduce MMF first, then tacrolimus.`;
+      } else if (bk === "low") {
+        lowTarget -= 1; highTarget -= 1;
+        bkNote = `\nBK viremia low-level — slightly reduced target. Monitor q2–4 weeks.`;
+      }
+
+      const parts: string[] = [];
+      parts.push(`Target range: ${lowTarget}–${highTarget} ng/mL (${months} months post-transplant, ${risk} risk).`);
+      if (value < lowTarget) parts.push(`Current level ${value} ng/mL — BELOW target. Risk of rejection. Consider dose increase.`);
+      else if (value > highTarget) parts.push(`Current level ${value} ng/mL — ABOVE target. Risk of nephrotoxicity, infections, BK reactivation. Consider dose reduction.`);
+      else parts.push(`Current level ${value} ng/mL — within target. Continue current dose.`);
+      if (bkNote) parts.push(bkNote);
+      return parts.join("\n");
+    },
+    clinicalPearls: [
+      "0–3 mo: 8–12 (standard) or 10–15 (high risk) ng/mL",
+      "3–6 mo: 6–10 | 6–12 mo: 5–8 | >12 mo: 4–7 ng/mL",
+      "BK viremia: reduce target 2–3 ng/mL; reduce MMF FIRST, then tacrolimus",
+      "Recent rejection: increase target 1–2 ng/mL for 3–6 months",
+      "CNI monotherapy (no MMF): higher tacrolimus targets needed (+1–2 ng/mL)",
+      "Check level as 12h trough (T0) — timing matters for consistency",
+      "Generic tacrolimus: recheck levels after any brand switch",
+    ],
+    references: [
+      "KDIGO Transplant Guideline. Am J Transplant. 2009;9(Suppl 3):S1-S157",
+      "Ekberg H et al. N Engl J Med. 2007;357(25):2562-2575",
+    ],
+  },
+  // ============================================================================
+  // NEW — BK VIRUS ASSESSMENT (Transplantation)
+  // ============================================================================
+  {
+    id: "bk-virus-assessment",
+    name: "BK Virus Risk Assessment",
+    searchTerms: ["bk virus", "bkv", "bk viremia", "bk nephropathy", "bkvn", "polyoma", "sv40", "bk viral load", "decoy cells", "bk management", "transplant bk"],
+    description: "BK viremia risk stratification with immunosuppression reduction guidance (AST guidelines)",
+    whenToUse: "Use to guide management of BK viremia in kidney transplant recipients per AST guidelines.",
+    category: "Transplantation",
+    inputs: [
+      { id: "bkViralLoad", label: "BK Viral Load", type: "number", unit: "copies/mL", placeholder: "5000", required: true },
+      { id: "monthsPostTxBK", label: "Months Post-Transplant", type: "number", unit: "months", placeholder: "3", required: true },
+      { id: "tacroLevelBK", label: "Current Tacrolimus Level", type: "number", unit: "ng/mL", placeholder: "8" },
+      { id: "mmfDoseBK", label: "Current MMF Dose", type: "number", unit: "mg/day", placeholder: "1500" },
+      { id: "decoyCells", label: "Urine Decoy Cells", type: "select", options: [{ value: "negative", label: "Negative" }, { value: "positive", label: "Positive" }] },
+      { id: "biopsyResult", label: "Biopsy Result (if done)", type: "select", options: [{ value: "notDone", label: "Not done" }, { value: "negative", label: "SV40 negative" }, { value: "positive", label: "SV40 positive (BKVN)" }] },
+      { id: "creatinineTrend", label: "Creatinine Trend", type: "select", options: [{ value: "stable", label: "Stable" }, { value: "rising", label: "Rising" }] },
+    ],
+    resultLabel: "BK Viral Load",
+    resultUnit: "copies/mL",
+    interpretation: (value, inputs) => {
+      const months = Number(inputs?.monthsPostTxBK) || 0;
+      const biopsy = inputs?.biopsyResult || "notDone";
+      const tacro = Number(inputs?.tacroLevelBK) || 0;
+      const mmf = Number(inputs?.mmfDoseBK) || 0;
+      const crTrend = inputs?.creatinineTrend || "stable";
+
+      if (biopsy === "positive") return `SV40-positive biopsy = confirmed BKVN. Aggressive IS reduction:\n• Stop or halve MMF immediately\n• Target tacrolimus 4–6 ng/mL\n• Repeat biopsy in 3–6 months\n• Consider IVIG or cidofovir only if graft function declining despite IS reduction\n• Monitor viral load q2 weeks`;
+
+      const parts: string[] = [];
+      if (value < 1000) {
+        parts.push("BK viremia <1,000 copies/mL — low-level. Monitor q4 weeks. No IS reduction needed yet.");
+        if (months <= 6) parts.push("High-risk period (0–6 months). Continue close surveillance.");
+      } else if (value < 10000) {
+        parts.push("BK viremia 1,000–10,000 copies/mL — moderate. Rising trend concerning.");
+        parts.push("Step 1: Reduce MMF by 25–50% (e.g., 1500→1000 mg or 1000→500 mg/day).");
+        if (tacro > 8) parts.push(`Step 2: Lower tacrolimus target to 6–8 ng/mL (current: ${tacro}).`);
+        parts.push("Monitor viral load q2 weeks. If not declining in 4 weeks, further reduce IS.");
+      } else {
+        parts.push(`BK viremia >10,000 copies/mL (${value.toLocaleString()}) — HIGH. Presumptive BKVN.`);
+        parts.push("• Stop or reduce MMF to 50% immediately");
+        parts.push("• Target tacrolimus 4–6 ng/mL");
+        parts.push("• Strongly consider kidney biopsy (SV40 stain) to confirm BKVN");
+        if (crTrend === "rising") parts.push("⚠ Rising creatinine + high viral load — biopsy URGENT to rule out concurrent rejection vs BKVN.");
+      }
+      return parts.join("\n");
+    },
+    clinicalPearls: [
+      "Screen BK viremia monthly for first 6 months, then q3 months for 2 years",
+      "<1,000: monitor q4wk | 1,000–10,000: reduce MMF 25–50% | >10,000: presumptive BKVN",
+      "SV40 positive on biopsy = confirmed BKVN — aggressive IS reduction",
+      "Reduce MMF FIRST, then tacrolimus — MMF has greater BK promotion effect",
+      "Target tacrolimus 4–6 ng/mL when BK viral load >10,000",
+      "Urine decoy cells: sensitive but not specific — use plasma viral load for management",
+      "BK clearance typically takes 6–12 weeks after IS reduction",
+      "Risk of rejection increases with IS reduction — monitor closely for donor-specific antibodies",
+    ],
+    references: [
+      "Hirsch HH et al. Am J Transplant. 2019;19(Suppl 3):364-376",
+      "AST Infectious Disease Community of Practice. Am J Transplant. 2019;19(Suppl 3)",
+    ],
+  },
+  // ============================================================================
+  // NEW — BVAS v3 (Systemic Diseases)
+  // ============================================================================
+  {
+    id: "bvas-v3",
+    name: "Birmingham Vasculitis Activity Score (BVAS v3)",
+    searchTerms: ["bvas", "vasculitis score", "anca vasculitis", "gpa", "mpa", "wegener", "vasculitis activity", "birmingham vasculitis", "bvas3", "bvas v3", "anca score"],
+    description: "Standardized vasculitis disease activity assessment across 9 organ systems",
+    whenToUse: "Use to quantify vasculitis disease activity in ANCA-associated vasculitis (GPA, MPA, EGPA) for treatment decisions and clinical trials.",
+    category: "Systemic Diseases & Scores",
+    inputs: [
+      // General (max 6)
+      { id: "myalgia", label: "Myalgia", type: "checkbox" },
+      { id: "arthralgia", label: "Arthralgia / Arthritis", type: "checkbox" },
+      { id: "fever", label: "Fever (≥38°C)", type: "checkbox" },
+      { id: "weightLoss", label: "Weight Loss (≥2 kg)", type: "checkbox" },
+      // Cutaneous (max 16)
+      { id: "infarct", label: "Skin Infarct", type: "checkbox" },
+      { id: "purpura", label: "Purpura", type: "checkbox" },
+      { id: "ulcer", label: "Skin Ulcer", type: "checkbox" },
+      { id: "gangrene", label: "Gangrene", type: "checkbox" },
+      { id: "otherSkinVasculitis", label: "Other Skin Vasculitis", type: "checkbox" },
+      // Eyes (max 31)
+      { id: "uveitis", label: "Uveitis", type: "checkbox" },
+      { id: "retinalVasculitis", label: "Retinal Vasculitis / Exudate", type: "checkbox" },
+      { id: "scleritis", label: "Scleritis / Episcleritis", type: "checkbox" },
+      { id: "suddenVisualLoss", label: "Sudden Visual Loss", type: "checkbox" },
+      // ENT (max 23)
+      { id: "nasalDischarge", label: "Nasal Discharge / Crusting", type: "checkbox" },
+      { id: "sinusitis", label: "Sinusitis", type: "checkbox" },
+      { id: "hearingLoss", label: "Sensorineural Hearing Loss", type: "checkbox" },
+      { id: "subglotticStenosis", label: "Subglottic Stenosis", type: "checkbox" },
+      // Chest (max 31)
+      { id: "nodules", label: "Pulmonary Nodules / Cavities", type: "checkbox" },
+      { id: "infiltrate", label: "Pulmonary Infiltrate", type: "checkbox" },
+      { id: "alveolarHemorrhage", label: "Alveolar Hemorrhage", type: "checkbox" },
+      { id: "respiratoryFailure", label: "Respiratory Failure", type: "checkbox" },
+      // Cardiovascular (max 29)
+      { id: "pericarditis", label: "Pericarditis", type: "checkbox" },
+      { id: "ischemicCardiacPain", label: "Ischemic Cardiac Pain", type: "checkbox" },
+      { id: "cardiomyopathy", label: "Cardiomyopathy", type: "checkbox" },
+      // Abdominal (max 21)
+      { id: "bloodyDiarrhea", label: "Bloody Diarrhea", type: "checkbox" },
+      { id: "ischemicAbdominalPain", label: "Ischemic Abdominal Pain", type: "checkbox" },
+      // Renal (max 32)
+      { id: "hypertensionBvas", label: "New/Worse Hypertension", type: "checkbox" },
+      { id: "proteinuriaBvas", label: "Proteinuria (>1+)", type: "checkbox" },
+      { id: "hematuria", label: "Hematuria (≥10 RBC/hpf)", type: "checkbox" },
+      { id: "creatinineRise", label: "Creatinine Rise (>30%)", type: "checkbox" },
+      { id: "creatinineRiseRapid", label: "Rapid Progressive GN (RPGN)", type: "checkbox" },
+      // Nervous System (max 52)
+      { id: "organicConfusion", label: "Organic Confusion / Dementia", type: "checkbox" },
+      { id: "seizuresBvas", label: "Seizures", type: "checkbox" },
+      { id: "strokeBvas", label: "Stroke / CVA", type: "checkbox" },
+      { id: "cranialNervePalsy", label: "Cranial Nerve Palsy", type: "checkbox" },
+      { id: "sensorNeuropathy", label: "Sensory Neuropathy", type: "checkbox" },
+      { id: "motorNeuropathy", label: "Motor Mononeuritis Multiplex", type: "checkbox" },
+    ],
+    resultLabel: "BVAS v3 Score",
+    resultUnit: "points",
+    interpretation: (value) => {
+      if (value === 0) return "BVAS 0 — Remission. Continue maintenance therapy. Monitor for relapse.";
+      if (value <= 9) return "BVAS 1–9 — Low activity. Consider treatment optimization. May represent grumbling disease or minor flare. Repeat in 2–4 weeks to confirm trend.";
+      if (value <= 19) return "BVAS 10–19 — Moderate activity. Active vasculitis requiring treatment escalation. Consider pulse steroids + cyclophosphamide or rituximab induction.";
+      return "BVAS ≥20 — Severe/life-threatening activity. Urgent induction therapy: pulse methylprednisolone 500–1000 mg × 3 days + cyclophosphamide or rituximab. Consider plasma exchange if pulmonary hemorrhage or severe renal disease (PEXIVAS).";
+    },
+    clinicalPearls: [
+      "BVAS 0 defines remission in clinical trials (RAVE, RITUXVAS)",
+      "Renal items carry high weight (max 32 pts) — kidney involvement drives severity",
+      "Persistent BVAS >0 for >6 months = consider treatment failure",
+      "Use BVAS at every visit to track disease activity trend",
+      "Alveolar hemorrhage + RPGN = life-threatening — immediate induction therapy",
+      "Score only items attributable to active vasculitis, not chronic damage (use VDI for damage)",
+    ],
+    references: [
+      "Mukhtyar C et al. Ann Rheum Dis. 2009;68(12):1827-1832",
+      "Stone JH et al. N Engl J Med. 2010;363(3):221-232",
+    ],
+  },
+  // ============================================================================
+  // NEW — DIALYSIS URGENCY SCORE
+  // ============================================================================
+  {
+    id: "dialysis-urgency",
+    name: "Dialysis Initiation Urgency Score",
+    searchTerms: ["dialysis urgency", "rrt indication", "dialysis indication", "emergent dialysis", "urgent dialysis", "aeiou", "dialysis initiation", "when to dialyze", "rrt timing", "start dialysis"],
+    description: "Weighted AEIOU scoring for dialysis initiation timing",
+    whenToUse: "Use to assess urgency of dialysis initiation based on clinical and lab parameters (AEIOU mnemonic).",
+    category: "Dialysis Adequacy",
+    inputs: [
+      { id: "pHDialysis", label: "Arterial pH", type: "number", unit: "", placeholder: "7.25" },
+      { id: "bicarbDialysis", label: "Serum Bicarbonate", type: "number", unit: "mEq/L", placeholder: "12" },
+      { id: "potassiumDialysis", label: "Serum Potassium", type: "number", unit: "mEq/L", placeholder: "5.5" },
+      { id: "ecgChanges", label: "ECG Changes (peaked T, wide QRS)", type: "select", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }] },
+      { id: "fluidOverload", label: "Fluid Overload Status", type: "select", options: [{ value: "none", label: "None" }, { value: "mild", label: "Mild (peripheral edema)" }, { value: "moderate", label: "Moderate (pleural effusion)" }, { value: "refractory", label: "Refractory pulmonary edema" }] },
+      { id: "bunDialysis", label: "BUN", type: "number", unit: "mg/dL", placeholder: "80" },
+      { id: "uremicSymptoms", label: "Uremic Symptoms", type: "select", options: [{ value: "none", label: "None" }, { value: "nausea", label: "Nausea/Vomiting/Anorexia" }, { value: "encephalopathy", label: "Encephalopathy (confusion, asterixis)" }, { value: "pericarditis", label: "Pericarditis (friction rub)" }] },
+      { id: "toxicIngestion", label: "Dialyzable Toxic Ingestion", type: "select", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }] },
+      { id: "diureticResponse", label: "Diuretic Response", type: "select", options: [{ value: "responsive", label: "Responsive to diuretics" }, { value: "resistant", label: "Diuretic resistant" }, { value: "anuric", label: "Anuric" }] },
+    ],
+    resultLabel: "Urgency Score",
+    resultUnit: "points",
+    interpretation: (value) => {
+      if (value >= 9) return "EMERGENT (Score ≥9) — Immediate dialysis. Life-threatening indication present. Contact nephrology STAT for emergent RRT. Place dialysis catheter emergently if no access.";
+      if (value >= 6) return "HIGH URGENCY (Score 6–8) — Dialysis within hours. Multiple serious indications. Place urgent dialysis access. Temporize with medical management while arranging RRT.";
+      if (value >= 3) return "MODERATE (Score 3–5) — Plan dialysis within 24h. Significant indications accumulating. Optimize medical management. Arrange vascular access and nephrology consult.";
+      return "LOW (Score 0–2) — Conservative management appropriate. Monitor closely. No immediate RRT indication. Continue supportive care and reassess in 6–12h.";
+    },
+    clinicalPearls: [
+      "AEIOU mnemonic: Acidosis, Electrolytes, Intoxication, Overload, Uremia",
+      "Any single life-threatening indication (pH <7.1, K >6.5+ECG, pulm edema, encephalopathy) = emergent",
+      "BUN alone is NOT a dialysis indication — always correlate with symptoms",
+      "Uremic pericarditis: friction rub = mandatory dialysis (risk of hemorrhagic tamponade)",
+      "Dialyzable toxins: methanol, ethylene glycol, lithium, salicylates, metformin",
+      "Consider earlier initiation if progressive trajectory (AKI not improving after 48–72h)",
+    ],
+    references: [
+      "Bagshaw SM et al. Curr Opin Crit Care. 2009;15(6):481-486",
+      "KDIGO AKI Guideline. Kidney Int Suppl. 2012;2(1):1-138",
+      "Zarbock A et al. JAMA. 2016;315(20):2190-2199",
+    ],
+  },
+  // ============================================================================
+  // NEW — COMPLEMENT LEVELS (GN Workup)
+  // ============================================================================
+  {
+    id: "complement-gn",
+    name: "Complement Levels Interpreter (GN Workup)",
+    searchTerms: ["complement", "c3", "c4", "low complement", "hypocomplementemia", "gn workup", "glomerulonephritis complement", "lupus complement", "mpgn", "c3g", "complement pattern"],
+    description: "Pattern-based complement interpretation for glomerulonephritis differential diagnosis",
+    whenToUse: "Use when evaluating complement levels (C3/C4) in the workup of glomerulonephritis to narrow the differential diagnosis.",
+    category: "Proteinuria & Glomerular Disease",
+    inputs: [
+      { id: "c3", label: "C3 Level", type: "number", unit: "mg/dL", placeholder: "90", required: true },
+      { id: "c4", label: "C4 Level", type: "number", unit: "mg/dL", placeholder: "20", required: true },
+      { id: "clinicalContext", label: "Clinical Context", type: "select", options: [{ value: "acute-gn", label: "Acute GN" }, { value: "chronic-gn", label: "Chronic/Persistent GN" }, { value: "nephrotic", label: "Nephrotic Syndrome" }, { value: "rpgn", label: "Rapidly Progressive GN" }] },
+    ],
+    resultLabel: "Complement Pattern",
+    resultUnit: "",
+    interpretation: (value, inputs) => {
+      const c3 = Number(inputs?.c3) || 0;
+      const c4 = Number(inputs?.c4) || 0;
+      const context = inputs?.clinicalContext || "acute-gn";
+      const lowC3 = c3 < 90;
+      const lowC4 = c4 < 10;
+
+      if (lowC3 && lowC4) {
+        return `Low C3 (${c3}) + Low C4 (${c4}) — CLASSICAL + ALTERNATIVE pathway activation.\nDifferential:\n• Lupus nephritis (most common) — check ANA, anti-dsDNA, anti-Smith\n• Cryoglobulinemia — check cryoglobulins, RF, hepatitis C\n• Infective endocarditis — blood cultures, echocardiogram\n• Atheroembolic disease (less common)\n• Serum sickness\n\nWorkup: ANA, dsDNA, cryoglobulins, RF, HCV, blood cultures, echocardiogram.`;
+      }
+      if (lowC3 && !lowC4) {
+        let ddx = `Low C3 (${c3}) + Normal C4 (${c4}) — ALTERNATIVE pathway activation.\nDifferential:\n`;
+        if (context === "acute-gn") ddx += "• Post-streptococcal GN (most common in acute setting) — check ASO, anti-DNase B\n• C3 glomerulopathy (C3G/DDD) — check C3 nephritic factor\n• Atypical HUS — check ADAMTS13, complement genetics";
+        else ddx += "• C3 glomerulopathy (C3G/DDD) — persistent low C3 is hallmark, check C3NeF\n• MPGN type II/III — complement-mediated\n• Shunt nephritis";
+        ddx += "\n\nWorkup: ASO/anti-DNase B, C3 nephritic factor, factor H, ADAMTS13, kidney biopsy with IF and EM.";
+        return ddx;
+      }
+      if (!lowC3 && lowC4) {
+        return `Normal C3 (${c3}) + Low C4 (${c4}) — CLASSICAL pathway activation (selective).\nDifferential:\n• Type I/II cryoglobulinemia — check cryoglobulins, RF, HCV\n• Hereditary angioedema (usually no GN) — check C1-esterase inhibitor\n• C4 deficiency (rare)\n\nWorkup: Cryoglobulins, RF, HCV, C1-esterase inhibitor level and function.`;
+      }
+      return `Normal C3 (${c3}) + Normal C4 (${c4}) — normocomplementemic GN.\nDifferential:\n• IgA nephropathy (most common GN worldwide)\n• ANCA-associated vasculitis (GPA, MPA) — check ANCA (PR3, MPO)\n• Anti-GBM disease — check anti-GBM antibodies\n• FSGS, Minimal Change Disease, Membranous nephropathy\n• Fibrillary GN, immunotactoid GN\n\nWorkup: ANCA, anti-GBM, PLA2R antibodies, serum/urine electrophoresis, kidney biopsy.`;
+    },
+    clinicalPearls: [
+      "Low C3 + Low C4: think lupus, cryoglobulinemia, endocarditis",
+      "Low C3 + Normal C4: think post-infectious GN, C3G, aHUS",
+      "Normal C3 + Low C4: cryoglobulinemia (classical pathway selective)",
+      "Normal C3 + Normal C4: IgAN, ANCA vasculitis, anti-GBM, FSGS, membranous",
+      "Post-streptococcal GN: C3 should normalize in 6–8 weeks — if persistent, think C3G",
+      "Always correlate with serology: ANA, ANCA, anti-GBM, cryoglobulins, HCV",
+    ],
+    references: [
+      "Sethi S et al. J Am Soc Nephrol. 2012;23(8):1359-1367",
+      "Fervenza FC et al. Kidney Int. 2012;82(4):465-473",
+    ],
+  },
+  // ============================================================================
+  // NEW — TRANSPLANT GN RECURRENCE RISK
+  // ============================================================================
+  {
+    id: "recurrence-risk-transplant",
+    name: "Transplant GN Recurrence Risk",
+    searchTerms: ["recurrence", "gn recurrence", "transplant recurrence", "fsgs recurrence", "igan recurrence", "membranous recurrence", "transplant glomerulonephritis", "recurrent gn"],
+    description: "Literature-based GN recurrence risk after kidney transplantation",
+    whenToUse: "Use to estimate glomerulonephritis recurrence risk after kidney transplantation based on primary disease.",
+    category: "Transplantation",
+    inputs: [
+      { id: "primaryDisease", label: "Primary Kidney Disease", type: "select", options: [
+        { value: "fsgs", label: "Primary FSGS" },
+        { value: "igan", label: "IgA Nephropathy" },
+        { value: "membranous", label: "Membranous Nephropathy" },
+        { value: "mpgn-ic", label: "MPGN (immune complex)" },
+        { value: "c3g", label: "C3 Glomerulopathy" },
+        { value: "lupus", label: "Lupus Nephritis" },
+        { value: "anca", label: "ANCA Vasculitis" },
+        { value: "antigbm", label: "Anti-GBM Disease" },
+        { value: "ahus", label: "Atypical HUS" },
+        { value: "dkd", label: "Diabetic Kidney Disease" },
+        { value: "amyloid-al", label: "AL Amyloidosis" },
+        { value: "amyloid-aa", label: "AA Amyloidosis" },
+        { value: "oxalosis", label: "Primary Hyperoxaluria" },
+        { value: "mcd", label: "Minimal Change Disease" },
+        { value: "fibrillary", label: "Fibrillary GN" },
+        { value: "other", label: "Other/Unknown" },
+      ], required: true },
+      { id: "priorRecurrence", label: "Prior Transplant Recurrence", type: "select", options: [{ value: "no", label: "No / First Transplant" }, { value: "yes", label: "Yes (recurred in prior graft)" }] },
+      { id: "donorType", label: "Donor Type", type: "select", options: [{ value: "deceased", label: "Deceased Donor" }, { value: "living", label: "Living Donor" }] },
+    ],
+    resultLabel: "Recurrence Risk",
+    resultUnit: "%",
+    interpretation: (value, inputs) => {
+      const disease = inputs?.primaryDisease || "other";
+      const prior = inputs?.priorRecurrence === "yes";
+      const data: Record<string, { rate: string; timeframe: string; impact: string; notes: string }> = {
+        "fsgs": { rate: "30–40%", timeframe: "Days to weeks (can be immediate)", impact: "50% graft loss if recurs", notes: prior ? "⚠ Prior recurrence → risk up to 80–100%. Consider plasmapheresis protocol pre-transplant." : "Risk factors: young age, rapid ESRD progression, podocin mutations. Rituximab at transplant may reduce risk." },
+        "igan": { rate: "40–60% histologic, 10–20% clinically significant", timeframe: "1–5 years", impact: "10–15% graft loss at 10 years from recurrence", notes: "Most common recurrent GN. Often subclinical. Tonsillectomy does not prevent recurrence." },
+        "membranous": { rate: "30–40%", timeframe: "Months to years", impact: "30–50% graft loss if recurrence untreated", notes: "PLA2R antibodies predict recurrence. Monitor PLA2R post-transplant. Rituximab effective for recurrence." },
+        "mpgn-ic": { rate: "30–65%", timeframe: "Months", impact: "Up to 50% graft loss", notes: "Treat underlying cause (HCV, monoclonal). Complement workup essential." },
+        "c3g": { rate: "50–80%", timeframe: "Weeks to months", impact: "50% graft loss at 5 years", notes: "Highest recurrence rate. Complement genetic testing essential. Consider eculizumab if complement-mediated." },
+        "lupus": { rate: "2–10% clinically significant", timeframe: "Years", impact: "Rarely causes graft loss", notes: "Wait for serologic quiescence. Low recurrence — do NOT delay transplant." },
+        "anca": { rate: "10–20%", timeframe: "Years (usually late)", impact: "Uncommon cause of graft loss", notes: "Wait until ANCA negative and clinically quiescent for ≥6–12 months. Rituximab maintenance may reduce risk." },
+        "antigbm": { rate: "<5% if waited", timeframe: "Rare", impact: "Low if antibodies negative", notes: "Wait until anti-GBM antibodies undetectable for ≥6 months. Very low risk if followed." },
+        "ahus": { rate: "50–80% without prophylaxis", timeframe: "Days to weeks", impact: "Near 100% graft loss without treatment", notes: "Complement genetics essential. Eculizumab prophylaxis dramatically reduces risk. Living related donors contraindicated in complement mutations." },
+        "dkd": { rate: "~100% histologic by 10 years", timeframe: "Years (5–10)", impact: "Graft loss from recurrent DKD uncommon if glycemic control maintained", notes: "Tight glycemic control (A1c <7%) is the key modifiable factor." },
+        "amyloid-al": { rate: "10–25%", timeframe: "Years", impact: "Depends on hematologic response", notes: "Only transplant if complete hematologic remission. Monitor free light chains." },
+        "amyloid-aa": { rate: "10–20%", timeframe: "Years", impact: "Depends on control of underlying inflammation", notes: "Control underlying inflammatory disease (FMF, RA). Consider anti-IL-1/6 therapy." },
+        "oxalosis": { rate: "Nearly 100% kidney-alone", timeframe: "Immediate", impact: "Universal graft loss without liver transplant", notes: "Combined liver-kidney transplant for type 1 (AGXT mutation). Lumasiran (Oxlumo) is changing paradigm." },
+        "mcd": { rate: "<5%", timeframe: "Rare", impact: "Low", notes: "Very low recurrence. Steroid-responsive if recurs." },
+        "fibrillary": { rate: "~50%", timeframe: "Months to years", impact: "Significant graft loss risk", notes: "DNAJB9-positive = fibrillary GN. Limited treatment options for recurrence." },
+        "other": { rate: "Variable", timeframe: "Variable", impact: "Depends on specific disease", notes: "Refer to disease-specific guidelines." },
+      };
+      const diseaseKey = String(disease);
+      const d = data[diseaseKey] || data["other"];
+      let result = `${diseaseKey.toUpperCase()} — Recurrence Rate: ${d.rate}\n`;
+      result += `Timeframe: ${d.timeframe}\n`;
+      result += `Impact on Graft: ${d.impact}\n\n`;
+      result += d.notes;
+      return result;
+    },
+    clinicalPearls: [
+      "Highest recurrence: C3G (50–80%), aHUS without prophylaxis (50–80%), primary FSGS (30–40%)",
+      "Prior recurrence in previous graft dramatically increases risk for FSGS, C3G",
+      "Living related donor contraindicated in aHUS with complement mutations",
+      "ANCA/anti-GBM: wait for serologic remission before transplant",
+      "Lupus nephritis: low recurrence — do not delay transplant",
+      "DKD recurs histologically but rarely causes graft failure with glycemic control",
+    ],
+    references: [
+      "Ponticelli C et al. Clin J Am Soc Nephrol. 2011;6(1):14-21",
+      "Allen PJ et al. Transplantation. 2017;101(4):710-718",
+    ],
+  },
+  // ============================================================================
+  // NEW — NEPHROTIC SYNDROME ASSESSMENT
+  // ============================================================================
+  {
+    id: "nephrotic-assessment",
+    name: "Nephrotic Syndrome Assessment",
+    searchTerms: ["nephrotic", "nephrotic syndrome", "nephrosis", "edema", "hypoalbuminemia", "nephrotic workup", "dvt risk nephrotic", "thrombosis nephrotic", "lipid nephrotic"],
+    description: "Comprehensive nephrotic syndrome severity assessment — proteinuria, thrombotic risk, lipids, edema",
+    whenToUse: "Use to assess severity of nephrotic syndrome and guide management of complications (thrombosis, edema, hyperlipidemia).",
+    category: "Proteinuria & Glomerular Disease",
+    inputs: [
+      { id: "upcr", label: "UPCR", type: "number", unit: "g/g", placeholder: "5.0", required: true },
+      { id: "albumin", label: "Serum Albumin", type: "number", unit: "g/dL", placeholder: "2.0", required: true },
+      { id: "totalCholesterol", label: "Total Cholesterol", type: "number", unit: "mg/dL", placeholder: "300" },
+      { id: "ldl", label: "LDL Cholesterol", type: "number", unit: "mg/dL", placeholder: "180" },
+      { id: "edemaStatus", label: "Edema Severity", type: "select", options: [{ value: "none", label: "None" }, { value: "mild", label: "Mild (ankle)" }, { value: "moderate", label: "Moderate (legs, periorbital)" }, { value: "severe", label: "Severe (anasarca, ascites, pleural effusion)" }] },
+      { id: "priorVTE", label: "Prior VTE / Known Thrombophilia", type: "select", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }] },
+      { id: "memberanousNephropathy", label: "Membranous Nephropathy Diagnosis", type: "select", options: [{ value: "no", label: "No / Unknown" }, { value: "yes", label: "Yes" }] },
+    ],
+    resultLabel: "Assessment",
+    resultUnit: "",
+    interpretation: (value, inputs) => {
+      const proteinuria = Number(inputs?.upcr) || 0;
+      const alb = Number(inputs?.albumin) || 0;
+      const chol = Number(inputs?.totalCholesterol) || 0;
+      const edema = inputs?.edemaStatus || "none";
+      const priorVTE = inputs?.priorVTE === "yes";
+      const membranous = inputs?.memberanousNephropathy === "yes";
+
+      const sections: string[] = [];
+
+      // Proteinuria tier
+      if (proteinuria >= 10) sections.push("MASSIVE proteinuria (≥10 g/g) — severe nephrotic syndrome. Urgent biopsy if not done.");
+      else if (proteinuria >= 3.5) sections.push("Nephrotic-range proteinuria (≥3.5 g/g) — full nephrotic workup indicated.");
+      else sections.push(`Proteinuria ${proteinuria} g/g — subnephrotic range.`);
+
+      // Thrombotic risk
+      let thrombRisk = "low";
+      if (alb < 2.0 || priorVTE) thrombRisk = "very high";
+      else if (alb < 2.5 || membranous) thrombRisk = "high";
+      else if (alb < 3.0) thrombRisk = "moderate";
+
+      if (thrombRisk === "very high") sections.push(`⚠ VERY HIGH thrombotic risk (albumin ${alb} g/dL${priorVTE ? ", prior VTE" : ""}). Prophylactic anticoagulation STRONGLY recommended. Consider full-dose warfarin (INR 2–3) or DOAC.`);
+      else if (thrombRisk === "high") sections.push(`HIGH thrombotic risk (albumin ${alb} g/dL${membranous ? ", membranous nephropathy" : ""}). Consider prophylactic anticoagulation. Membranous has highest VTE risk among nephrotic causes (up to 37%).`);
+      else if (thrombRisk === "moderate") sections.push(`Moderate thrombotic risk (albumin ${alb} g/dL). Individualize anticoagulation decision. Encourage ambulation, compression stockings.`);
+
+      // Lipid management
+      if (chol > 200) sections.push(`Hyperlipidemia (cholesterol ${chol} mg/dL) — start high-intensity statin. Lipid levels normalize when proteinuria resolves. Statin indicated regardless.`);
+
+      // Edema
+      if (edema === "severe") sections.push("Severe edema/anasarca — combination diuretics: loop (furosemide 80–160mg IV) + thiazide (metolazone 5mg). Consider IV albumin 25% + furosemide if albumin <2.0. Strict sodium restriction (<2g/day).");
+      else if (edema === "moderate") sections.push("Moderate edema — oral loop diuretics (furosemide 40–80mg BID). Add metolazone if insufficient response. Sodium restriction <2g/day.");
+      else if (edema === "mild") sections.push("Mild edema — sodium restriction (<2g/day) + oral loop diuretic as needed.");
+
+      return sections.join("\n\n");
+    },
+    clinicalPearls: [
+      "Nephrotic syndrome = proteinuria >3.5 g/day + hypoalbuminemia + edema + hyperlipidemia",
+      "Thrombotic risk highest with albumin <2.5 g/dL, especially in membranous nephropathy (37% VTE risk)",
+      "Prophylactic anticoagulation: consider when albumin <2.0–2.5, especially in membranous",
+      "Edema management: loop diuretics + thiazide (sequential nephron blockade). Albumin infusion if albumin <2.0",
+      "Treat hyperlipidemia with statins — lipid abnormality is atherogenic",
+      "RAAS blockade (ACEi/ARB) + SGLT2i = cornerstone of proteinuria reduction",
+    ],
+    references: [
+      "Glassock RJ. Clin J Am Soc Nephrol. 2007;2(5):1054-1065",
+      "Barbour SJ et al. Kidney Int. 2012;81(2):190-195",
+      "KDIGO GN Guideline. Kidney Int. 2021;100(4S):S1-S276",
+    ],
+  },
+  // ============================================================================
+  // NEW — CREATININE TRAJECTORY (AKI Recovery)
+  // ============================================================================
+  {
+    id: "creatinine-trajectory",
+    name: "Creatinine Trajectory (AKI Recovery)",
+    searchTerms: ["creatinine trajectory", "creatinine trend", "aki recovery", "creatinine slope", "creatinine kinetics", "aki resolution", "creatinine falling", "creatinine rising"],
+    description: "Plots creatinine trend (2–3 values) to classify AKI as rising, plateau, or falling",
+    whenToUse: "Use to track creatinine trajectory during AKI to predict recovery vs. progression to dialysis.",
+    category: "Acute Kidney Injury (AKI) Workup",
+    inputs: [
+      { id: "cr1", label: "Creatinine #1 (earliest)", type: "number", unit: "mg/dL", placeholder: "2.0", required: true },
+      { id: "cr1Time", label: "Time of Cr #1 (hours from admission)", type: "number", unit: "hours", placeholder: "0", required: true },
+      { id: "cr2", label: "Creatinine #2", type: "number", unit: "mg/dL", placeholder: "3.5", required: true },
+      { id: "cr2Time", label: "Time of Cr #2", type: "number", unit: "hours", placeholder: "24", required: true },
+      { id: "cr3", label: "Creatinine #3 (optional)", type: "number", unit: "mg/dL", placeholder: "3.0" },
+      { id: "cr3Time", label: "Time of Cr #3", type: "number", unit: "hours", placeholder: "48" },
+      { id: "baselineCrTrajectory", label: "Baseline Creatinine (target)", type: "number", unit: "mg/dL", placeholder: "1.0" },
+    ],
+    resultLabel: "Slope",
+    resultUnit: "mg/dL/day",
+    interpretation: (value) => {
+      if (Math.abs(value) < 0.1) return `Plateau (slope ${value.toFixed(2)} mg/dL/day) — creatinine stabilizing. AKI may be at peak. Continue supportive care, avoid nephrotoxins, reassess in 12–24h.`;
+      if (value > 0) return `Rising (slope +${value.toFixed(2)} mg/dL/day) — AKI progressing. Reassess volume status, obstruction, nephrotoxins. If sustained rise, evaluate for RRT. Consider urgent nephrology consult.`;
+      return `Falling (slope ${value.toFixed(2)} mg/dL/day) — AKI recovering. Continue supportive care. Projected recovery time shown below.`;
+    },
+    clinicalPearls: [
+      "Rising creatinine >0.3 mg/dL/day: AKI progressing, high risk for RRT",
+      "Plateau phase may last 7–14 days in ATN before recovery",
+      "Falling creatinine: recovery phase. Expect polyuria — match fluid losses",
+      "If creatinine not falling by 5–7 days post-insult: consider cortical necrosis, ongoing injury",
+      "Kinetic eGFR may be more accurate than static eGFR during rapid changes",
+    ],
+    references: [
+      "Chen S. Kidney Int. 2013;83(3):435-438",
+      "Waikar SS, Bonventre JV. J Am Soc Nephrol. 2009;20(4):672-679",
+    ],
   },
 ];
 export function getCalculatorsByCategory(category: string): Calculator[] {

@@ -1,7 +1,7 @@
 /**
  * OTC Calculators Dashboard
  * Professional open-access calculator for nephrologists
- * 92 calculators organized by clinical category
+ * 105 calculators organized by clinical category
  * Features: Light/Dark theme, inline unit conversion per input, mobile-friendly
  */
 
@@ -54,6 +54,7 @@ import { getRecommendations } from '@/lib/clinicalRecommendations';
 import { useTheme } from "@/contexts/ThemeContext";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { cn } from "@/lib/utils";
+import { scoreCalculator, cmdkFuzzyFilter } from "@/lib/fuzzySearch";
 import SearchInput from "@/components/SearchInput";
 import {
   DndContext,
@@ -103,6 +104,7 @@ const categoryColors: { [key: string]: string } = {
   "Systemic Diseases & Scores": "text-indigo-600 dark:text-indigo-400",
   "Bone & Fracture Risk": "text-yellow-700 dark:text-yellow-400",
   "Critical Care": "text-red-700 dark:text-red-300",
+  "Drug Dosing & Toxicity": "text-emerald-600 dark:text-emerald-400",
 };
 
 // Category icons mapping
@@ -119,6 +121,7 @@ const categoryIcons: { [key: string]: React.ReactNode } = {
   "Systemic Diseases & Scores": <Brain className="w-4 h-4" />,
   "Bone & Fracture Risk": <Bone className="w-4 h-4" />,
   "Critical Care": <AlertTriangle className="w-4 h-4" />,
+  "Drug Dosing & Toxicity": <Pill className="w-4 h-4" />,
 };
 
 // Category descriptions for clinical context
@@ -135,6 +138,7 @@ const categoryDescriptions: { [key: string]: string } = {
   "Systemic Diseases & Scores": "Disease activity scores and classification criteria for systemic conditions affecting the kidney, including lupus nephritis and frailty assessment.",
   "Bone & Fracture Risk": "Fracture risk assessment tools including FRAX for osteoporosis screening in CKD patients.",
   "Critical Care": "Sepsis screening and organ failure assessment tools including qSOFA, NEWS2, SOFA, and Wells scores for PE/DVT. Essential for early recognition of clinical deterioration.",
+  "Drug Dosing & Toxicity": "Renal dosing calculators for commonly used nephrotoxic drugs, including vancomycin AUC-guided monitoring and steroid conversion.",
 };
 
 // Define which inputs support unit conversion and their options
@@ -149,6 +153,10 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   plasmaCr: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   urineCr: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   donorCreatinine: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  cr1: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  cr2: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  cr3: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
+  baselineCrTrajectory: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 88.4 },
   bun: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.357 },
   preBUN: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.357 },
   postBUN: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.357 },
@@ -162,6 +170,8 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   // UPCR inputs
   urineProtein: { conventional: "mg", si: "g", conversionFactor: 0.001 },
   calcium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
+  calciumPTH: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
+  calciumPhos: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
   measuredCa: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
   phosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.323 },
   totalCholesterol: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0259 },
@@ -187,6 +197,7 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   // Magnesium (1 mg/dL = 0.4114 mmol/L)
   urineMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
   plasmaMagnesium: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
+  serumMagnesiumRepletion: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.4114 },
   // Uric acid (1 mg/dL = 59.48 μmol/L)
   urineUricAcid: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 59.48 },
   plasmaUricAcid: { conventional: "mg/dL", si: "μmol/L", conversionFactor: 59.48 },
@@ -194,6 +205,8 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   serumPhosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
   urinePhosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
   plasmaPhosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
+  phosphateLevel: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
+  phosphatePTH: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
   // Urine glucose
   urineGlucose: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0555 },
 };
@@ -620,73 +633,12 @@ export default function Dashboard() {
     [selectedCalculatorId]
   );
 
-  // Smart search: scores calculators by relevance using tokenized matching,
-  // abbreviation handling, prefix matching, and searchTerms aliases
+  // Smart search: scores calculators by relevance with fuzzy fallback
   const filteredCalculators = useMemo(() => {
     let filtered = calculators;
 
     if (searchQuery) {
-      const query = searchQuery.toLowerCase().trim();
-      // Normalize: strip special chars, collapse spaces
-      const normalizedQuery = query.replace(/[₂²\-_\/]/g, "").replace(/\s+/g, " ");
-      const queryTokens = normalizedQuery.split(" ").filter(Boolean);
-
-      // Score each calculator
-      const scored = calculators.map(c => {
-        const name = c.name.toLowerCase();
-        const normalizedName = name.replace(/[₂²\-_\/()]/g, "").replace(/\s+/g, " ");
-        const desc = c.description.toLowerCase();
-        const cat = c.category.toLowerCase();
-        const id = c.id.toLowerCase().replace(/[\-_]/g, "");
-        const terms = (c.searchTerms || []).map(t => t.toLowerCase());
-
-        let score = 0;
-
-        // Exact match on searchTerms (highest priority)
-        if (terms.some(t => t === normalizedQuery || t === query)) {
-          score += 100;
-        }
-
-        // searchTerm starts with query (prefix match)
-        if (terms.some(t => t.startsWith(normalizedQuery) || t.startsWith(query))) {
-          score += 80;
-        }
-
-        // searchTerm contains query
-        if (terms.some(t => t.includes(normalizedQuery) || t.includes(query))) {
-          score += 60;
-        }
-
-        // Name contains query directly
-        if (name.includes(query) || normalizedName.includes(normalizedQuery)) {
-          score += 50;
-        }
-
-        // ID matches
-        if (id.includes(normalizedQuery.replace(/\s/g, ""))) {
-          score += 45;
-        }
-
-        // All query tokens match somewhere (name, desc, category, or searchTerms)
-        const allSearchable = [normalizedName, desc, cat, ...terms, id].join(" ");
-        const allTokensMatch = queryTokens.every(token => allSearchable.includes(token));
-        if (allTokensMatch && queryTokens.length > 0) {
-          score += 40;
-        }
-
-        // Description contains query
-        if (desc.includes(query) || desc.includes(normalizedQuery)) {
-          score += 20;
-        }
-
-        // Category contains query
-        if (cat.includes(query)) {
-          score += 10;
-        }
-
-        return { calc: c, score };
-      });
-
+      const scored = calculators.map(c => ({ calc: c, score: scoreCalculator(c, searchQuery) }));
       filtered = scored
         .filter(s => s.score > 0)
         .sort((a, b) => b.score - a.score)
@@ -730,9 +682,9 @@ export default function Dashboard() {
 
     // Special multi-option toggles (BUN 4-option, KFRE ACR 3-option) — store specific selection
     // Link related inputs of the same measurement type so they toggle together
-    const allCreatinineIds = ["creatinine", "baselineCreatinine", "currentCreatinine", "creatinine1", "creatinine2", "preCreatinine", "postCreatinine", "plasmaCr", "urineCr", "urineCreatinine24h", "donorCreatinine"];
-    const allPhosphateIds = ["phosphate", "serumPhosphate", "urinePhosphate", "plasmaPhosphate"];
-    const allMagnesiumIds = ["urineMagnesium", "plasmaMagnesium"];
+    const allCreatinineIds = ["creatinine", "baselineCreatinine", "currentCreatinine", "creatinine1", "creatinine2", "preCreatinine", "postCreatinine", "plasmaCr", "urineCr", "urineCreatinine24h", "donorCreatinine", "cr1", "cr2", "cr3", "baselineCrTrajectory"];
+    const allPhosphateIds = ["phosphate", "serumPhosphate", "urinePhosphate", "plasmaPhosphate", "phosphateLevel", "phosphatePTH"];
+    const allMagnesiumIds = ["urineMagnesium", "plasmaMagnesium", "serumMagnesiumRepletion"];
     const allUricAcidIds = ["urineUricAcid", "plasmaUricAcid"];
     const creatinineGroups: Record<string, string[]> = {
       ...Object.fromEntries(allCreatinineIds.map(id => [id, allCreatinineIds])),
@@ -829,6 +781,10 @@ export default function Dashboard() {
       plasmaCr: { conventional: "1.0", si: "88" },
       urineCr: { conventional: "100", si: "8840" },
       donorCreatinine: { conventional: "0.9", si: "80" },
+      cr1: { conventional: "2.0", si: "177" },
+      cr2: { conventional: "3.5", si: "309" },
+      cr3: { conventional: "3.0", si: "265" },
+      baselineCrTrajectory: { conventional: "1.0", si: "88" },
       // BUN: 20 mg/dL = 7.1 mmol/L (upper normal)
       bun: { conventional: "20", si: "7.1" },
       preBUN: { conventional: "60", si: "21" },
@@ -842,6 +798,8 @@ export default function Dashboard() {
       albumin: { conventional: "4.0", si: "40" },
       // Calcium: 9.5 mg/dL = 2.4 mmol/L (normal)
       calcium: { conventional: "9.5", si: "2.4" },
+      calciumPTH: { conventional: "9.5", si: "2.4" },
+      calciumPhos: { conventional: "9.5", si: "2.4" },
       measuredCa: { conventional: "9.5", si: "2.4" },
       // Phosphate: 4.0 mg/dL = 1.3 mmol/L (normal)
       phosphate: { conventional: "4.0", si: "1.3" },
@@ -881,6 +839,7 @@ export default function Dashboard() {
       // Magnesium: urine 4.0 mg/dL = 1.6 mmol/L, plasma 1.8 mg/dL = 0.74 mmol/L
       urineMagnesium: { conventional: "4.0", si: "1.6" },
       plasmaMagnesium: { conventional: "1.8", si: "0.74" },
+      serumMagnesiumRepletion: { conventional: "1.4", si: "0.58" },
       // Uric acid: urine 20 mg/dL = 1190 μmol/L, plasma 4.5 mg/dL = 268 μmol/L
       urineUricAcid: { conventional: "20", si: "1190" },
       plasmaUricAcid: { conventional: "4.5", si: "268" },
@@ -888,6 +847,8 @@ export default function Dashboard() {
       serumPhosphate: { conventional: "1.8", si: "0.58" },
       urinePhosphate: { conventional: "40", si: "12.9" },
       plasmaPhosphate: { conventional: "3.0", si: "0.97" },
+      phosphateLevel: { conventional: "5.5", si: "1.78" },
+      phosphatePTH: { conventional: "4.5", si: "1.45" },
       // Urine glucose
       urineGlucose: { conventional: "0", si: "0" },
     };
@@ -1079,7 +1040,7 @@ export default function Dashboard() {
           );
           break;
 
-        case "fena":
+        case "fena": {
           calculationResult = calc.fena(
             Number(calculatorState.urineNa) || 0,
             getValue("plasmaCr"),
@@ -1087,7 +1048,10 @@ export default function Dashboard() {
             getValue("urineCr"),
             "mg/dL"
           );
+          const fenaVal = typeof calculationResult === "number" ? calculationResult : 0;
+          setResultInterpretation(selectedCalculator.interpretation(fenaVal, calculatorState));
           break;
+        }
 
         case "feurea":
           calculationResult = calc.feurea(
@@ -1210,12 +1174,15 @@ export default function Dashboard() {
           );
           break;
 
-        case "qtc-bazett":
+        case "qtc-bazett": {
           calculationResult = calc.qtcBazett(
             Number(calculatorState.qtInterval) || 0,
             Number(calculatorState.heartRate) || 0
           );
+          const qtcVal = typeof calculationResult === "number" ? calculationResult : 0;
+          setResultInterpretation(selectedCalculator.interpretation(qtcVal, calculatorState));
           break;
+        }
 
         case "uacr": {
           const rawCreatUACR = Number(calculatorState.urineCreatinineUACR) || 0;
@@ -1421,14 +1388,17 @@ export default function Dashboard() {
           );
           break;
 
-        case "iron-deficit":
+        case "iron-deficit": {
           calculationResult = calc.ironDeficitGanzoni(
             getValue("targetHemoglobin"),
             getValue("currentHemoglobin"),
             Number(calculatorState.weight) || 0,
             calculatorState.sex as "M" | "F"
           );
+          const ironVal = typeof calculationResult === "number" ? calculationResult : 0;
+          setResultInterpretation(selectedCalculator.interpretation(ironVal, calculatorState));
           break;
+        }
 
         case "kdpi": {
           const kdpiCalcResult = calc.kdpi(
@@ -2329,12 +2299,16 @@ export default function Dashboard() {
           );
           break;
 
-        case "kdigo-aki-staging":
+        case "kdigo-aki-staging": {
           calculationResult = calc.kdigoAkiStaging(
             getValue("baselineCreatinine"),
             getValue("currentCreatinine")
           );
+          // Pass full inputs to interpretation for UO-based staging
+          const akiVal = typeof calculationResult === "number" ? calculationResult : 0;
+          setResultInterpretation(selectedCalculator.interpretation(akiVal, calculatorState));
           break;
+        }
 
         case "mdrd":
           calculationResult = calc.mdrdGfr(
@@ -2372,8 +2346,10 @@ export default function Dashboard() {
             setResultInterpretation(
               `${kResult.severity.charAt(0).toUpperCase() + kResult.severity.slice(1)} hypokalemia — ` +
               `estimated total body deficit: ~${kResult.deficit} mEq. ` +
-              selectedCalculator.interpretation(kResult.deficit)
+              selectedCalculator.interpretation(kResult.deficit, calculatorState)
             );
+          } else {
+            setResultInterpretation(selectedCalculator.interpretation(kResult.deficit, calculatorState));
           }
           break;
         }
@@ -2416,6 +2392,189 @@ export default function Dashboard() {
             Number(calculatorState.bicarbonate) || 0
           );
           calculationResult = wintersResult.expectedPCO2;
+          break;
+        }
+
+        // ====================================================================
+        // NEW CALCULATORS — PHASE 2 & 3
+        // ====================================================================
+
+        case "magnesium-repletion": {
+          const mgResult = calc.magnesiumRepletion(
+            getValue("serumMagnesiumRepletion"),
+            Number(calculatorState.targetMagnesium) || 2.0,
+            Number(calculatorState.weight) || 70,
+            (calculatorState.renalFunction as "normal" | "ckd3-4" | "dialysis") || "normal"
+          );
+          calculationResult = mgResult.dose;
+          if (mgResult.severity !== "normal") {
+            setResultInterpretation(
+              `${mgResult.severity.charAt(0).toUpperCase() + mgResult.severity.slice(1)} hypomagnesemia — ` +
+              `IV MgSO4 dose: ${mgResult.dose}g. ` +
+              `Route: ${mgResult.route}\n` +
+              `Monitoring: ${mgResult.monitoring}\n\n` +
+              selectedCalculator.interpretation(mgResult.dose, calculatorState)
+            );
+          }
+          break;
+        }
+
+        case "pth-target-ckd": {
+          const pthVal = Number(calculatorState.pth) || 0;
+          calculationResult = pthVal;
+          setResultInterpretation(selectedCalculator.interpretation(pthVal, calculatorState));
+          break;
+        }
+
+        case "phosphate-management": {
+          const phos = getValue("phosphateLevel");
+          const ca = getValue("calciumPhos");
+          calculationResult = Math.round(phos * ca * 10) / 10;
+          setResultInterpretation(selectedCalculator.interpretation(calculationResult, calculatorState));
+          break;
+        }
+
+        case "vancomycin-auc": {
+          const vancResult = calc.vancomycinAuc(
+            Number(calculatorState.vancDose) || 0,
+            Number(calculatorState.vancInterval) || 12,
+            Number(calculatorState.vancTrough) || 0,
+            Number(calculatorState.vancPeak) || 0,
+            Number(calculatorState.vancInfusionTime) || 1,
+            Number(calculatorState.timeToPeak) || 1,
+            Number(calculatorState.timeToTrough) || 11,
+            Number(calculatorState.vancMIC) || 1.0,
+            Number(calculatorState.weight) || 70
+          );
+          calculationResult = vancResult.aucMic;
+          setResultInterpretation(
+            `AUC/MIC: ${vancResult.aucMic} | AUC₂₄: ${vancResult.auc24} mg·h/L\n` +
+            `Ke: ${vancResult.ke} h⁻¹ | t½: ${vancResult.halfLife}h | Vd: ${vancResult.vd}L\n\n` +
+            `${vancResult.adjustedDose}\n\n` +
+            selectedCalculator.interpretation(vancResult.aucMic)
+          );
+          break;
+        }
+
+        case "tacrolimus-target": {
+          const tacroVal = Number(calculatorState.tacroLevel) || 0;
+          calculationResult = tacroVal;
+          setResultInterpretation(selectedCalculator.interpretation(tacroVal, calculatorState));
+          break;
+        }
+
+        case "bk-virus-assessment": {
+          const bkVal = Number(calculatorState.bkViralLoad) || 0;
+          calculationResult = bkVal;
+          setResultInterpretation(selectedCalculator.interpretation(bkVal, calculatorState));
+          break;
+        }
+
+        case "bvas-v3": {
+          const bvasItems: Record<string, boolean> = {};
+          const bvasCheckboxIds = [
+            "myalgia", "arthralgia", "fever", "weightLoss",
+            "infarct", "purpura", "ulcer", "gangrene", "otherSkinVasculitis",
+            "uveitis", "retinalVasculitis", "scleritis", "suddenVisualLoss",
+            "nasalDischarge", "sinusitis", "hearingLoss", "subglotticStenosis",
+            "nodules", "infiltrate", "alveolarHemorrhage", "respiratoryFailure",
+            "pericarditis", "ischemicCardiacPain", "cardiomyopathy",
+            "bloodyDiarrhea", "ischemicAbdominalPain",
+            "hypertensionBvas", "proteinuriaBvas", "hematuria", "creatinineRise", "creatinineRiseRapid",
+            "organicConfusion", "seizuresBvas", "strokeBvas", "cranialNervePalsy", "sensorNeuropathy", "motorNeuropathy",
+          ];
+          for (const id of bvasCheckboxIds) {
+            bvasItems[id] = calculatorState[id] === "on";
+          }
+          const bvasResult = calc.bvasV3(bvasItems);
+          calculationResult = bvasResult.total;
+          const activeOrgans = Object.entries(bvasResult.organScores)
+            .filter(([, score]) => score > 0)
+            .map(([organ, score]) => `${organ}: ${score}`)
+            .join(", ");
+          setResultInterpretation(
+            (activeOrgans ? `Active organs: ${activeOrgans}\n\n` : "") +
+            selectedCalculator.interpretation(bvasResult.total)
+          );
+          break;
+        }
+
+        case "dialysis-urgency": {
+          const duResult = calc.dialysisUrgency(
+            Number(calculatorState.pHDialysis) || 0,
+            Number(calculatorState.bicarbDialysis) || 0,
+            Number(calculatorState.potassiumDialysis) || 0,
+            calculatorState.ecgChanges === "yes",
+            (calculatorState.fluidOverload as "none" | "mild" | "moderate" | "refractory") || "none",
+            Number(calculatorState.bunDialysis) || 0,
+            (calculatorState.uremicSymptoms as "none" | "nausea" | "encephalopathy" | "pericarditis") || "none",
+            0, // urineOutput24h — not used directly, diureticResponse covers it
+            Number(calculatorState.weight) || 70,
+            calculatorState.toxicIngestion === "yes",
+            (calculatorState.diureticResponse as "responsive" | "resistant" | "anuric") || "responsive"
+          );
+          calculationResult = duResult.score;
+          setResultInterpretation(
+            `${duResult.urgency}\n\n` +
+            (duResult.indications.length > 0 ? `Indications:\n• ${duResult.indications.join("\n• ")}\n\n` : "") +
+            selectedCalculator.interpretation(duResult.score)
+          );
+          break;
+        }
+
+        case "complement-gn": {
+          const c3Val = Number(calculatorState.c3) || 0;
+          const c4Val = Number(calculatorState.c4) || 0;
+          // Result is a code: 0=normal/normal, 1=lowC3/normalC4, 2=normalC3/lowC4, 3=lowC3/lowC4
+          const lowC3 = c3Val < 90;
+          const lowC4 = c4Val < 10;
+          calculationResult = (lowC3 ? 2 : 0) + (lowC4 ? 1 : 0);
+          setResultInterpretation(selectedCalculator.interpretation(calculationResult, calculatorState));
+          break;
+        }
+
+        case "recurrence-risk-transplant": {
+          // Lookup-based — pass disease code, result is approximate recurrence rate
+          const diseaseRates: Record<string, number> = {
+            "fsgs": 35, "igan": 50, "membranous": 35, "mpgn-ic": 45, "c3g": 65,
+            "lupus": 5, "anca": 15, "antigbm": 3, "ahus": 65, "dkd": 95,
+            "amyloid-al": 15, "amyloid-aa": 15, "oxalosis": 95, "mcd": 3, "fibrillary": 50, "other": 20,
+          };
+          const disease = calculatorState.primaryDisease || "other";
+          calculationResult = diseaseRates[disease as string] || 20;
+          setResultInterpretation(selectedCalculator.interpretation(calculationResult, calculatorState));
+          break;
+        }
+
+        case "nephrotic-assessment": {
+          // Multi-section assessment — result is albumin (drives thrombotic risk)
+          const albVal = getValue("albumin");
+          calculationResult = albVal;
+          setResultInterpretation(selectedCalculator.interpretation(albVal, calculatorState));
+          break;
+        }
+
+        case "creatinine-trajectory": {
+          const crValues: { creatinine: number; hoursFromFirst: number }[] = [];
+          const cr1 = getValue("cr1");
+          const cr1Time = Number(calculatorState.cr1Time) || 0;
+          const cr2 = getValue("cr2");
+          const cr2Time = Number(calculatorState.cr2Time) || 0;
+          const cr3 = getValue("cr3");
+          const cr3Time = Number(calculatorState.cr3Time) || 0;
+          if (cr1 > 0) crValues.push({ creatinine: cr1, hoursFromFirst: cr1Time });
+          if (cr2 > 0) crValues.push({ creatinine: cr2, hoursFromFirst: cr2Time });
+          if (cr3 > 0 && cr3Time > 0) crValues.push({ creatinine: cr3, hoursFromFirst: cr3Time });
+          const trajResult = calc.creatinineTrajectory(crValues, getValue("baselineCrTrajectory") || 1.0);
+          calculationResult = trajResult.slope;
+          let trajInterp = selectedCalculator.interpretation(trajResult.slope);
+          if (trajResult.trend === "Falling" && trajResult.projectedBaseline > 0) {
+            trajInterp += `\n\nProjected time to baseline: ~${Math.round(trajResult.projectedBaseline / 24)} days (${trajResult.projectedBaseline}h).`;
+          }
+          if (trajResult.trend === "Rising" && trajResult.projectedDialysis > 0) {
+            trajInterp += `\n\n⚠ Projected time to dialysis threshold (Cr 6.0): ~${Math.round(trajResult.projectedDialysis / 24)} days (${trajResult.projectedDialysis}h).`;
+          }
+          setResultInterpretation(trajInterp);
           break;
         }
 
@@ -5290,6 +5449,7 @@ export default function Dashboard() {
         onOpenChange={setCommandOpen}
         title="Search Calculators"
         description="Find a calculator by name, category, or keyword"
+        filter={cmdkFuzzyFilter}
       >
         <CommandInput placeholder="Search calculators..." />
         <CommandList className="max-h-[400px]">
@@ -5299,7 +5459,8 @@ export default function Dashboard() {
               {favoriteCalculators.map((calc) => (
                 <CommandItem
                   key={`cmd-fav-${calc.id}`}
-                  value={`${calc.name} ${calc.description} ${calc.category} ${calc.searchTerms?.join(" ") || ""}`}
+                  value={calc.name}
+                  keywords={[calc.description, calc.category, ...(calc.searchTerms || []), calc.id]}
                   onSelect={() => {
                     handleSelectCalculator(calc.id);
                     setCommandOpen(false);
@@ -5318,7 +5479,8 @@ export default function Dashboard() {
                 {catCalcs.map((calc) => (
                   <CommandItem
                     key={`cmd-${calc.id}`}
-                    value={`${calc.name} ${calc.description} ${calc.category} ${calc.searchTerms?.join(" ") || ""}`}
+                    value={calc.name}
+                    keywords={[calc.description, calc.category, ...(calc.searchTerms || []), calc.id]}
                     onSelect={() => {
                       handleSelectCalculator(calc.id);
                       setCommandOpen(false);
