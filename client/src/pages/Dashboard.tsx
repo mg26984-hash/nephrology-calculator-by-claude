@@ -2467,10 +2467,12 @@ export default function Dashboard() {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
           }
         }
-        // Auto-scroll to result on mobile
-        setTimeout(() => {
-          resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        // Auto-scroll to result after render
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            resultCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+        });
       }
     } catch (error) {
       console.error("Calculation error:", error);
