@@ -78,3 +78,12 @@ When passing numeric values from `calculatorState` to calculator functions:
 - Age threshold: >= 50
 - Full-precision OPTN mapping table (14-digit values)
 - NEVER change these coefficients without verifying against official OPTN documentation
+
+## Mobile Numpad Inputs (CRITICAL)
+
+All calculator `type: "number"` inputs render as `<input type="text" inputMode="decimal">` in Dashboard.tsx, NOT `type="number"`. This guarantees a numpad keyboard on all mobile devices.
+
+1. **Never use `type="number"`** on calculator inputs — always `type="text"` with `inputMode="decimal"`
+2. **onChange uses regex validation** — `/^\d*\.?\d*$/` blocks non-numeric characters while allowing decimal typing (e.g., "5." is preserved, not truncated to "5")
+3. **Values stored as strings** — all calculation code uses `Number(val) || 0` which handles strings identically
+4. **Floating calculate button** uses `useKeyboardOffset()` hook (Visual Viewport API) to stay above the mobile keyboard

@@ -52,6 +52,7 @@ import { calculators, getCategories, getCalculatorById, CalculatorInput } from "
 import * as calc from "@/lib/calculators";
 import { getRecommendations } from '@/lib/clinicalRecommendations';
 import { useTheme } from "@/contexts/ThemeContext";
+import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { cn } from "@/lib/utils";
 import SearchInput from "@/components/SearchInput";
 import {
@@ -315,6 +316,7 @@ function SortableFavoriteCard({ calc, categoryIcons, onSelect, onToggleFavorite 
 
 export default function Dashboard() {
   const { theme, toggleTheme } = useTheme();
+  const keyboardOffset = useKeyboardOffset();
   const [selectedCalculatorId, setSelectedCalculatorId] = useState<string | null>(null);
   const [calculatorState, setCalculatorState] = useState<CalculatorState>({});
   const [unitState, setUnitState] = useState<UnitState>(() => {
@@ -3408,13 +3410,17 @@ export default function Dashboard() {
                         {input.type === "number" && (
                           <div className="relative">
                             <Input
-                              type="number"
+                              type="text"
+                              inputMode="decimal"
+                              autoComplete="off"
                               placeholder={getDynamicPlaceholder(input)}
                               value={String(calculatorState[input.id] ?? "")}
-                              onChange={(e) => handleInputChange(input.id, parseFloat(e.target.value) || "")}
-                              min={input.min}
-                              max={input.max}
-                              step={input.step}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                  handleInputChange(input.id, val);
+                                }
+                              }}
                               className={cn("max-lg:text-base max-lg:min-h-[48px]", hasUnitToggle(input.id) ? "" : hasUnitConversion(input.id) ? "pr-20" : "pr-16")}
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -3583,7 +3589,7 @@ export default function Dashboard() {
               </Card>
 
               {/* Mobile Sticky Calculate Button */}
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-background/80 backdrop-blur-lg border-t border-border" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+              <div className="lg:hidden fixed left-0 right-0 z-40 p-3 bg-background/80 backdrop-blur-lg border-t border-border" style={{ bottom: `${keyboardOffset}px`, paddingBottom: keyboardOffset > 0 ? '0.75rem' : 'max(0.75rem, env(safe-area-inset-bottom))' }}>
                 <Button
                   onClick={handleCalculate}
                   disabled={!allRequiredFilled}
@@ -3594,8 +3600,8 @@ export default function Dashboard() {
                   Calculate
                 </Button>
               </div>
-              {/* Spacer for sticky button on mobile */}
-              <div className="lg:hidden h-20" />
+              {/* Spacer for sticky button on mobile — grows when keyboard pushes button up */}
+              <div className="lg:hidden" style={{ height: `${80 + keyboardOffset}px` }} />
 
               {/* Result Card */}
               {result !== null && (() => {
