@@ -203,17 +203,17 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
           info.highlight ? "bg-primary/5 border-primary/30" : "bg-muted/50"
         } ${isRecommended ? "ring-2 ring-primary/50" : ""}`}
       >
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-start gap-3">
-            <div className={`p-2 rounded-lg ${info.highlight ? "bg-primary/10" : "bg-muted"}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className={`p-2 rounded-lg shrink-0 ${info.highlight ? "bg-primary/10" : "bg-muted"}`}>
               <Icon className={`h-4 w-4 ${info.highlight ? "text-primary" : "text-muted-foreground"}`} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{info.name}</span>
                 {isRecommended && (
                   <Badge variant="outline" className="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300">
-                    Recommended for this patient
+                    Recommended
                   </Badge>
                 )}
               </div>
@@ -228,7 +228,7 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
               </button>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-left sm:text-right shrink-0">
             {value !== null ? (
               <>
                 <div className="text-2xl font-bold">{value}</div>
