@@ -328,7 +328,6 @@ export default function Dashboard() {
     return saved === "si" ? "si" : "conventional";
   });
   const [result, setResult] = useState<number | { [key: string]: number } | null>(null);
-  const [calcCount, setCalcCount] = useState(0);
   const [lastCalculatedEgfr, setLastCalculatedEgfr] = useState<number | null>(null);
   const [navigatedFromMehran, setNavigatedFromMehran] = useState<string | null>(null);
   const [savedMehranState, setSavedMehranState] = useState<CalculatorState | null>(null);
@@ -538,23 +537,21 @@ export default function Dashboard() {
     return () => observer.disconnect();
   }, [selectedCalculatorId]);
 
-  // Scroll to result card after it renders
-  useEffect(() => {
-    if (calcCount === 0 || result === null) return;
-    const scrollToResult = () => {
-      const el = resultCardRef.current || document.getElementById('result-card');
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      window.scrollTo({ top: scrollTop + rect.top - 80, behavior: 'smooth' });
-    };
-    // Double rAF ensures browser has painted the result card
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollToResult();
-      });
-    });
-  }, [calcCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Scroll to result card — polls DOM until the element appears, then scrolls
+  const scrollToResultCard = useCallback(() => {
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      const el = document.getElementById('result-card');
+      if (el) {
+        clearInterval(poll);
+        const rect = el.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        window.scrollTo({ top: scrollTop + rect.top - 80, behavior: 'smooth' });
+      }
+      if (attempts >= 30) clearInterval(poll); // give up after 1.5s
+    }, 50);
+  }, []);
 
   // Add calculator to recent list (called when selecting a calculator)
   const addToRecent = useCallback((calcId: string) => {
@@ -2486,15 +2483,15 @@ export default function Dashboard() {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
           }
         }
-        // Trigger scroll to result after render
-        setCalcCount(c => c + 1);
+        // Scroll to result after DOM updates
+        scrollToResultCard();
       }
     } catch (error) {
       console.error("Calculation error:", error);
       setResult(null);
       setResultInterpretation("Error in calculation. Please check your inputs.");
     }
-  }, [selectedCalculator, calculatorState, normalizeValue]);
+  }, [selectedCalculator, calculatorState, normalizeValue, scrollToResultCard]);
 
   const handleSelectCalculator = useCallback((calcId: string) => {
     setSelectedCalculatorId(calcId);
@@ -5109,7 +5106,7 @@ export default function Dashboard() {
 
               {/* Standalone Banff Result Display - shown when result is null but banffResult exists */}
               {selectedCalculator.id === 'banff-classification' && banffResult && result === null && (
-                <Card className="border-l-4 border-emerald-500 bg-emerald-500/5">
+                <Card id="result-card" className="border-l-4 border-emerald-500 bg-emerald-500/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Activity className="w-5 h-5 text-emerald-600" />
