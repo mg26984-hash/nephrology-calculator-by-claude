@@ -93,7 +93,21 @@ ALL numeric `<Input>` fields — in Dashboard.tsx AND in sub-components (EGFRCom
 The calculate button uses a two-tier approach to avoid overlapping inputs on short calculators:
 
 1. **Inline button** — always visible on all screen sizes, in the natural document flow inside the card. Uses `ref={inlineCalculateRef}` for visibility tracking.
-2. **Compact circular FAB** — a 56×56px (`w-14 h-14 rounded-full`) floating action button that ONLY appears when the inline button scrolls out of view (via IntersectionObserver). Positioned bottom-right, hidden on desktop (`lg:hidden`).
-3. **No full-width fixed bar** — the old full-width fixed bottom bar is removed. Never re-add it — it overlaps inputs on short calculators (2-3 inputs).
-4. **No spacer div** — the old 80px spacer that compensated for the fixed bar is removed.
-5. **Keyboard awareness** — the FAB repositions above the mobile keyboard via `useKeyboardOffset()` hook (Visual Viewport API): `bottom: Math.max(16, keyboardOffset + 16)`
+2. **Compact circular FAB** — a 56×56px (`w-14 h-14 rounded-full`) floating action button that ONLY appears when the inline button scrolls out of view (via IntersectionObserver). Positioned bottom-right, hidden on desktop (`lg:hidden`). Displays **"Go!"** text (`text-xs font-bold`), NOT an icon.
+3. **FAB auto-scrolls to result** — the FAB calls `handleCalculate` which calculates and then scrolls to `resultCardRef` via `scrollIntoView({ behavior: 'smooth', block: 'start' })`.
+4. **No full-width fixed bar** — the old full-width fixed bottom bar is removed. Never re-add it — it overlaps inputs on short calculators (2-3 inputs).
+5. **No spacer div** — the old 80px spacer that compensated for the fixed bar is removed.
+6. **Keyboard awareness** — the FAB repositions above the mobile keyboard via `useKeyboardOffset()` hook (Visual Viewport API): `bottom: Math.max(16, keyboardOffset + 16)`
+
+## eGFR Comparison Layout (CRITICAL)
+
+The EGFRComparison component uses a responsive layout for equation result cards:
+
+1. **Stacked on mobile, side-by-side on sm+** — `flex-col sm:flex-row sm:items-center sm:justify-between` prevents the value column from being crushed into vertical single-character stacking on narrow screens.
+2. **Left column (name/badge)** — uses `min-w-0` to allow text truncation, icon gets `shrink-0`.
+3. **Right column (value/CKD stage)** — uses `shrink-0` so it never collapses. `text-left sm:text-right` for mobile alignment.
+4. **Badge text** — keep short (e.g., "Recommended" not "Recommended for this patient") to save horizontal space. Name+badge row uses `flex-wrap`.
+
+## Result Color Coding IDs (CRITICAL)
+
+Calculator IDs in `resultColorCoding.ts` switch cases MUST exactly match the calculator IDs in `calculatorData.ts`. Use hyphens (e.g., `'curb-65'` not `'curb65'`). Always verify the case string matches the calculator's `id` field.
