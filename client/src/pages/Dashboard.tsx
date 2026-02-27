@@ -744,7 +744,7 @@ export default function Dashboard() {
   const getDynamicPlaceholder = useCallback((input: CalculatorInput): string => {
     // Handle ACR multi-unit placeholders for KFRE calculator
     if (selectedCalculatorId === "kfre" && input.id === "acr") {
-      const currentAcrUnit = unitState.acr || (globalUnitPreference === "si" ? "mg/mmol" : "mg/g");
+      const currentAcrUnit = unitState.acr || "mg/mmol";
       // Typical moderately elevated ACR values for each unit
       // 300 mg/g = 33.9 mg/mmol = 0.3 mg/mg (A3 category)
       switch (currentAcrUnit) {
@@ -756,6 +756,22 @@ export default function Dashboard() {
           return "0.3";
         default:
           return "300";
+      }
+    }
+
+    // Handle UPCR multi-unit placeholders for Nephrotic Syndrome Assessment
+    if (selectedCalculatorId === "nephrotic-assessment" && input.id === "upcr") {
+      const currentUnit = unitState.upcr || "mg/mmol";
+      // Nephrotic-range ~5 g/g = 5000 mg/g = 565 mg/mmol
+      switch (currentUnit) {
+        case "mg/mmol":
+          return "565";
+        case "mg/g":
+          return "5000";
+        case "g/g":
+          return "5.0";
+        default:
+          return "565";
       }
     }
 
@@ -900,11 +916,11 @@ export default function Dashboard() {
         case "BUN (mg/dL)":
           return String(baseBUN);
         case "BUN (mmol/L)":
-          return (baseBUN * 0.357).toFixed(1);
+          return (baseBUN * 0.357).toFixed(1); // BUN mg/dL → BUN mmol/L
         case "Urea (mg/dL)":
-          return (baseBUN / 0.467).toFixed(0); // BUN to Urea
+          return (baseBUN * 2.14).toFixed(0); // BUN mg/dL → Urea mg/dL (× 60/28)
         case "Urea (mmol/L)":
-          return ((baseBUN / 0.467) * 0.166).toFixed(1); // Urea mg/dL to mmol/L
+          return (baseBUN * 0.357).toFixed(1); // BUN mg/dL → Urea mmol/L (same as BUN mmol/L at molar level)
         default:
           return String(baseBUN);
       }
@@ -953,21 +969,21 @@ export default function Dashboard() {
         
         const selectedUnit = unitState[`${inputId}_bunUrea`] || (globalUnitPreference === "si" ? "BUN (mmol/L)" : "BUN (mg/dL)");
         
-        // Conversion factors:
-        // BUN (mg/dL) -> BUN (mg/dL): 1
-        // BUN (mmol/L) -> BUN (mg/dL): multiply by 2.8 (1 mmol/L BUN = 2.8 mg/dL)
-        // Urea (mg/dL) -> BUN (mg/dL): divide by 2.14 (Urea = BUN × 2.14)
-        // Urea (mmol/L) -> BUN (mg/dL): multiply by 2.8 / 2.14 = 1.308 (or divide by 0.357 then divide by 2.14)
-        
+        // Conversion factors (per acutecaretesting.org, wikipedia BUN):
+        // BUN (mg/dL) → BUN (mg/dL): 1
+        // BUN (mmol/L) → BUN (mg/dL): × 2.8
+        // Urea (mg/dL) → BUN (mg/dL): × 0.467 (= 28/60, i.e. ÷ 2.14)
+        // Urea (mmol/L) → BUN (mg/dL): × 2.8 (at molar level BUN = Urea, then × 2.8)
+
         switch (selectedUnit) {
           case "BUN (mg/dL)":
             return raw;
           case "BUN (mmol/L)":
-            return raw * 2.8; // Convert BUN mmol/L to BUN mg/dL
+            return raw * 2.8; // BUN mmol/L → BUN mg/dL
           case "Urea (mg/dL)":
-            return raw / 2.14; // Convert Urea mg/dL to BUN mg/dL
+            return raw * 0.467; // Urea mg/dL → BUN mg/dL (28/60)
           case "Urea (mmol/L)":
-            return raw * 6.006; // Convert Urea mmol/L to BUN mg/dL (2.8 / 0.4665)
+            return raw * 2.8; // Urea mmol/L = BUN mmol/L (same at molar level) → × 2.8 for mg/dL
           default:
             return raw;
         }
@@ -1033,16 +1049,20 @@ export default function Dashboard() {
           );
           break;
 
-        case "kfre":
+        case "kfre": {
+          // Read ACR value and unit directly (multi-unit toggle stores actual unit string)
+          const rawAcr = Number(calculatorState.acr) || 0;
+          const acrUnit = (unitState.acr || "mg/mmol") as "mg/g" | "mg/mmol" | "mg/mg";
           calculationResult = calc.kfre(
             Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             Number(calculatorState.eGFR) || 0,
-            getValue("acr"),
-            "mg/g",
+            rawAcr,
+            acrUnit,
             (calculatorState.years as 2 | 5) || 5
           );
           break;
+        }
 
         case "lund-malmo-revised":
           calculationResult = calc.lundMalmoRevised(
@@ -2608,9 +2628,17 @@ export default function Dashboard() {
           // Multi-section assessment — result is albumin (drives thrombotic risk)
           const albVal = getValue("albumin");
           calculationResult = albVal;
+          // Convert UPCR to g/g for interpretation thresholds
+          const rawUpcr = Number(calculatorState.upcr) || 0;
+          const upcrUnit = unitState.upcr || "mg/mmol";
+          let upcrGG: number;
+          if (upcrUnit === "mg/mmol") upcrGG = rawUpcr / 113;
+          else if (upcrUnit === "mg/g") upcrGG = rawUpcr / 1000;
+          else upcrGG = rawUpcr; // already g/g
           // Pass pre-converted values so interpretation thresholds work correctly
           const nephInputs = {
             ...calculatorState,
+            upcr: String(upcrGG),
             albumin: String(albVal),
             totalCholesterol: String(getValue("totalCholesterol")),
             ldl: String(getValue("ldl")),
@@ -2964,11 +2992,13 @@ export default function Dashboard() {
   // Inline Unit Toggle Component
   // Multi-option unit definitions for calculators with more than 2 unit options
   const multiUnitOptions: { [inputId: string]: string[] } = {
-    ratioValue: ["mg/mg", "mg/g", "mg/mmol", "mg/L"],
+    ratioValue: ["mg/mmol", "mg/g", "mg/mg", "mg/L"],
     proteinValue: ["mg/dL", "g/L", "mg/L"],
     creatinineValue: ["mg/dL", "mmol/L"],
-    // ACR for KFRE calculator - mg/g is most common, mg/mmol is SI, mg/mg is ratio
-    acr: ["mg/g", "mg/mmol", "mg/mg"],
+    // ACR — mg/mmol (SI, default), mg/g (US conventional), mg/mg (ratio)
+    acr: ["mg/mmol", "mg/g", "mg/mg"],
+    // UPCR ratio input (nephrotic-assessment) — mg/mmol (SI, default), mg/g, g/g
+    upcr: ["mg/mmol", "mg/g", "g/g"],
     // Urine creatinine for UACR calculator - g is most common, mg and μmol alternatives
     urineCreatinineUACR: ["g", "mg", "μmol"],
     // Urine creatinine for UPCR calculator - mg is most common, g and μmol alternatives
@@ -2981,15 +3011,14 @@ export default function Dashboard() {
     const hasMultiUnitOptions =
       (selectedCalculatorId === "24-hour-protein" && multiUnitOptions[inputId]) ||
       (selectedCalculatorId === "kfre" && inputId === "acr") ||
+      (selectedCalculatorId === "nephrotic-assessment" && inputId === "upcr") ||
       (selectedCalculatorId === "uacr" && multiUnitOptions[inputId]) ||
       (selectedCalculatorId === "upcr" && multiUnitOptions[inputId]);
     
     if (hasMultiUnitOptions && multiUnitOptions[inputId]) {
       const options = multiUnitOptions[inputId];
-      // Default follows global unit preference: si → mg/mmol, conventional → mg/g (or first option)
-      const defaultUnit = globalUnitPreference === "si"
-        ? (options.includes("mg/mmol") ? "mg/mmol" : options[0])
-        : (options.includes("mg/g") ? "mg/g" : options.includes("mg/mg") ? "mg/mg" : options[0]);
+      // Default: mg/mmol for ratio inputs (ACR, PCR, UPCR), otherwise first option
+      const defaultUnit = options.includes("mg/mmol") ? "mg/mmol" : options[0];
       const currentUnit = unitState[inputId] || defaultUnit;
       
       return (
@@ -3519,27 +3548,28 @@ export default function Dashboard() {
             // Calculator View
             <div className="max-w-2xl mx-auto space-y-6 max-lg:space-y-3">
               {/* Breadcrumb Navigation */}
-              <nav className="flex items-center gap-2 text-sm">
+              <nav className="flex items-center gap-1.5 text-sm flex-wrap">
                 <button
                   onClick={() => setSelectedCalculatorId(null)}
-                  className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 group"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors flex items-center gap-1 group font-medium"
                 >
                   <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
                   Dashboard
                 </button>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/50 hidden lg:block" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
                 <button
                   onClick={() => {
                     setViewingCategoryList(selectedCalculator.category);
                     setSelectedCategory(selectedCalculator.category);
                     setSelectedCalculatorId(null);
                   }}
-                  className="text-muted-foreground hover:text-foreground transition-colors hidden lg:block"
+                  className={cn("transition-colors font-medium flex items-center gap-1", categoryColors[selectedCalculator.category] || "text-muted-foreground")}
                 >
+                  {categoryIcons[selectedCalculator.category] || <Calculator className="w-3.5 h-3.5" />}
                   {selectedCalculator.category}
                 </button>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
-                <span className="text-foreground font-medium truncate max-w-[200px] sm:max-w-none">
+                <span className="text-foreground font-semibold truncate max-w-[200px] sm:max-w-none animate-pulse">
                   {selectedCalculator.name}
                 </span>
               </nav>

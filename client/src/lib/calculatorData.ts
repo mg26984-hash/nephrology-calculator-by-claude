@@ -4250,7 +4250,7 @@ export const calculators: Calculator[] = [
     whenToUse: "Use to assess severity of nephrotic syndrome and guide management of complications (thrombosis, edema, hyperlipidemia).",
     category: "Proteinuria & Glomerular Disease",
     inputs: [
-      { id: "upcr", label: "UPCR", type: "number", unit: "g/g", placeholder: "5.0", required: true },
+      { id: "upcr", label: "UPCR", type: "number", unit: "mg/mmol", placeholder: "565", required: true },
       { id: "albumin", label: "Serum Albumin", type: "number", unit: "g/dL", placeholder: "2.0", required: true },
       { id: "totalCholesterol", label: "Total Cholesterol", type: "number", unit: "mg/dL", placeholder: "300" },
       { id: "ldl", label: "LDL Cholesterol", type: "number", unit: "mg/dL", placeholder: "180" },
