@@ -2990,8 +2990,8 @@ export default function Dashboard() {
           ↑↓ Navigate · Enter Select · ⌘K Search
         </p>
         <p className="text-[10px] text-muted-foreground/60 mt-2 leading-relaxed">
-          Designed and coded by Dr Mohammed Megahed MSc. MRCP(UK), Transplant Nephrologist, Ministry of Health Kuwait.
-          For feedback and inquiries:{" "}
+          Designed and coded by Dr Mohammed Megahed MSc. MRCP(UK), Transplant Nephrologist, KCNKT, Ministry of Health Kuwait.
+          For feedbacks and inquiries:{" "}
           <a href="mailto:mg26984@gmail.com" className="underline hover:text-foreground transition-colors">mg26984@gmail.com</a>
         </p>
       </div>
