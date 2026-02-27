@@ -2844,6 +2844,10 @@ export default function Dashboard() {
     // For UACR/UPCR calculators, check multi-unit options for urine creatinine
     if (selectedCalculatorId === "uacr" && inputId === "urineCreatinineUACR") return true;
     if (selectedCalculatorId === "upcr" && inputId === "urineCreatinineUPCR") return true;
+    // KFRE ACR multi-unit toggle
+    if (selectedCalculatorId === "kfre" && inputId === "acr") return true;
+    // Nephrotic Syndrome Assessment UPCR multi-unit toggle
+    if (selectedCalculatorId === "nephrotic-assessment" && inputId === "upcr") return true;
     // Check if this is a BUN/Urea input that needs 4-option toggle
     if (bunUreaInputIds.includes(inputId)) return true;
     return inputId in unitOptions;

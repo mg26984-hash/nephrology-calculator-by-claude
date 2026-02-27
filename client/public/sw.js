@@ -1,6 +1,6 @@
 // OTC Calculators - Service Worker for Offline Support
-const CACHE_NAME = 'otc-calculator-v22';
-const STATIC_CACHE_NAME = 'otc-static-v22';
+const CACHE_NAME = 'otc-calculator-v23';
+const STATIC_CACHE_NAME = 'otc-static-v23';
 const BASE_PATH = '/';
 
 // Assets to cache immediately on install
