@@ -2989,6 +2989,11 @@ export default function Dashboard() {
         <p className="text-[10px] text-muted-foreground/70 mt-1">
           ↑↓ Navigate · Enter Select · ⌘K Search
         </p>
+        <p className="text-[10px] text-muted-foreground/60 mt-2 leading-relaxed">
+          Designed and coded by Dr Mohammed Megahed MSc. MRCP(UK), Transplant Nephrologist, Ministry of Health Kuwait.
+          For feedback and inquiries:{" "}
+          <a href="mailto:mg26984@gmail.com" className="underline hover:text-foreground transition-colors">mg26984@gmail.com</a>
+        </p>
       </div>
     </div>
   ), [selectedCategory, categories, favoriteCalculators, recentCalculators, groupedCalculators, filteredCalculators, selectedCalculatorId, focusedIndex, favorites, handleSelectCalculator, toggleFavorite, sidebarAccordionValue]);
