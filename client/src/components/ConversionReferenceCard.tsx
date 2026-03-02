@@ -134,8 +134,35 @@ export default function ConversionReferenceCard({ onClose }: ConversionReference
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Quick Reference Table */}
-        <div className="overflow-x-auto">
+        {/* Quick Reference — stacked cards on mobile, table on sm+ */}
+        {/* Mobile: card grid */}
+        <div className="grid grid-cols-1 gap-2 sm:hidden">
+          {conversions.map((conv, idx) => (
+            <div
+              key={idx}
+              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                selectedConversion?.name === conv.name
+                  ? "bg-primary/10 border-primary/30"
+                  : "bg-muted/30 border-transparent hover:bg-muted/50"
+              }`}
+              onClick={() => {
+                setSelectedConversion(conv);
+                setInputValue("");
+              }}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-sm">{conv.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {conv.conventional.unit} ↔ {conv.si.unit}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">{conv.formula}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
             <thead>
               <tr className="border-b bg-muted/50">
