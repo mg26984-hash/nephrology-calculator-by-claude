@@ -136,19 +136,19 @@ export default function ConversionReferenceCard({ onClose }: ConversionReference
       <CardContent className="space-y-4">
         {/* Quick Reference Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[500px]">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left p-2 font-medium">Parameter</th>
-                <th className="text-left p-2 font-medium">Conventional</th>
-                <th className="text-left p-2 font-medium">SI</th>
-                <th className="text-left p-2 font-medium">Conversion</th>
+                <th className="text-left p-2 font-medium whitespace-nowrap">Parameter</th>
+                <th className="text-left p-2 font-medium whitespace-nowrap">Conventional</th>
+                <th className="text-left p-2 font-medium whitespace-nowrap">SI</th>
+                <th className="text-left p-2 font-medium whitespace-nowrap">Conversion</th>
               </tr>
             </thead>
             <tbody>
               {conversions.map((conv, idx) => (
-                <tr 
-                  key={idx} 
+                <tr
+                  key={idx}
                   className={`border-b hover:bg-muted/30 cursor-pointer transition-colors ${
                     selectedConversion?.name === conv.name ? "bg-primary/10" : ""
                   }`}
@@ -157,10 +157,10 @@ export default function ConversionReferenceCard({ onClose }: ConversionReference
                     setInputValue("");
                   }}
                 >
-                  <td className="p-2 font-medium">{conv.name}</td>
-                  <td className="p-2 text-muted-foreground">{conv.conventional.unit}</td>
-                  <td className="p-2 text-muted-foreground">{conv.si.unit}</td>
-                  <td className="p-2 text-xs text-muted-foreground">{conv.formula}</td>
+                  <td className="p-2 font-medium whitespace-nowrap">{conv.name}</td>
+                  <td className="p-2 text-muted-foreground whitespace-nowrap">{conv.conventional.unit}</td>
+                  <td className="p-2 text-muted-foreground whitespace-nowrap">{conv.si.unit}</td>
+                  <td className="p-2 text-xs text-muted-foreground whitespace-nowrap">{conv.formula}</td>
                 </tr>
               ))}
             </tbody>

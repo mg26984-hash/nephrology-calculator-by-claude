@@ -1,5 +1,17 @@
 # Nephrology Calculator - Development Rules
 
+## Mobile Table Overflow Prevention (CRITICAL)
+
+HTML `<table>` elements have a column-sizing algorithm that can compress columns to near-zero width on narrow mobile screens, causing text to wrap **character-by-character vertically** (each letter on its own line). CSS Grid and Flexbox do NOT have this issue — they maintain min-content width.
+
+**Rules for ALL `<table>` elements:**
+
+1. **Always set `min-w-[Npx]`** on the `<table>` element (e.g., `min-w-[600px]` for 5+ columns, `min-w-[500px]` for 4 columns). This forces horizontal scrolling via the `overflow-x-auto` wrapper instead of column compression.
+2. **Always wrap tables in `<div className="overflow-x-auto">`** to enable horizontal scroll on mobile.
+3. **Always add `whitespace-nowrap`** to all `<th>` and `<td>` cells to prevent any text from wrapping within cells.
+4. **Prefer the shadcn `<Table>` component** (`components/ui/table.tsx`) over raw `<table>` — it has `whitespace-nowrap` on cells and `overflow-x-auto` on the container by default.
+5. **Never use `w-full` alone on a table** without a `min-w-[Npx]` — `w-full` forces the table to fit within the container, enabling column compression.
+
 ## Unit Conversion Rules (CRITICAL)
 
 All calculator inputs that accept values with multiple possible units MUST have:
