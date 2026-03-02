@@ -80,6 +80,7 @@ import { getResultColorCoding } from "@/lib/resultColorCoding";
 import { UnitConversionTooltip, hasUnitConversion } from "@/components/UnitConversionTooltip";
 import { isBinaryYesNoInput, getYesNoLabel, getYesNoValue, isYesValue } from "@/lib/inputHelpers";
 import ConversionReferenceCard from "@/components/ConversionReferenceCard";
+import { EKFCAgeCurve } from "@/components/EKFCAgeCurve";
 
 interface CalculatorState {
   [key: string]: string | number | boolean;
@@ -378,6 +379,7 @@ export default function Dashboard() {
   const [anticoagReversalResult, setAnticoagReversalResult] = useState<calc.AnticoagulantReversalResult | null>(null);
   const [steroidConversionResult, setSteroidConversionResult] = useState<calc.SteroidConversionResult | null>(null);
   const [plasmaExchangeResult, setPlasmaExchangeResult] = useState<calc.PlasmaExchangeResult | null>(null);
+  const [ekfcPatientCreatinine, setEkfcPatientCreatinine] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [viewingCategoryList, setViewingCategoryList] = useState<string | null>(null);
@@ -2305,14 +2307,17 @@ export default function Dashboard() {
           );
           break;
 
-        case "ekfc-creatinine":
+        case "ekfc-creatinine": {
+          const ekfcCr = getValue("creatinine");
           calculationResult = calc.ekfcCreatinine(
-            getValue("creatinine"),
+            ekfcCr,
             Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             "mg/dL"
           );
+          setEkfcPatientCreatinine(ekfcCr);
           break;
+        }
 
         case "electrolyte-free-water-clearance":
           calculationResult = calc.electrolyteFreeWaterClearance(
@@ -5275,6 +5280,16 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
+                    )}
+
+                    {/* EKFC eGFR vs Age Curve */}
+                    {selectedCalculator.id === 'ekfc-creatinine' && result !== null && ekfcPatientCreatinine !== null && (
+                      <EKFCAgeCurve
+                        patientAge={Number(calculatorState.age) || 0}
+                        patientEgfr={result as number}
+                        patientSex={calculatorState.sex as "M" | "F"}
+                        patientCreatinine={ekfcPatientCreatinine}
+                      />
                     )}
 
                     {/* Reference Ranges */}

@@ -3926,7 +3926,7 @@ export function creatinineClearance24h(
 /**
  * Get EKFC Q value (median serum creatinine for healthy population) in μmol/L
  */
-function getEkfcQValue(age: number, sex: "M" | "F"): number {
+export function getEkfcQValue(age: number, sex: "M" | "F"): number {
   if (age <= 25) {
     if (sex === "M") {
       return Math.exp(
