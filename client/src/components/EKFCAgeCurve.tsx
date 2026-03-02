@@ -79,7 +79,7 @@ export function EKFCAgeCurve({
             data={data}
             margin={{ top: 10, right: 10, bottom: 20, left: 10 }}
           >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.15} />
 
             {/* CKD stage bands */}
             {CKD_BANDS.map((band) => (
@@ -104,24 +104,26 @@ export function EKFCAgeCurve({
               type="number"
               domain={[2, 90]}
               ticks={[5, 15, 25, 35, 45, 55, 65, 75, 85]}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "currentColor" }}
               label={{
                 value: "Age (years)",
                 position: "insideBottom",
                 offset: -10,
                 fontSize: 12,
+                fill: "currentColor",
               }}
             />
             <YAxis
               domain={[0, 150]}
               ticks={[15, 30, 45, 60, 90, 120, 150]}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "currentColor" }}
               label={{
                 value: "eGFR",
                 angle: -90,
                 position: "insideLeft",
                 offset: 0,
                 fontSize: 12,
+                fill: "currentColor",
               }}
               width={40}
             />
