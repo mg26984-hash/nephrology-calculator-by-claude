@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, ArrowLeftRight, Info, Users, Baby, UserCheck, Globe, Ruler } from "lucide-react";
-import { ckdEpiCreatinine, cockcrofGault, bis1Elderly, fasFullAgeSpectrum, schwartzPediatric } from "@/lib/calculators";
+import { ckdEpiCreatinine, cockcrofGault, bis1Elderly, fasFullAgeSpectrum, schwartzPediatric, ekfcCreatinine } from "@/lib/calculators";
 
 interface EGFRComparisonProps {
   onClose?: () => void;
@@ -80,6 +80,14 @@ const equationInfo = {
     icon: Baby,
     highlight: false,
   },
+  ekfc: {
+    name: "EKFC 2021",
+    shortDesc: "European consortium, all ages",
+    population: "All ages (2 years to elderly)",
+    indication: "Developed by European Kidney Function Consortium. Uses age- and sex-specific Q values for normalized creatinine. Validated across all ages without discontinuity. Similar approach to FAS but with refined coefficients from larger European datasets.",
+    icon: Globe,
+    highlight: false,
+  },
 };
 
 export function EGFRComparison({ onClose }: EGFRComparisonProps) {
@@ -87,8 +95,8 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
   const [age, setAge] = useState<string>("55");
   const [sex, setSex] = useState<"M" | "F">("M");
   const [race, setRace] = useState<"Black" | "Other">("Other");
-  const [creatinine, setCreatinine] = useState<string>("1.2");
-  const [creatinineUnit, setCreatinineUnit] = useState<"mg/dL" | "μmol/L">("mg/dL");
+  const [creatinine, setCreatinine] = useState<string>("106");
+  const [creatinineUnit, setCreatinineUnit] = useState<"mg/dL" | "μmol/L">("μmol/L");
   const [weight, setWeight] = useState<string>("70");
   const [height, setHeight] = useState<string>(""); // For Schwartz equation
   const [calculated, setCalculated] = useState(false);
@@ -118,7 +126,8 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
 
     const bis1 = bis1Elderly(creatNum, ageNum, sex, creatinineUnit);
     const fas = fasFullAgeSpectrum(creatNum, ageNum, sex, creatinineUnit);
-    
+    const ekfc = ekfcCreatinine(creatNum, ageNum, sex, creatinineUnit);
+
     // Schwartz for pediatric patients (requires height)
     const schwartz = (ageNum >= 1 && ageNum < 18 && !isNaN(heightNum) && heightNum > 0)
       ? schwartzPediatric(creatNum, heightNum, creatinineUnit)
@@ -131,6 +140,7 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
 
       bis1,
       fas,
+      ekfc,
       schwartz,
       ageNum,
       isPediatric: ageNum >= 1 && ageNum < 18,
@@ -176,8 +186,8 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
 
   // Get the number of equations being compared
   const getEquationCount = () => {
-    if (results?.isPediatric) return 6; // Including Schwartz
-    return 5;
+    if (results?.isPediatric) return 7; // Including Schwartz
+    return 6;
   };
 
   const renderEquationResult = (
@@ -279,7 +289,7 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Compare eGFR results from {isPediatric ? "6" : "5"} equations with population-specific recommendations
+          Compare eGFR results from {isPediatric ? "7" : "6"} equations with population-specific recommendations
           {isPediatric && <span className="text-primary font-medium"> (including pediatric Schwartz)</span>}
         </p>
       </CardHeader>
@@ -320,7 +330,14 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
               <div className="flex rounded-md border overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => { setCreatinineUnit("mg/dL"); setCalculated(false); }}
+                  onClick={() => {
+                    if (creatinineUnit !== "mg/dL") {
+                      const val = parseFloat(creatinine);
+                      if (!isNaN(val) && val > 0) setCreatinine((val / 88.4).toFixed(2));
+                      setCreatinineUnit("mg/dL");
+                      setCalculated(false);
+                    }
+                  }}
                   className={`px-2 py-1 text-xs font-medium transition-colors ${
                     creatinineUnit === "mg/dL"
                       ? "bg-primary text-primary-foreground"
@@ -331,7 +348,14 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setCreatinineUnit("μmol/L"); setCalculated(false); }}
+                  onClick={() => {
+                    if (creatinineUnit !== "μmol/L") {
+                      const val = parseFloat(creatinine);
+                      if (!isNaN(val) && val > 0) setCreatinine((val * 88.4).toFixed(1));
+                      setCreatinineUnit("μmol/L");
+                      setCalculated(false);
+                    }
+                  }}
                   className={`px-2 py-1 text-xs font-medium transition-colors ${
                     creatinineUnit === "μmol/L"
                       ? "bg-primary text-primary-foreground"
@@ -467,6 +491,7 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
                 "Enter height"
               )}
               {renderEquationResult("ckdEpi", results.ckdEpi)}
+              {renderEquationResult("ekfc", results.ekfc)}
               {renderEquationResult("fas", results.fas)}
               {renderEquationResult("bis1", results.bis1)}
               {renderEquationResult("mdrd", results.mdrd)}
@@ -483,17 +508,17 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
                     {Math.min(
                       results.ckdEpi,
                       results.mdrd,
-
                       results.bis1,
                       results.fas,
+                      results.ekfc,
                       results.schwartz || Infinity,
                       results.cockcroftGault || Infinity
                     )} - {Math.max(
                       results.ckdEpi,
                       results.mdrd,
-
                       results.bis1,
                       results.fas,
+                      results.ekfc,
                       results.schwartz || 0,
                       results.cockcroftGault || 0
                     )} mL/min
@@ -503,8 +528,8 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
                   <div className="text-muted-foreground">Mean (excl. CG)</div>
                   <div className="font-medium">
                     {Math.round(
-                      (results.ckdEpi + results.mdrd + results.bis1 + results.fas + (results.schwartz || 0)) / 
-                      (results.schwartz ? 5 : 4)
+                      (results.ckdEpi + results.mdrd + results.bis1 + results.fas + results.ekfc + (results.schwartz || 0)) /
+                      (results.schwartz ? 6 : 5)
                     )} mL/min/1.73m²
                   </div>
                 </div>
@@ -552,6 +577,7 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
                   <li>• <strong>Schwartz Bedside</strong>: Gold standard for pediatric patients (1-17 years), requires height measurement</li>
                 )}
                 <li>• <strong>CKD-EPI 2021</strong>: Gold standard for adults, race-free, recommended by KDIGO for general adult population</li>
+                <li>• <strong>EKFC</strong>: European consortium equation, all ages, uses refined age/sex-specific Q values from large European cohorts</li>
                 <li>• <strong>FAS</strong>: Continuous equation from children to elderly, ideal for transitional care</li>
 
                 <li>• <strong>BIS1</strong>: Specifically validated for elderly ≥70 years, may be more accurate in this group</li>
