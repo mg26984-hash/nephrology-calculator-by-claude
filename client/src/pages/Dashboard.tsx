@@ -512,6 +512,17 @@ export default function Dashboard() {
     localStorage.setItem('nephrology-calculator-recent', JSON.stringify(recentCalculatorIds));
   }, [recentCalculatorIds]);
 
+  // Recent calculations history (last 5 with results)
+  const [recentCalculations, setRecentCalculations] = useState<{id: string; name: string; result: string; timestamp: number}[]>(() => {
+    try {
+      const saved = localStorage.getItem('nephrology-recent-calculations');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    localStorage.setItem('nephrology-recent-calculations', JSON.stringify(recentCalculations));
+  }, [recentCalculations]);
+
   // Scroll to panel when toggled on
   useEffect(() => {
     if (showComparison) {
@@ -955,6 +966,7 @@ export default function Dashboard() {
   const handleCalculate = useCallback(() => {
     if (!selectedCalculator) return;
 
+    let calcResultDisplay = '';
     try {
       let calculationResult: number | { [key: string]: number } | undefined;
 
@@ -1508,6 +1520,7 @@ export default function Dashboard() {
             kdpiInterpretation = "High KDPI (≥85%). Consider for expanded criteria donor (ECD) allocation. May be suitable for older recipients or those with limited life expectancy.";
           }
           setResultInterpretation(kdpiInterpretation);
+          calcResultDisplay = kdpiCalcResult.kdpi.toFixed(0) + '%';
           return;
         }
 
@@ -1735,6 +1748,7 @@ export default function Dashboard() {
           setFraxResult(fraxCalcResult);
           setResult(fraxCalcResult.majorFracture);
           setResultInterpretation('');
+          calcResultDisplay = fraxCalcResult.majorFracture.toFixed(1) + '% major / ' + fraxCalcResult.hipFracture.toFixed(1) + '% hip';
           return;
         }
 
@@ -1773,6 +1787,7 @@ export default function Dashboard() {
           console.log('setBanffResult called');
           setResult(null); // Banff uses custom display, not numeric result
           setResultInterpretation('');
+          calcResultDisplay = banffResultData.diagnoses.filter(d => d.diagnosed).map(d => d.title).join(', ') || 'Normal';
           return; // Skip the default interpretation handling
 
 
@@ -1871,6 +1886,7 @@ export default function Dashboard() {
           });
           setResult(m2Score);
           setResultInterpretation('');
+          calcResultDisplay = m2Score + ' pts - ' + m2RiskCategory;
           return;
         }
 
@@ -1972,6 +1988,7 @@ export default function Dashboard() {
           });
           setResult(origMehranScore);
           setResultInterpretation('');
+          calcResultDisplay = origMehranScore + ' pts - ' + origRiskCategory;
           return;
         }
 
@@ -2711,10 +2728,12 @@ export default function Dashboard() {
           setResult(calculationResult);
           const numResult = (calculationResult as any).mgDl;
           setResultInterpretation(selectedCalculator.interpretation(numResult, calculatorState as Record<string, unknown>));
+          calcResultDisplay = numResult.toFixed(2) + (selectedCalculator.resultUnit ? ' ' + selectedCalculator.resultUnit : '');
         } else {
           const numResult = typeof calculationResult === "number" ? calculationResult : 0;
           setResult(numResult);
           setResultInterpretation(selectedCalculator.interpretation(numResult, calculatorState as Record<string, unknown>));
+          calcResultDisplay = numResult.toFixed(2) + (selectedCalculator.resultUnit ? ' ' + selectedCalculator.resultUnit : '');
           // Store eGFR result for auto-population in other calculators (e.g., Mehran 2)
           if (['ckd-epi-creatinine', 'ckd-epi-cystatin-c', 'cockcroft-gault', 'kinetic-egfr'].includes(selectedCalculator.id)) {
             setLastCalculatedEgfr(Math.round(numResult * 100) / 100);
@@ -2726,6 +2745,13 @@ export default function Dashboard() {
       setResult(null);
       setResultInterpretation("Error in calculation. Please check your inputs.");
     } finally {
+      // Save to recent calculations history
+      if (selectedCalculator && calcResultDisplay) {
+        setRecentCalculations(prev => [
+          { id: selectedCalculator.id, name: selectedCalculator.name, result: calcResultDisplay, timestamp: Date.now() },
+          ...prev
+        ].slice(0, 5));
+      }
       // Always scroll to result after any calculation (including early-return calculators like Banff, KDPI, FRAX, Mehran)
       scrollToResultCard();
     }
@@ -3402,29 +3428,34 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Recently Viewed Card */}
+                {/* Recent Calculations Card */}
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Clock className="w-4 h-4 text-blue-500" />
-                      Recently Viewed
+                      Recent Calculations
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {recentCalculators.length === 0 ? (
+                    {recentCalculations.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        Your recently used calculators will appear here.
+                        Your recent calculation results will appear here.
                       </p>
                     ) : (
                       <div className="space-y-1">
-                        {recentCalculators.map((calc) => (
+                        {recentCalculations.map((entry, idx) => (
                           <button
-                            key={`home-recent-${calc.id}`}
-                            onClick={() => handleSelectCalculator(calc.id)}
-                            className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-between group"
+                            key={`home-calc-${idx}`}
+                            onClick={() => handleSelectCalculator(entry.id)}
+                            className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors group"
                           >
-                            <span className="truncate">{calc.name}</span>
-                            <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="flex items-center justify-between">
+                              <span className="truncate font-medium">{entry.name}</span>
+                              <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-2">
+                                {(() => { const mins = Math.round((Date.now() - entry.timestamp) / 60000); if (mins < 1) return 'just now'; if (mins < 60) return mins + 'm ago'; const hrs = Math.round(mins / 60); if (hrs < 24) return hrs + 'h ago'; return Math.round(hrs / 24) + 'd ago'; })()}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">{entry.result}</p>
                           </button>
                         ))}
                       </div>
