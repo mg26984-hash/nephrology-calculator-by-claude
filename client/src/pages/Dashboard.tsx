@@ -1342,7 +1342,7 @@ export default function Dashboard() {
             const creatinineUnit = unitState.creatinineValue || "mg/dL";
             let creatinineMgdL = rawCreatinine;
             if (creatinineUnit === "mmol/L") {
-              creatinineMgdL = rawCreatinine * 88.4; // mmol/L to mg/dL (creatinine)
+              creatinineMgdL = rawCreatinine * 11.312; // 1 mmol/L = 113.12 mg/L = 11.312 mg/dL
             }
 
             ratioMgPerMg = creatinineMgdL > 0 ? proteinMgdL / creatinineMgdL : 0;
