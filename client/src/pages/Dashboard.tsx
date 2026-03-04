@@ -2979,7 +2979,7 @@ export default function Dashboard() {
                           </AccordionTrigger>
                         </div>
                       </HoverCardTrigger>
-                      <HoverCardContent side="right" align="start" className="w-64 p-3 hidden sm:block">
+                      <HoverCardContent side="right" align="start" sideOffset={2} className="w-64 p-3 hidden sm:block">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{calcs.length} calculators</p>
                         <div className="max-h-48 overflow-y-auto space-y-0.5">
                           {calcs.map(calc => (
