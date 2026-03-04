@@ -2935,7 +2935,7 @@ export default function Dashboard() {
           onSearchChange={setSearchQuery}
           onSelectCalculator={handleSelectCalculator}
           placeholder="Search calculators..."
-          inputClassName="border-primary/50 bg-primary/5 shadow-[0_0_0_1px_var(--primary)/0.2] animate-pulse focus:animate-none focus:border-primary focus:bg-secondary"
+          inputClassName="border-primary/30 bg-primary/5 animate-pulse focus:animate-none focus:border-primary focus:bg-secondary focus:shadow-sm"
         />
       </div>
 
@@ -2970,7 +2970,7 @@ export default function Dashboard() {
                     <HoverCard openDelay={400} closeDelay={100}>
                       <HoverCardTrigger asChild>
                         <div>
-                          <AccordionTrigger className={cn("px-2 py-2 text-xs font-semibold uppercase tracking-wider hover:no-underline", categoryColors[category] || "text-muted-foreground")}>
+                          <AccordionTrigger className={cn("px-3 py-2.5 text-xs font-semibold uppercase tracking-wider hover:no-underline rounded-md hover:bg-muted/50 transition-colors", categoryColors[category] || "text-muted-foreground")}>
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               {categoryIcons[category] || <Calculator className="w-4 h-4" />}
                               <span className="truncate">{category.split(" & ")[0]}</span>
@@ -3368,16 +3368,16 @@ export default function Dashboard() {
             // Welcome Screen — Bento Grid Layout
             <div className="max-w-5xl mx-auto">
               {/* Compact Header */}
-              <div className="flex items-center gap-3 mb-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 flex-shrink-0">
+              <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 flex-shrink-0">
                   <img
                     src={`${import.meta.env.BASE_URL}images/kidney-logo.svg`}
                     alt="OTC Calculators Logo"
-                    className="w-8 h-8 object-contain"
+                    className="w-10 h-10 object-contain"
                   />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">OTC Calculators</h2>
+                  <h2 className="text-2xl font-bold tracking-tight">OTC Calculators</h2>
                   <p className="text-sm text-muted-foreground">{calculators.length} clinical calculators for nephrology practice</p>
                 </div>
               </div>
@@ -3394,7 +3394,7 @@ export default function Dashboard() {
               {/* Bento Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Favorites Card — spans 2 cols */}
-                <Card className="md:col-span-2 lg:col-span-2">
+                <Card className="md:col-span-2 lg:col-span-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-base flex items-center gap-2">
@@ -3443,7 +3443,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Recent Calculations Card */}
-                <Card>
+                <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Clock className="w-4 h-4 text-blue-500" />
@@ -3478,7 +3478,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Quick Tools Card */}
-                <Card>
+                <Card className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-100">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Stethoscope className="w-4 h-4 text-primary" />
@@ -3517,7 +3517,7 @@ export default function Dashboard() {
                 </Card>
 
                 {/* Categories Section — spans 2 cols */}
-                <Card className="md:col-span-2 lg:col-span-2">
+                <Card className="md:col-span-2 lg:col-span-2 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-150">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-base">
@@ -3589,7 +3589,7 @@ export default function Dashboard() {
                             <HoverCardTrigger asChild>
                               <button
                                 onClick={() => { setViewingCategoryList(category); setSelectedCategory(category); }}
-                                className="p-3 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group cursor-pointer"
+                                className="p-3 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all text-left group cursor-pointer"
                               >
                                 <div className="flex items-center gap-3 mb-1.5">
                                   <div className="p-1.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -3674,7 +3674,7 @@ export default function Dashboard() {
                   {selectedCalculator.category}
                 </button>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
-                <span className="text-foreground font-semibold truncate max-w-[200px] sm:max-w-none animate-pulse">
+                <span className="text-foreground font-semibold truncate max-w-[200px] sm:max-w-none">
                   {selectedCalculator.name}
                 </span>
               </nav>
@@ -3954,7 +3954,7 @@ export default function Dashboard() {
                 
                 return (
                 <Card id="result-card" ref={resultCardRef} className={cn(
-                  "border-l-4 scroll-mt-20",
+                  "border-l-4 scroll-mt-20 animate-in fade-in slide-in-from-bottom-3 duration-400",
                   colorCoding ? `${colorCoding.bgClass} ${colorCoding.borderClass}` : "border-primary/50 bg-primary/5"
                 )}>
                   <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -3990,7 +3990,7 @@ export default function Dashboard() {
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-4">
+                    <div className="text-center py-6">
                       {selectedCalculator.id === "corrected-calcium" && typeof result === "object" ? (
                         <>
                           <p className={cn("text-3xl font-bold", colorCoding ? colorCoding.textClass : "text-primary")}>
@@ -4009,11 +4009,11 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <>
-                          <p className={cn("text-4xl font-bold", colorCoding ? colorCoding.textClass : "text-primary")}>
+                          <p className={cn("text-5xl font-bold tracking-tight", colorCoding ? colorCoding.textClass : "text-primary")}>
                             {typeof result === "number" ? result.toFixed(2) : "N/A"}
                           </p>
                           {selectedCalculator.resultUnit && (
-                            <p className="text-sm text-muted-foreground mt-1">{selectedCalculator.resultUnit}</p>
+                            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mt-2">{selectedCalculator.resultUnit}</p>
                           )}
                         </>
                       )}
