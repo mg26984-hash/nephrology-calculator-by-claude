@@ -2800,6 +2800,9 @@ export default function Dashboard() {
         } else if (isBinaryYesNoInput(input)) {
           // Initialize all Yes/No toggle inputs to 'No' by default using helper function
           initialState[input.id] = getYesNoValue(input, false);
+        } else if (input.type === 'select' && input.options && input.options.length > 0) {
+          // Initialize non-yes/no selects to their first option value
+          initialState[input.id] = input.options[0].value;
         }
       });
     }
