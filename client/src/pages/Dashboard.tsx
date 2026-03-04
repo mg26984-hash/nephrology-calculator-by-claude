@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription, SheetHeader } from "@/components/ui/sheet";
 import { 
   Calculator, 
@@ -3539,23 +3540,44 @@ export default function Dashboard() {
                       ].includes(cat))).map((category) => {
                         const categoryCalculators = calculators.filter((c) => c.category === category);
                         return (
-                          <button
-                            key={category}
-                            onClick={() => { setViewingCategoryList(category); setSelectedCategory(category); }}
-                            className="p-3 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group cursor-pointer"
-                          >
-                            <div className="flex items-center gap-3 mb-1.5">
-                              <div className="p-1.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                {categoryIcons[category] || <Calculator className="w-4 h-4" />}
+                          <HoverCard key={category} openDelay={300} closeDelay={100}>
+                            <HoverCardTrigger asChild>
+                              <button
+                                onClick={() => { setViewingCategoryList(category); setSelectedCategory(category); }}
+                                className="p-3 rounded-xl border border-border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group cursor-pointer"
+                              >
+                                <div className="flex items-center gap-3 mb-1.5">
+                                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                    {categoryIcons[category] || <Calculator className="w-4 h-4" />}
+                                  </div>
+                                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary ml-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
+                                </div>
+                                <h3 className="font-medium text-sm">{category.split(" & ")[0]}</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">{categoryCalculators.length} calculators</p>
+                                {showAllCategories && categoryDescriptions[category] && (
+                                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{categoryDescriptions[category]}</p>
+                                )}
+                              </button>
+                            </HoverCardTrigger>
+                            <HoverCardContent side="bottom" align="start" className="w-72 p-3 hidden sm:block">
+                              <div className="space-y-1.5">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                  {categoryCalculators.length} calculators
+                                </p>
+                                <div className="max-h-48 overflow-y-auto space-y-0.5">
+                                  {categoryCalculators.map(calc => (
+                                    <button
+                                      key={calc.id}
+                                      onClick={() => handleSelectCalculator(calc.id)}
+                                      className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent truncate"
+                                    >
+                                      {calc.name}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
-                              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary ml-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
-                            </div>
-                            <h3 className="font-medium text-sm">{category.split(" & ")[0]}</h3>
-                            <p className="text-xs text-muted-foreground mt-0.5">{categoryCalculators.length} calculators</p>
-                            {showAllCategories && categoryDescriptions[category] && (
-                              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{categoryDescriptions[category]}</p>
-                            )}
-                          </button>
+                            </HoverCardContent>
+                          </HoverCard>
                         );
                       })}
                     </div>
