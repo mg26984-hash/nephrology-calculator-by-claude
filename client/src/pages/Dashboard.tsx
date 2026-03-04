@@ -1036,7 +1036,7 @@ export default function Dashboard() {
         case "ckd-epi-cystatin-c":
           calculationResult = calc.ckdEpiCystatinC(
             getValue("creatinine"),
-            Number(calculatorState.cystatinC) || 0,
+            getValue("cystatinC"),
             Number(calculatorState.age) || 0,
             calculatorState.sex as "M" | "F",
             "mg/dL"
@@ -1061,7 +1061,7 @@ export default function Dashboard() {
             Number(calculatorState.eGFR) || 0,
             rawAcr,
             acrUnit,
-            (calculatorState.years as 2 | 5) || 5
+            (Number(calculatorState.years) || 5) as 2 | 5
           );
           break;
         }
@@ -1254,7 +1254,7 @@ export default function Dashboard() {
           calculationResult = calc.uacr(
             getValue("urineAlbumin"),
             creatInG,
-            getInputUnit("urineAlbumin") === "si" ? "μg" : "mg",
+            "mg",
             "g"
           );
           break;
@@ -1271,7 +1271,7 @@ export default function Dashboard() {
           calculationResult = calc.upcr(
             getValue("urineProtein"),
             creatInMg,
-            getInputUnit("urineProtein") === "si" ? "g" : "mg",
+            "mg",
             "mg"
           );
           break;
@@ -1879,32 +1879,32 @@ export default function Dashboard() {
           let origMehranScore = 0;
           
           // Hypotension: 5 points
-          const origHasHypotension = calculatorState.hypotension === "1" || calculatorState.hypotension === true;
+          const origHasHypotension = calculatorState.hypotension === "on";
           origBreakdown.push({ factor: 'Hypotension (SBP <80 mmHg for ≥1 hr requiring inotropes)', points: 5, present: origHasHypotension });
           if (origHasHypotension) origMehranScore += 5;
-          
+
           // IABP: 5 points
-          const origHasIABP = calculatorState.iabp === "1" || calculatorState.iabp === true;
+          const origHasIABP = calculatorState.iabp === "on";
           origBreakdown.push({ factor: 'Intra-aortic balloon pump (IABP)', points: 5, present: origHasIABP });
           if (origHasIABP) origMehranScore += 5;
-          
+
           // CHF: 5 points
-          const origHasCHF = calculatorState.chf === "1" || calculatorState.chf === true;
+          const origHasCHF = calculatorState.chf === "on";
           origBreakdown.push({ factor: 'Congestive heart failure (NYHA III-IV or pulmonary edema)', points: 5, present: origHasCHF });
           if (origHasCHF) origMehranScore += 5;
-          
+
           // Age >75: 4 points
-          const origHasAge = calculatorState.ageOver75 === "1" || calculatorState.ageOver75 === true;
+          const origHasAge = calculatorState.ageOver75 === "on";
           origBreakdown.push({ factor: 'Age >75 years', points: 4, present: origHasAge });
           if (origHasAge) origMehranScore += 4;
-          
+
           // Anemia: 3 points
-          const origHasAnemia = calculatorState.anemia === "1" || calculatorState.anemia === true;
+          const origHasAnemia = calculatorState.anemia === "on";
           origBreakdown.push({ factor: 'Anemia (Hct <39% for men, <36% for women)', points: 3, present: origHasAnemia });
           if (origHasAnemia) origMehranScore += 3;
-          
+
           // Diabetes: 3 points
-          const origHasDiabetes = calculatorState.diabetes === "1" || calculatorState.diabetes === true;
+          const origHasDiabetes = calculatorState.diabetes === "on";
           origBreakdown.push({ factor: 'Diabetes mellitus', points: 3, present: origHasDiabetes });
           if (origHasDiabetes) origMehranScore += 3;
           
@@ -2010,7 +2010,7 @@ export default function Dashboard() {
         case "sofa": {
           const sofaResult = calc.sofa(
             Number(calculatorState.pao2) || 0,
-            Number(calculatorState.fio2) || 0,
+            Number(calculatorState.fio2) || 21,
             Number(calculatorState.platelets) || 0,
             getValue("bilirubin"),
             'mg/dL',
@@ -2118,7 +2118,7 @@ export default function Dashboard() {
             parseFloat(String(calculatorState.arterialPH)) || 7.4,
             parseFloat(String(calculatorState.sodium)) || 140,
             parseFloat(String(calculatorState.potassium)) || 4.0,
-            parseFloat(String(calculatorState.creatinine)) || 1.0,
+            getValue("creatinine") || 1.0,
             calculatorState.acuteRenalFailure === 'yes',
             parseFloat(String(calculatorState.hematocrit)) || 40,
             parseFloat(String(calculatorState.wbc)) || 10,

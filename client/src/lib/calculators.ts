@@ -4304,8 +4304,8 @@ export function bvasV3(items: Record<string, boolean>): { total: number; organSc
     chest: { items: ["wheeze", "nodules", "pleuralEffusion", "infiltrate", "massiveMoptysis", "alveolarHemorrhage", "respiratoryFailure"], maxPoints: [2, 3, 4, 4, 6, 6, 6] },
     cardiovascular: { items: ["lossOfPulses", "valvularHeartDisease", "pericarditis", "ischemicCardiacPain", "cardiomyopathy", "congestiveHeartFailure"], maxPoints: [4, 4, 3, 6, 6, 6] },
     abdominal: { items: ["peritonitis", "bloodyDiarrhea", "ischemicAbdominalPain"], maxPoints: [6, 6, 9] },
-    renal: { items: ["hypertension", "proteinuria", "hematuria", "creatinineRise", "creatinineRiseRapid", "rrtOrDialysis"], maxPoints: [4, 4, 6, 6, 6, 6] },
-    nervousSystem: { items: ["headache", "meningitis", "organicConfusion", "seizures", "stroke", "cranialNervePalsy", "sensorNeuropathy", "motorNeuropathy"], maxPoints: [1, 6, 6, 9, 9, 6, 6, 9] },
+    renal: { items: ["hypertensionBvas", "proteinuriaBvas", "hematuria", "creatinineRise", "creatinineRiseRapid", "rrtOrDialysis"], maxPoints: [4, 4, 6, 6, 6, 6] },
+    nervousSystem: { items: ["headache", "meningitis", "organicConfusion", "seizuresBvas", "strokeBvas", "cranialNervePalsy", "sensorNeuropathy", "motorNeuropathy"], maxPoints: [1, 6, 6, 9, 9, 6, 6, 9] },
   };
 
   const organScores: Record<string, number> = {};
