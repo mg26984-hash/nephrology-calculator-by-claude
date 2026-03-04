@@ -902,6 +902,39 @@ export default function Dashboard() {
       targetMagnesium: { conventional: "2.0", si: "0.82" },
     };
     
+    // Handle 24-hour protein multi-unit placeholders
+    if (selectedCalculatorId === "24-hour-protein") {
+      if (input.id === "ratioValue") {
+        const unit = unitState["ratioValue"] || (globalUnitPreference === "si" ? "mg/mmol" : "mg/g");
+        // Typical mild proteinuria: PCR 0.5 g/g = 500 mg/g = 56.5 mg/mmol
+        switch (unit) {
+          case "g/g": return "0.5";
+          case "mg/g": return "500";
+          case "mg/mmol": return "57";
+          default: return "500";
+        }
+      }
+      if (input.id === "proteinValue") {
+        const unit = unitState["proteinValue"] || (globalUnitPreference === "si" ? "g/L" : "mg/dL");
+        // Typical urine protein: 50 mg/dL = 0.5 g/L = 500 mg/L
+        switch (unit) {
+          case "mg/dL": return "50";
+          case "g/L": return "0.5";
+          case "mg/L": return "500";
+          default: return "50";
+        }
+      }
+      if (input.id === "creatinineValue") {
+        const unit = unitState["creatinineValue"] || (globalUnitPreference === "si" ? "mmol/L" : "mg/dL");
+        // Typical urine creatinine: 100 mg/dL = 8.8 mmol/L
+        switch (unit) {
+          case "mg/dL": return "100";
+          case "mmol/L": return "8.8";
+          default: return "100";
+        }
+      }
+    }
+
     const typicalValue = typicalValues[input.id];
     if (typicalValue) {
       const currentUnit = getInputUnit(input.id);
@@ -1311,21 +1344,47 @@ export default function Dashboard() {
 
         case "24-hour-protein": {
           const inputMode = (calculatorState.inputMode as string) || "ratio";
-          const testType = (calculatorState.testType as string) || "pcr";
-          let ratioMgPerMg = 0;
-          
+          let resultGPerDay = 0;
+
           if (inputMode === "ratio") {
-            // getValue normalizes to conventional (mg/mg)
-            ratioMgPerMg = getValue("ratioValue");
+            // Multi-unit: convert from selected unit to g/g (= g/day)
+            const raw = Number(calculatorState.ratioValue) || 0;
+            const ratioUnit = unitState["ratioValue"] || (globalUnitPreference === "si" ? "mg/mmol" : "mg/g");
+            switch (ratioUnit) {
+              case "g/g":
+                resultGPerDay = raw; // g/g = g/day directly
+                break;
+              case "mg/g":
+                resultGPerDay = raw / 1000; // 1 g/g = 1000 mg/g
+                break;
+              case "mg/mmol":
+                resultGPerDay = raw / 113; // 1 g/g ≈ 113 mg/mmol
+                break;
+              default:
+                resultGPerDay = raw / 1000; // fallback: treat as mg/g
+            }
           } else {
-            // getValue normalizes both to mg/dL — ratio is unit-independent
-            const proteinMgdL = getValue("proteinValue");
-            const creatinineMgdL = getValue("creatinineValue");
-            ratioMgPerMg = creatinineMgdL > 0 ? proteinMgdL / creatinineMgdL : 0;
+            // Raw mode: multi-unit conversion for protein & creatinine concentrations
+            const rawProtein = Number(calculatorState.proteinValue) || 0;
+            const rawCreatinine = Number(calculatorState.creatinineValue) || 0;
+            const proteinUnit = unitState["proteinValue"] || (globalUnitPreference === "si" ? "g/L" : "mg/dL");
+            const creatinineUnit = unitState["creatinineValue"] || (globalUnitPreference === "si" ? "mmol/L" : "mg/dL");
+
+            // Convert both to mg/L for consistent ratio
+            let proteinMgL = rawProtein;
+            if (proteinUnit === "mg/dL") proteinMgL = rawProtein * 10;
+            else if (proteinUnit === "g/L") proteinMgL = rawProtein * 1000;
+            // mg/L stays as-is
+
+            let creatinineMgL = rawCreatinine;
+            if (creatinineUnit === "mg/dL") creatinineMgL = rawCreatinine * 10;
+            else if (creatinineUnit === "mmol/L") creatinineMgL = rawCreatinine * 113.12;
+
+            // protein (mg/L) / creatinine (mg/L) = mg/mg = g/g = g/day
+            resultGPerDay = creatinineMgL > 0 ? proteinMgL / creatinineMgL : 0;
           }
-          
-          // PCR/ACR in mg/mg equals estimated 24-hour protein/albumin excretion in g/day
-          calculationResult = ratioMgPerMg;
+
+          calculationResult = Math.round(resultGPerDay * 1000) / 1000;
           break;
         }
 
@@ -3006,7 +3065,7 @@ export default function Dashboard() {
   // Inline Unit Toggle Component
   // Multi-option unit definitions for calculators with more than 2 unit options
   const multiUnitOptions: { [inputId: string]: string[] } = {
-    ratioValue: ["mg/mmol", "mg/g", "mg/mg", "mg/L"],
+    ratioValue: ["mg/g", "mg/mmol", "g/g"],
     proteinValue: ["mg/dL", "g/L", "mg/L"],
     creatinineValue: ["mg/dL", "mmol/L"],
     // ACR — mg/mmol (SI, default), mg/g (US conventional), mg/mg (ratio)
@@ -3031,8 +3090,8 @@ export default function Dashboard() {
     
     if (hasMultiUnitOptions && multiUnitOptions[inputId]) {
       const options = multiUnitOptions[inputId];
-      // Default: mg/mmol for ratio inputs (ACR, PCR, UPCR), otherwise first option
-      const defaultUnit = options.includes("mg/mmol") ? "mg/mmol" : options[0];
+      // Default: SI → mg/mmol, conventional → first option (mg/g, mg/dL, etc.)
+      const defaultUnit = globalUnitPreference === "si" && options.includes("mg/mmol") ? "mg/mmol" : options[0];
       const currentUnit = unitState[inputId] || defaultUnit;
       
       return (
