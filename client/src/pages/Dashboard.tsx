@@ -2967,13 +2967,27 @@ export default function Dashboard() {
               <Accordion type="single" collapsible value={sidebarAccordionValue} onValueChange={setSidebarAccordionValue}>
                 {Object.entries(groupedCalculators).map(([category, calcs]) => (
                   <AccordionItem key={category} value={category} className="border-b-0">
-                    <AccordionTrigger className={cn("px-2 py-2 text-xs font-semibold uppercase tracking-wider hover:no-underline", categoryColors[category] || "text-muted-foreground")}>
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {categoryIcons[category] || <Calculator className="w-4 h-4" />}
-                        <span className="truncate">{category.split(" & ")[0]}</span>
-                        <span className={cn("ml-auto mr-2 text-[10px] px-1.5 py-0.5 rounded", categoryColors[category] ? "bg-current/10" : "bg-secondary")}>{calcs.length}</span>
-                      </div>
-                    </AccordionTrigger>
+                    <HoverCard openDelay={400} closeDelay={100}>
+                      <HoverCardTrigger asChild>
+                        <div>
+                          <AccordionTrigger className={cn("px-2 py-2 text-xs font-semibold uppercase tracking-wider hover:no-underline", categoryColors[category] || "text-muted-foreground")}>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {categoryIcons[category] || <Calculator className="w-4 h-4" />}
+                              <span className="truncate">{category.split(" & ")[0]}</span>
+                              <span className={cn("ml-auto mr-2 text-[10px] px-1.5 py-0.5 rounded", categoryColors[category] ? "bg-current/10" : "bg-secondary")}>{calcs.length}</span>
+                            </div>
+                          </AccordionTrigger>
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent side="right" align="start" className="w-64 p-3 hidden sm:block">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{calcs.length} calculators</p>
+                        <div className="max-h-48 overflow-y-auto space-y-0.5">
+                          {calcs.map(calc => (
+                            <button key={calc.id} onClick={() => handleSelectCalculator(calc.id)} className="w-full text-left text-xs px-2 py-1 rounded hover:bg-accent truncate">{calc.name}</button>
+                          ))}
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
                     <AccordionContent className="pb-2">
                       <div className="space-y-1">
                         {calcs.map((calc) => {
