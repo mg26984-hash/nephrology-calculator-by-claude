@@ -75,9 +75,10 @@ All calculator inputs with Yes/No options MUST:
 
 When passing numeric values from `calculatorState` to calculator functions:
 
-1. **Unit-converted inputs** — use `getValue(id)` which auto-converts SI→conventional via `normalizeValue`
+1. **Standard 2-option unit inputs** — use `getValue(id)` which auto-converts SI→conventional via `normalizeValue`
 2. **BUN/Urea inputs** — use `getBunValue(id)` which handles 4-way unit conversion
 3. **Plain numeric inputs** (age, weight, height, time, sodium, etc.) — use `Number(calculatorState.X) || 0`, NEVER `calculatorState.X as number` (which passes empty strings and causes NaN)
+4. **multiUnitOptions inputs — NEVER use `getValue()`**. `getValue()`/`normalizeValue()` only handles binary conventional/SI toggles from `unitOptions`. Inputs defined in the `multiUnitOptions` object (e.g., ratioValue, proteinValue, creatinineValue, urineCreatinineUACR, urineCreatinineUPCR) require **manual conversion** — read the raw value with `Number(calculatorState.X) || 0`, read the selected unit with `unitState.X || defaultUnit`, and convert with explicit if/switch logic. Using `getValue()` on these inputs silently skips conversion and produces wildly wrong results.
 
 ## Stack
 - React 19 + TypeScript + Tailwind + shadcn/ui
