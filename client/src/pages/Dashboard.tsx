@@ -748,13 +748,21 @@ export default function Dashboard() {
 
   // Get the display unit label for an input
   const getUnitLabel = useCallback((input: { id: string; unit?: string }): string => {
+    // Handle BUN/Urea 4-option toggle — extract unit from the stored option string
+    if (bunUreaInputIds.includes(input.id)) {
+      const bunUreaUnit = unitState[input.id] || (globalUnitPreference === "si" ? "BUN (mmol/L)" : "BUN (mg/dL)");
+      // Extract the parenthesized unit and prepend BUN/Urea label
+      const match = bunUreaUnit.match(/^(BUN|Urea)\s*\((.+)\)$/);
+      if (match) return `${match[2]} (${match[1]})`;
+      return bunUreaUnit;
+    }
     const options = unitOptions[input.id];
     if (options) {
       const currentUnit = getInputUnit(input.id);
       return currentUnit === "si" ? options.si : options.conventional;
     }
     return input.unit || "";
-  }, [getInputUnit]);
+  }, [getInputUnit, unitState, globalUnitPreference]);
 
   // Get dynamic placeholder based on unit selection
   const getDynamicPlaceholder = useCallback((input: CalculatorInput): string => {
