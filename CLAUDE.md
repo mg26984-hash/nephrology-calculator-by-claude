@@ -1,5 +1,15 @@
 # Nephrology Calculator - Development Rules
 
+## Mobile Vertical View (CRITICAL)
+
+All UI must be fully usable on a 320–375px vertical mobile screen without horizontal scrolling. Follow these rules:
+
+1. **Tables MUST have mobile card alternatives** — every `<table>` with 4+ columns needs a `sm:hidden` card/list view alongside a `hidden sm:block` desktop table. Never rely solely on `overflow-x-auto` for tables.
+2. **Grids start at 1 column** — use `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` (or `grid-cols-2` minimum). Never start at `grid-cols-3` or higher without a mobile breakpoint.
+3. **Flex rows must wrap** — any `flex justify-between` row with potentially long text on both sides must use `flex-wrap gap-1` so items wrap to the next line instead of overflowing.
+4. **No horizontal-only layouts** — every horizontal layout (side-by-side cards, multi-column stats) must stack vertically on mobile via responsive breakpoints.
+5. **Badge/label rows** — use `flex items-start flex-wrap gap-2 justify-between` (not `items-center`) so badges wrap below titles on narrow screens.
+
 ## Mobile Table Overflow Prevention (CRITICAL)
 
 HTML `<table>` elements have a column-sizing algorithm that can compress columns to near-zero width on narrow mobile screens, causing text to wrap **character-by-character vertically** (each letter on its own line). CSS Grid and Flexbox do NOT have this issue — they maintain min-content width.

@@ -221,10 +221,58 @@ export function DryWeightTracker({ onClose }: DryWeightTrackerProps) {
           </div>
         )}
 
-        {/* Sessions table */}
+        {/* Sessions — mobile card view */}
         {sessions.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-[600px] w-full text-sm">
+          <div className="space-y-2 sm:hidden">
+            {sessions.map((s) => {
+              const preW = Number(s.preWeight);
+              const postW = Number(s.postWeight);
+              const uf = Number(s.ufVolume);
+              const dw = Number(s.dryWeight);
+              const hours = Number(s.sessionHours) || 4;
+
+              const idwg = calcIDWG(preW, dw);
+              const ufRate = uf > 0 ? calcUFRate(uf, postW, hours) : null;
+
+              const idwgSev = idwg ? getIDWGSeverity(idwg.pct) : "normal";
+              const ufSev = ufRate !== null ? getUFRateSeverity(ufRate) : "normal";
+              const bpSev = s.postBP ? getPostBPSeverity(s.postBP) : "normal";
+              const rowSev = worstSeverity(worstSeverity(idwgSev, ufSev), bpSev);
+
+              return (
+                <div
+                  key={s.id}
+                  className={cn(
+                    "rounded-lg border p-3 text-sm space-y-1",
+                    rowSev === "red" ? "bg-red-50/50 dark:bg-red-950/20 border-red-300 dark:border-red-800" :
+                    rowSev === "amber" ? "bg-amber-50/50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800" : ""
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{s.date}</span>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)} className="h-6 w-6 text-destructive hover:text-destructive">
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
+                    <span className="text-muted-foreground">Pre: {s.preWeight} kg</span>
+                    <span className="text-muted-foreground">Post: {s.postWeight} kg</span>
+                    {s.ufVolume && <span className="text-muted-foreground">UF: {s.ufVolume} mL</span>}
+                    {idwg && <span className={severityClass(idwgSev)}>IDWG: {idwg.kg.toFixed(1)} kg ({idwg.pct.toFixed(1)}%)</span>}
+                    {ufRate !== null && <span className={severityClass(ufSev)}>UF Rate: {ufRate.toFixed(1)} mL/kg/h</span>}
+                    {s.preBP && <span className="text-muted-foreground">Pre BP: {s.preBP}</span>}
+                    {s.postBP && <span className={severityClass(bpSev)}>Post BP: {s.postBP}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Sessions — desktop table */}
+        {sessions.length > 0 && (
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="min-w-[800px] w-full text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-2 px-2 whitespace-nowrap font-medium text-muted-foreground">Date</th>

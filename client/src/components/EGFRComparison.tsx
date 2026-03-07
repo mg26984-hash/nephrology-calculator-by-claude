@@ -295,7 +295,7 @@ export function EGFRComparison({ onClose }: EGFRComparisonProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Input Section */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* Age */}
           <div className="space-y-2">
             <Label htmlFor="comp-age">Age (years)</Label>

@@ -4557,9 +4557,9 @@ export default function Dashboard() {
 
                           return (
                             <div key={idx} className={`p-4 rounded-lg border-l-4 ${colorClass}`}>
-                              <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-start flex-wrap gap-2 justify-between mb-2">
                                 <h3 className="text-lg font-bold text-foreground">{diagnosis.title}</h3>
-                                <span className="text-xs font-medium px-2 py-1 rounded bg-muted text-muted-foreground">
+                                <span className="text-xs font-medium px-2 py-1 rounded bg-muted text-muted-foreground shrink-0">
                                   {diagnosis.category}
                                 </span>
                               </div>
@@ -4700,7 +4700,7 @@ export default function Dashboard() {
                               {mehranResult.breakdown.map((item, idx) => (
                                 <div
                                   key={idx}
-                                  className={`flex items-center justify-between p-2 rounded ${
+                                  className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                                     item.present
                                       ? 'bg-primary/10 border border-primary/30'
                                       : 'bg-muted/50'
@@ -4738,25 +4738,25 @@ export default function Dashboard() {
                           <div className="mt-3 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-semibold mb-3">Risk Stratification (Mehran 2 Model 1)</p>
                           <div className="space-y-2">
-                            <div className={`flex items-center justify-between p-2 rounded ${
+                            <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                               mehranResult.totalScore <= 4 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
                             }`}>
                               <span className="text-sm">Low Risk</span>
                               <span className="text-sm font-medium">≤4 pts (CA-AKI ~2.3%)</span>
                             </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
+                            <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                               mehranResult.totalScore > 4 && mehranResult.totalScore <= 8 ? 'bg-yellow-500/20 ring-2 ring-yellow-500' : 'bg-muted'
                             }`}>
                               <span className="text-sm">Moderate Risk</span>
                               <span className="text-sm font-medium">5-8 pts (CA-AKI ~8.3%)</span>
                             </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
+                            <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                               mehranResult.totalScore > 8 && mehranResult.totalScore <= 11 ? 'bg-orange-500/20 ring-2 ring-orange-500' : 'bg-muted'
                             }`}>
                               <span className="text-sm">High Risk</span>
                               <span className="text-sm font-medium">9-11 pts (CA-AKI ~16.5%)</span>
                             </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
+                            <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                               mehranResult.totalScore > 11 ? 'bg-red-500/20 ring-2 ring-red-500' : 'bg-muted'
                             }`}>
                               <span className="text-sm">Very High Risk</span>
@@ -4931,7 +4931,7 @@ export default function Dashboard() {
                               {mehranResult.breakdown.map((item, idx) => (
                                 <div
                                   key={idx}
-                                  className={`flex items-center justify-between p-2 rounded ${
+                                  className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                                     item.present
                                       ? 'bg-primary/10 border border-primary/30'
                                       : 'bg-muted/50'
@@ -4969,25 +4969,25 @@ export default function Dashboard() {
                           <div className="mt-3 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-semibold mb-3">Risk Stratification (Original Mehran 2004)</p>
                             <div className="space-y-2">
-                              <div className={`flex items-center justify-between p-2 rounded ${
+                              <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                                 mehranResult.totalScore <= 5 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
                               }`}>
                                 <span className="text-sm">Low Risk</span>
                                 <span className="text-sm font-medium">≤5 pts (CIN 7.5%, Dialysis 0.04%)</span>
                               </div>
-                              <div className={`flex items-center justify-between p-2 rounded ${
+                              <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                                 mehranResult.totalScore > 5 && mehranResult.totalScore <= 10 ? 'bg-yellow-500/20 ring-2 ring-yellow-500' : 'bg-muted'
                               }`}>
                                 <span className="text-sm">Moderate Risk</span>
                                 <span className="text-sm font-medium">6-10 pts (CIN 14%, Dialysis 0.12%)</span>
                               </div>
-                              <div className={`flex items-center justify-between p-2 rounded ${
+                              <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                                 mehranResult.totalScore > 10 && mehranResult.totalScore <= 15 ? 'bg-orange-500/20 ring-2 ring-orange-500' : 'bg-muted'
                               }`}>
                                 <span className="text-sm">High Risk</span>
                                 <span className="text-sm font-medium">11-15 pts (CIN 26.1%, Dialysis 1.09%)</span>
                               </div>
-                              <div className={`flex items-center justify-between p-2 rounded ${
+                              <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                                 mehranResult.totalScore > 15 ? 'bg-red-500/20 ring-2 ring-red-500' : 'bg-muted'
                               }`}>
                                 <span className="text-sm">Very High Risk</span>
@@ -5134,13 +5134,13 @@ export default function Dashboard() {
                         <div className="p-4 rounded-lg bg-muted/50">
                           <p className="text-sm font-semibold mb-3">Treatment Thresholds (NOF/ISCD Guidelines)</p>
                           <div className="space-y-2">
-                            <div className={`flex items-center justify-between p-2 rounded ${
+                            <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                               fraxResult.majorFracture < 20 && fraxResult.hipFracture < 3 ? 'bg-emerald-500/20 ring-2 ring-emerald-500' : 'bg-muted'
                             }`}>
                               <span className="text-sm">Below Treatment Threshold</span>
                               <span className="text-sm font-medium">MOF &lt;20% AND Hip &lt;3%</span>
                             </div>
-                            <div className={`flex items-center justify-between p-2 rounded ${
+                            <div className={`flex items-start flex-wrap gap-1 justify-between p-2 rounded ${
                               fraxResult.majorFracture >= 20 || fraxResult.hipFracture >= 3 ? 'bg-red-500/20 ring-2 ring-red-500' : 'bg-muted'
                             }`}>
                               <span className="text-sm">Above Treatment Threshold</span>
@@ -5508,7 +5508,26 @@ export default function Dashboard() {
                             <Activity className="w-4 h-4" />
                             Equivalent Doses
                           </h4>
-                          <div className="overflow-x-auto">
+                          {/* Mobile card view */}
+                          <div className="space-y-2 sm:hidden">
+                            {steroidConversionResult.equivalentDoses.map((eq, idx) => (
+                              <div key={idx} className={`rounded-lg border p-2.5 text-sm ${eq.steroid === steroidConversionResult.fromSteroid ? 'bg-purple-500/10 border-purple-300 dark:border-purple-700' : ''}`}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className={`font-medium ${eq.steroid === steroidConversionResult.fromSteroid ? 'font-bold text-purple-600 dark:text-purple-400' : ''}`}>
+                                    {eq.steroid}{eq.steroid === steroidConversionResult.fromSteroid ? ' (input)' : ''}
+                                  </span>
+                                  <span className="font-mono font-semibold">{eq.dose} {eq.unit}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                                  <span>GC: {eq.relativeGlucocorticoidPotency}x</span>
+                                  <span>MC: {eq.relativeMineralocorticoidPotency === 0 ? 'None' : `${eq.relativeMineralocorticoidPotency}x`}</span>
+                                  <span>t½: {eq.biologicalHalfLife}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Desktop table */}
+                          <div className="hidden sm:block overflow-x-auto">
                             <table className="w-full text-sm min-w-[600px]">
                               <thead>
                                 <tr className="border-b border-border">
@@ -5592,7 +5611,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Key Metrics */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                           <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-center">
                             <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
                               {plasmaExchangeResult.totalPlasmaVolume}
@@ -5625,7 +5644,7 @@ export default function Dashboard() {
                             <Activity className="w-4 h-4" />
                             Expected IgG Removal
                           </h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                             <div className="text-center">
                               <p className="text-xl font-bold text-green-600 dark:text-green-400">
                                 ~{plasmaExchangeResult.expectedIgGRemoval}%

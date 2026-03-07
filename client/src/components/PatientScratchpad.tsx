@@ -322,7 +322,7 @@ export function PatientScratchpad({ onClose, onUseLabs, unitPreference }: Patien
                 autoComplete="off"
               />
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {labFields.map((field) => (
                 <div key={field.id}>
                   <Label className="text-xs text-muted-foreground truncate block">

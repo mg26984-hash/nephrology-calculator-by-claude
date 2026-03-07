@@ -20,7 +20,29 @@ export function RTADifferentialCard({ onClose }: ReferenceCardProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        {/* Mobile card view */}
+        <div className="space-y-3 sm:hidden">
+          {[
+            { type: "Type 1 (Distal)", color: "text-cyan-700 dark:text-cyan-400 border-cyan-300 dark:border-cyan-800", k: "↓ Low", hco3: "Can be <10 mEq/L", uph: ">5.5", uag: "Positive", fehco3: "<5%", causes: "Sjögren's, SLE, amphotericin, lithium, toluene", rx: "NaHCO₃ 1–2 mEq/kg/day + K⁺" },
+            { type: "Type 2 (Proximal)", color: "text-violet-700 dark:text-violet-400 border-violet-300 dark:border-violet-800", k: "↓ Low", hco3: "14–18 mEq/L", uph: "<5.5", uag: "Positive", fehco3: ">15%", causes: "Fanconi syndrome, myeloma, acetazolamide, tenofovir", rx: "NaHCO₃ 5–15 mEq/kg/day + K⁺ + thiazide" },
+            { type: "Type 4 (Hypoaldo)", color: "text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800", k: "↑ High", hco3: "17–22 mEq/L", uph: "<5.5", uag: "Positive", fehco3: "<5%", causes: "Diabetes, ACEi, ARB, TMP-SMX, heparin, NSAIDs", rx: "Fludrocortisone, loop diuretic, Na polystyrene, restrict K⁺" },
+          ].map((rta) => (
+            <div key={rta.type} className={`rounded-lg border p-3 space-y-1.5 text-sm ${rta.color.split(" ").slice(2).join(" ")}`}>
+              <div className={`font-semibold ${rta.color.split(" ").slice(0, 2).join(" ")}`}>{rta.type}</div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <span><span className="font-medium">K⁺:</span> {rta.k}</span>
+                <span><span className="font-medium">HCO₃:</span> {rta.hco3}</span>
+                <span><span className="font-medium">Urine pH:</span> {rta.uph}</span>
+                <span><span className="font-medium">Urine AG:</span> {rta.uag}</span>
+                <span className="col-span-2"><span className="font-medium">FE-HCO₃:</span> {rta.fehco3}</span>
+              </div>
+              <div className="text-xs"><span className="font-medium">Causes:</span> {rta.causes}</div>
+              <div className="text-xs"><span className="font-medium">Rx:</span> {rta.rx}</div>
+            </div>
+          ))}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-[600px] w-full text-sm border-collapse">
             <thead>
               <tr className="border-b">
@@ -140,9 +162,9 @@ export function GNSerologicWorkupCard({ onClose }: ReferenceCardProps) {
             <h4 className={`font-semibold text-sm mb-2 ${group.color}`}>{group.title}</h4>
             <div className="space-y-1.5">
               {group.items.map((item) => (
-                <div key={item.disease} className="flex gap-2 text-sm">
-                  <span className="font-medium min-w-[160px] shrink-0">{item.disease}</span>
-                  <span className="text-muted-foreground">{item.tests}</span>
+                <div key={item.disease} className="flex flex-col sm:flex-row sm:gap-2 text-sm">
+                  <span className="font-medium sm:min-w-[160px] sm:shrink-0">{item.disease}</span>
+                  <span className="text-muted-foreground text-xs sm:text-sm">{item.tests}</span>
                 </div>
               ))}
             </div>
@@ -258,7 +280,28 @@ export function TransplantScreeningCard({ onClose }: ReferenceCardProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        {/* Mobile card view */}
+        <div className="space-y-2 sm:hidden">
+          {screeningData.map((row) => {
+            const activeTimes = timepoints.filter((_, i) => row.schedule[i]);
+            return (
+              <div key={row.test} className="rounded-lg border p-2.5 text-sm">
+                <div className="font-medium mb-1">{row.test}</div>
+                <div className="flex flex-wrap gap-1">
+                  {activeTimes.length > 0 ? activeTimes.map((tp) => (
+                    <span key={tp} className="inline-flex items-center rounded-md bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 text-xs text-green-700 dark:text-green-400">
+                      {tp}
+                    </span>
+                  )) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-[600px] w-full text-sm border-collapse">
             <thead>
               <tr className="border-b">
