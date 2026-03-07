@@ -411,10 +411,33 @@ export default function Dashboard() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // On-Call Mode state
+  const [onCallMode, setOnCallMode] = useState(() => localStorage.getItem('on-call-mode-active') === 'true');
+  const [onCallCalculators, setOnCallCalculators] = useState<string[]>(() => {
+    const saved = localStorage.getItem('on-call-calculators');
+    if (saved) return JSON.parse(saved);
+    return [
+      'fena', 'feurea', 'anion-gap', 'delta-gap', 'winters-formula',
+      'corrected-sodium-hyperglycemia', 'water-deficit-hypernatremia',
+      'sodium-correction-rate', 'kdigo-aki-staging', 'dialysis-urgency',
+      'corrected-calcium', 'potassium-repletion', 'phosphate-repletion',
+      'magnesium-repletion', 'qsofa', 'sofa'
+    ];
+  });
+  const [showOnCallCustomizer, setShowOnCallCustomizer] = useState(false);
+
   // Save favorites to localStorage when they change
   useEffect(() => {
     localStorage.setItem('nephrology-calculator-favorites', JSON.stringify(favorites));
   }, [favorites]);
+
+  // Save on-call mode state to localStorage
+  useEffect(() => {
+    localStorage.setItem('on-call-mode-active', String(onCallMode));
+  }, [onCallMode]);
+  useEffect(() => {
+    localStorage.setItem('on-call-calculators', JSON.stringify(onCallCalculators));
+  }, [onCallCalculators]);
 
   // Save unit preferences to localStorage when they change
   useEffect(() => {
@@ -663,10 +686,11 @@ export default function Dashboard() {
 
   // Smart search: scores calculators by relevance with fuzzy fallback
   const filteredCalculators = useMemo(() => {
-    let filtered = calculators;
+    const baseCalculators = onCallMode ? calculators.filter(c => onCallCalculators.includes(c.id)) : calculators;
+    let filtered = baseCalculators;
 
     if (searchQuery) {
-      const scored = calculators.map(c => ({ calc: c, score: scoreCalculator(c, searchQuery) }));
+      const scored = baseCalculators.map(c => ({ calc: c, score: scoreCalculator(c, searchQuery) }));
       filtered = scored
         .filter(s => s.score > 0)
         .sort((a, b) => b.score - a.score)
@@ -678,7 +702,7 @@ export default function Dashboard() {
     }
 
     return filtered;
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, onCallMode, onCallCalculators]);
 
   // Group filtered calculators by category
   const groupedCalculators = useMemo(() => {
@@ -3250,6 +3274,19 @@ export default function Dashboard() {
             >
               <Search className="w-5 h-5" />
             </Button>
+            {/* On-Call Mode Toggle */}
+            <Button
+              variant={onCallMode ? "default" : "ghost"}
+              size="icon"
+              onClick={() => setOnCallMode(!onCallMode)}
+              className={cn("rounded-lg relative", onCallMode && "bg-amber-600 hover:bg-amber-700 text-white")}
+              title={onCallMode ? "Exit On-Call Mode" : "Enter On-Call Mode"}
+            >
+              <Stethoscope className="w-5 h-5" />
+              {onCallMode && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse" />
+              )}
+            </Button>
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -3370,6 +3407,102 @@ export default function Dashboard() {
                           <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
                       </div>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ) : !selectedCalculator && onCallMode ? (
+            // On-Call Mode Home Screen
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber-600/15">
+                    <Stethoscope className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold">On-Call Mode</h1>
+                    <p className="text-sm text-muted-foreground">{onCallCalculators.length} calculators selected</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowOnCallCustomizer(!showOnCallCustomizer)}
+                >
+                  {showOnCallCustomizer ? "Done" : "Customize"}
+                </Button>
+              </div>
+
+              {showOnCallCustomizer && (
+                <Card className="mb-6">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">Customize On-Call Calculators</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOnCallCalculators([
+                          'fena', 'feurea', 'anion-gap', 'delta-gap', 'winters-formula',
+                          'corrected-sodium-hyperglycemia', 'water-deficit-hypernatremia',
+                          'sodium-correction-rate', 'kdigo-aki-staging', 'dialysis-urgency',
+                          'corrected-calcium', 'potassium-repletion', 'phosphate-repletion',
+                          'magnesium-repletion', 'qsofa', 'sofa'
+                        ])}
+                      >
+                        Reset to Defaults
+                      </Button>
+                    </div>
+                    <CardDescription>Select which calculators appear in On-Call Mode</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[320px] pr-4">
+                      <div className="space-y-1">
+                        {categories.map(cat => {
+                          const catCalcs = calculators.filter(c => c.category === cat);
+                          return (
+                            <div key={cat} className="mb-3">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{cat}</p>
+                              {catCalcs.map(calc => (
+                                <label key={calc.id} className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 cursor-pointer">
+                                  <Checkbox
+                                    checked={onCallCalculators.includes(calc.id)}
+                                    onCheckedChange={(checked) => {
+                                      setOnCallCalculators(prev =>
+                                        checked
+                                          ? [...prev, calc.id]
+                                          : prev.filter(id => id !== calc.id)
+                                      );
+                                    }}
+                                  />
+                                  <span className="text-sm">{calc.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {calculators
+                  .filter(c => onCallCalculators.includes(c.id))
+                  .map(calc => (
+                    <button
+                      key={calc.id}
+                      onClick={() => handleSelectCalculator(calc.id)}
+                      className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:bg-muted/50 hover:border-primary/30 transition-all text-left group"
+                    >
+                      <div className="shrink-0">
+                        {categoryIcons[calc.category] || <Calculator className="w-5 h-5" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{calc.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{calc.category}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
                   ))}
               </div>
@@ -5688,9 +5821,9 @@ export default function Dashboard() {
         <CommandInput placeholder="Search calculators..." />
         <CommandList className="max-h-[400px]">
           <CommandEmpty>No calculators found.</CommandEmpty>
-          {favoriteCalculators.length > 0 && (
+          {favoriteCalculators.filter(c => !onCallMode || onCallCalculators.includes(c.id)).length > 0 && (
             <CommandGroup heading="Favorites">
-              {favoriteCalculators.map((calc) => (
+              {favoriteCalculators.filter(c => !onCallMode || onCallCalculators.includes(c.id)).map((calc) => (
                 <CommandItem
                   key={`cmd-fav-${calc.id}`}
                   value={calc.name}
@@ -5707,7 +5840,8 @@ export default function Dashboard() {
             </CommandGroup>
           )}
           {categories.map((cat) => {
-            const catCalcs = calculators.filter(c => c.category === cat);
+            const catCalcs = calculators.filter(c => c.category === cat && (!onCallMode || onCallCalculators.includes(c.id)));
+            if (catCalcs.length === 0) return null;
             return (
               <CommandGroup key={cat} heading={cat}>
                 {catCalcs.map((calc) => (
