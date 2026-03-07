@@ -85,6 +85,7 @@ import ConversionReferenceCard from "@/components/ConversionReferenceCard";
 import { EKFCAgeCurve } from "@/components/EKFCAgeCurve";
 import { SmartResultActions } from "@/components/SmartResultActions";
 import { RTADifferentialCard, GNSerologicWorkupCard, DialysisIndicationsCard, TransplantScreeningCard } from "@/components/QuickReferenceCards";
+import { HyponatremiaWizard } from "@/components/HyponatremiaWizard";
 
 interface CalculatorState {
   [key: string]: string | number | boolean;
@@ -402,6 +403,7 @@ export default function Dashboard() {
   const [showGNCard, setShowGNCard] = useState(false);
   const [showDialysisCard, setShowDialysisCard] = useState(false);
   const [showTransplantCard, setShowTransplantCard] = useState(false);
+  const [showHyponatremiaWizard, setShowHyponatremiaWizard] = useState(false);
   const comparisonRef = useRef<HTMLDivElement>(null);
   const pePathwayRef = useRef<HTMLDivElement>(null);
   const conversionRef = useRef<HTMLDivElement>(null);
@@ -409,6 +411,7 @@ export default function Dashboard() {
   const gnCardRef = useRef<HTMLDivElement>(null);
   const dialysisCardRef = useRef<HTMLDivElement>(null);
   const transplantCardRef = useRef<HTMLDivElement>(null);
+  const hyponatremiaRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultCardRef = useRef<HTMLDivElement>(null);
   const inlineCalculateRef = useRef<HTMLButtonElement>(null);
@@ -599,6 +602,14 @@ export default function Dashboard() {
       setTimeout(() => transplantCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     }
   }, [showTransplantCard]);
+
+  useEffect(() => {
+    if (showHyponatremiaWizard && hyponatremiaRef.current) {
+      hyponatremiaRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showHyponatremiaWizard]);
+
+
 
   // Auto-expand sidebar accordion to selected calculator's category
   useEffect(() => {
@@ -3681,6 +3692,15 @@ export default function Dashboard() {
                       {showPEPathway ? "Hide PE Pathway" : "PE Clinical Pathway"}
                     </Button>
                     <Button
+                      onClick={() => setShowHyponatremiaWizard(!showHyponatremiaWizard)}
+                      variant={showHyponatremiaWizard ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <Droplets className="w-4 h-4 mr-2" />
+                      {showHyponatremiaWizard ? "Hide Hyponatremia Wizard" : "Hyponatremia Workup"}
+                    </Button>
+                    <Button
                       onClick={() => setShowConversionCard(!showConversionCard)}
                       variant={showConversionCard ? "default" : "outline"}
                       className="w-full justify-start"
@@ -3866,6 +3886,12 @@ export default function Dashboard() {
               {showConversionCard && (
                 <div className="mt-4" ref={conversionRef}>
                   <ConversionReferenceCard onClose={() => setShowConversionCard(false)} />
+                </div>
+              )}
+
+              {showHyponatremiaWizard && (
+                <div className="mt-4" ref={hyponatremiaRef}>
+                  <HyponatremiaWizard onClose={() => setShowHyponatremiaWizard(false)} onNavigateToCalculator={handleSelectCalculator} />
                 </div>
               )}
 
