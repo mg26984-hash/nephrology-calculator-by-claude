@@ -213,4 +213,4 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-console.log('[SW] Service Worker loaded - OTC Calculators v37');
+console.log('[SW] Service Worker loaded - OTC Calculators v38');

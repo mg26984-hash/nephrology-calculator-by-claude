@@ -81,6 +81,29 @@ const SHORT_LABELS: Record<string, string> = {
   "urine albumin": "UAlb",
   acr: "ACR",
   pcr: "PCR",
+  // Magnesium
+  magnesium: "Mg",
+  "serum magnesium": "Mg",
+  "target magnesium": "Tgt Mg",
+  // Plasma electrolytes
+  "plasma potassium": "K",
+  "plasma sodium": "Na",
+  // Target labs
+  "target potassium": "Tgt K",
+  // Measured variants
+  "measured hco3": "HCO₃",
+  "measured bicarbonate": "HCO₃",
+  // Cardiac
+  "left ventricular ejection fraction": "LVEF",
+  lvef: "LVEF",
+  // Urine creatinine variants
+  "urine creatinine concentration": "Urine Cr",
+  // Hematology
+  "white blood cell count": "WBC",
+  "white blood count": "WBC",
+  wbc: "WBC",
+  // eGFR
+  egfr: "eGFR",
 };
 
 interface ClinicalNoteParams {

@@ -55,9 +55,9 @@ const conversions: ConversionItem[] = [
   {
     name: "Phosphate",
     conventional: { unit: "mg/dL", factor: 1 },
-    si: { unit: "mmol/L", factor: 0.323 },
-    conversionFactor: 0.323,
-    formula: "PO₄ (mg/dL) × 0.323 = PO₄ (mmol/L)"
+    si: { unit: "mmol/L", factor: 0.3229 },
+    conversionFactor: 0.3229,
+    formula: "PO₄ (mg/dL) × 0.3229 = PO₄ (mmol/L)"
   },
   {
     name: "Albumin",

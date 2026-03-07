@@ -182,7 +182,7 @@ const unitOptions: { [inputId: string]: { conventional: string; si: string; conv
   calciumPTH: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
   calciumPhos: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
   measuredCa: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.25 },
-  phosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.323 },
+  phosphate: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.3229 },
   totalCholesterol: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0259 },
   hdl: { conventional: "mg/dL", si: "mmol/L", conversionFactor: 0.0259 },
   hemoglobin: { conventional: "g/dL", si: "g/L", conversionFactor: 10 },
@@ -704,13 +704,14 @@ export default function Dashboard() {
         if (result < 40) return "moderate";
         return "high";
       
-      case "cin-mehran":
+      case "cin-mehran-score":
+      case "cin-mehran-original-score":
         if (result < 8) return "low";
         if (result < 16) return "moderate";
         if (result < 26) return "high";
         return "veryhigh";
-      
-      case "ascvd":
+
+      case "ascvd-risk":
         if (result < 5) return "low";
         if (result < 7.5) return "borderline";
         if (result < 20) return "intermediate";

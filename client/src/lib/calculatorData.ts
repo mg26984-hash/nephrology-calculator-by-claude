@@ -1416,7 +1416,7 @@ export const calculators: Calculator[] = [
     interpretation: (value) => {
       const strokeRisk: Record<number, string> = {
         0: "0%", 1: "1.3%", 2: "2.2%", 3: "3.2%", 4: "4.0%",
-        5: "6.7%", 6: "9.8%", 7: "9.6%", 8: "6.7%", 9: "15.2%"
+        5: "6.7%", 6: "9.8%", 7: "11.2%", 8: "12.5%", 9: "15.2%"
       };
       const risk = strokeRisk[Math.min(value, 9)] || ">15%";
       if (value === 0) return `Score ${value} - Annual stroke risk: ${risk}. LOW RISK - No antithrombotic therapy recommended.`;

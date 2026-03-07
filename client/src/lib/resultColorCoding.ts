@@ -60,7 +60,8 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'kdigo-aki-staging':
       return getKDIGOAKIColor(value);
 
-    case 'cin-risk':
+    case 'cin-mehran-score':
+    case 'cin-mehran-original-score':
       return getCINRiskColor(value);
 
     case 'ttkg':
@@ -69,10 +70,10 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     // ============================================================================
     // ELECTROLYTES
     // ============================================================================
-    case 'water-deficit':
+    case 'water-deficit-hypernatremia':
       return getWaterDeficitColor(value);
 
-    case 'corrected-sodium':
+    case 'corrected-sodium-hyperglycemia':
       return getCorrectedSodiumColor(value);
 
     case 'sodium-correction-rate':
@@ -120,7 +121,7 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'urr':
       return getURRColor(value);
 
-    case 'tbw-watson':
+    case 'total-body-water':
       return null; // TBW doesn't need color coding
 
     case 'hd-session-duration':
@@ -132,7 +133,7 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'epts':
       return getEPTSColor(value);
 
-    case 'tacrolimus':
+    case 'tacrolimus-target':
       return getTacrolimusColor(value, inputs);
 
     // ============================================================================
@@ -168,21 +169,18 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     // SYSTEMIC DISEASES
     // ============================================================================
     case 'sledai-2k':
-    case 'sledai':
       return getSLEDAIColor(value);
 
     case 'slicc-2012':
-    case 'slicc':
       return getSLICCColor(value);
 
     case 'frail-scale':
-    case 'frail':
       return getFRAILColor(value);
 
     case 'das28-esr':
       return getDAS28Color(value);
 
-    case 'prisma7':
+    case 'prisma-7':
       return getPRISMA7Color(value);
 
     case 'curb-65':
@@ -191,7 +189,7 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
     case 'roks':
       return getROKSColor(value);
 
-    case 'frax':
+    case 'frax-simplified':
       return getFRAXColor(value);
 
     // ============================================================================
@@ -247,9 +245,6 @@ export function getResultColorCoding(calculatorId: string, value: number, inputs
 
     case 'vancomycin-auc':
       return getVancomycinAUCColor(value);
-
-    case 'tacrolimus-target':
-      return null; // Dynamic target — color handled by interpretation
 
     case 'bk-virus-assessment':
       return getBKVirusColor(value);
