@@ -52,6 +52,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { calculators, getCategories, getCalculatorById, CalculatorInput } from "@/lib/calculatorData";
 import * as calc from "@/lib/calculators";
 import { getRecommendations } from '@/lib/clinicalRecommendations';
+import { generateClinicalNote } from '@/lib/clinicalNoteFormatter';
 import { useTheme } from "@/contexts/ThemeContext";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { cn } from "@/lib/utils";
@@ -3976,8 +3977,15 @@ export default function Dashboard() {
                       size="sm"
                       className="h-8 px-2 text-muted-foreground hover:text-foreground"
                       onClick={() => {
-                        const resultText = `${selectedCalculator.name}\nResult: ${typeof result === "number" ? result.toFixed(2) : "N/A"}${selectedCalculator.resultUnit ? " " + selectedCalculator.resultUnit : ""}\nInterpretation: ${resultInterpretation}`;
-                        navigator.clipboard.writeText(resultText);
+                        const noteText = generateClinicalNote({
+                          calculator: selectedCalculator,
+                          result,
+                          resultInterpretation,
+                          calculatorState: calculatorState as Record<string, string>,
+                          unitState,
+                          getUnitLabel,
+                        });
+                        navigator.clipboard.writeText(noteText);
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
                       }}
