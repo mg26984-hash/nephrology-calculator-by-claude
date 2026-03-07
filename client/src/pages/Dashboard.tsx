@@ -84,6 +84,7 @@ import { isBinaryYesNoInput, getYesNoLabel, getYesNoValue, isYesValue } from "@/
 import ConversionReferenceCard from "@/components/ConversionReferenceCard";
 import { EKFCAgeCurve } from "@/components/EKFCAgeCurve";
 import { SmartResultActions } from "@/components/SmartResultActions";
+import { RTADifferentialCard, GNSerologicWorkupCard, DialysisIndicationsCard, TransplantScreeningCard } from "@/components/QuickReferenceCards";
 
 interface CalculatorState {
   [key: string]: string | number | boolean;
@@ -397,9 +398,17 @@ export default function Dashboard() {
   const [showComparison, setShowComparison] = useState(false);
   const [showPEPathway, setShowPEPathway] = useState(false);
   const [showConversionCard, setShowConversionCard] = useState(false);
+  const [showRTACard, setShowRTACard] = useState(false);
+  const [showGNCard, setShowGNCard] = useState(false);
+  const [showDialysisCard, setShowDialysisCard] = useState(false);
+  const [showTransplantCard, setShowTransplantCard] = useState(false);
   const comparisonRef = useRef<HTMLDivElement>(null);
   const pePathwayRef = useRef<HTMLDivElement>(null);
   const conversionRef = useRef<HTMLDivElement>(null);
+  const rtaCardRef = useRef<HTMLDivElement>(null);
+  const gnCardRef = useRef<HTMLDivElement>(null);
+  const dialysisCardRef = useRef<HTMLDivElement>(null);
+  const transplantCardRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultCardRef = useRef<HTMLDivElement>(null);
   const inlineCalculateRef = useRef<HTMLButtonElement>(null);
@@ -566,6 +575,30 @@ export default function Dashboard() {
       setTimeout(() => conversionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     }
   }, [showConversionCard]);
+
+  useEffect(() => {
+    if (showRTACard) {
+      setTimeout(() => rtaCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showRTACard]);
+
+  useEffect(() => {
+    if (showGNCard) {
+      setTimeout(() => gnCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showGNCard]);
+
+  useEffect(() => {
+    if (showDialysisCard) {
+      setTimeout(() => dialysisCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showDialysisCard]);
+
+  useEffect(() => {
+    if (showTransplantCard) {
+      setTimeout(() => transplantCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showTransplantCard]);
 
   // Auto-expand sidebar accordion to selected calculator's category
   useEffect(() => {
@@ -3656,6 +3689,50 @@ export default function Dashboard() {
                       <ArrowLeftRight className="w-4 h-4 mr-2" />
                       {showConversionCard ? "Hide Unit Converter" : "Unit Conversion Reference"}
                     </Button>
+
+                    <div className="relative py-2">
+                      <Separator />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                        Reference Cards
+                      </span>
+                    </div>
+
+                    <Button
+                      onClick={() => setShowRTACard(!showRTACard)}
+                      variant={showRTACard ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <Droplets className="w-4 h-4 mr-2" />
+                      {showRTACard ? "Hide RTA Differential" : "RTA Differential"}
+                    </Button>
+                    <Button
+                      onClick={() => setShowGNCard(!showGNCard)}
+                      variant={showGNCard ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <FlaskConical className="w-4 h-4 mr-2" />
+                      {showGNCard ? "Hide GN Workup" : "GN Serologic Workup"}
+                    </Button>
+                    <Button
+                      onClick={() => setShowDialysisCard(!showDialysisCard)}
+                      variant={showDialysisCard ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      {showDialysisCard ? "Hide Dialysis Indications" : "Dialysis Indications"}
+                    </Button>
+                    <Button
+                      onClick={() => setShowTransplantCard(!showTransplantCard)}
+                      variant={showTransplantCard ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      {showTransplantCard ? "Hide Transplant Screening" : "Transplant Screening"}
+                    </Button>
                   </CardContent>
                 </Card>
 
@@ -3789,6 +3866,30 @@ export default function Dashboard() {
               {showConversionCard && (
                 <div className="mt-4" ref={conversionRef}>
                   <ConversionReferenceCard onClose={() => setShowConversionCard(false)} />
+                </div>
+              )}
+
+              {showRTACard && (
+                <div className="mt-4" ref={rtaCardRef}>
+                  <RTADifferentialCard onClose={() => setShowRTACard(false)} />
+                </div>
+              )}
+
+              {showGNCard && (
+                <div className="mt-4" ref={gnCardRef}>
+                  <GNSerologicWorkupCard onClose={() => setShowGNCard(false)} />
+                </div>
+              )}
+
+              {showDialysisCard && (
+                <div className="mt-4" ref={dialysisCardRef}>
+                  <DialysisIndicationsCard onClose={() => setShowDialysisCard(false)} />
+                </div>
+              )}
+
+              {showTransplantCard && (
+                <div className="mt-4" ref={transplantCardRef}>
+                  <TransplantScreeningCard onClose={() => setShowTransplantCard(false)} />
                 </div>
               )}
             </div>
