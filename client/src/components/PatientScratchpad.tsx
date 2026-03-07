@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,34 +10,96 @@ interface ScratchpadEntry {
   id: string;
   label: string;
   labs: Record<string, string>;
+  /** Unit system when entry was saved — needed to display badges and convert on "Use Labs" */
+  unitSystem: "conventional" | "si";
   createdAt: number;
 }
 
 interface PatientScratchpadProps {
   onClose: () => void;
   onUseLabs?: (labs: Record<string, string>) => void;
+  /** Current global unit preference from Dashboard */
+  unitPreference: "conventional" | "si";
 }
 
-const LAB_FIELDS = [
-  { id: "cr", label: "Cr", unit: "mg/dL", placeholder: "1.2" },
-  { id: "na", label: "Na", unit: "mEq/L", placeholder: "140" },
-  { id: "k", label: "K", unit: "mEq/L", placeholder: "4.0" },
-  { id: "bun", label: "BUN", unit: "mg/dL", placeholder: "20" },
-  { id: "hco3", label: "HCO\u2083", unit: "mEq/L", placeholder: "24" },
-  { id: "cl", label: "Cl", unit: "mEq/L", placeholder: "100" },
-  { id: "ca", label: "Ca", unit: "mg/dL", placeholder: "9.5" },
-  { id: "phos", label: "Phos", unit: "mg/dL", placeholder: "3.5" },
-  { id: "mg", label: "Mg", unit: "mg/dL", placeholder: "2.0" },
-  { id: "alb", label: "Alb", unit: "g/dL", placeholder: "4.0" },
-  { id: "glucose", label: "Gluc", unit: "mg/dL", placeholder: "100" },
-  { id: "hgb", label: "Hgb", unit: "g/dL", placeholder: "12" },
-  { id: "ph", label: "pH", unit: "", placeholder: "7.40" },
-  { id: "pco2", label: "pCO\u2082", unit: "mmHg", placeholder: "40" },
-  { id: "una", label: "UNa", unit: "mEq/L", placeholder: "40" },
-  { id: "ucr", label: "UCr", unit: "mg/dL", placeholder: "80" },
-  { id: "uosm", label: "UOsm", unit: "mOsm/kg", placeholder: "500" },
-  { id: "sosm", label: "SOsm", unit: "mOsm/kg", placeholder: "285" },
-] as const;
+// Unit conversion definitions for labs that support SI
+// conversionFactor: multiply conventional value by this to get SI value
+interface UnitDef {
+  conventional: { unit: string; placeholder: string };
+  si: { unit: string; placeholder: string };
+  factor: number; // conventional × factor = SI
+}
+
+const UNIT_CONVERSIONS: Record<string, UnitDef> = {
+  cr:      { conventional: { unit: "mg/dL", placeholder: "1.2" },   si: { unit: "μmol/L", placeholder: "106" },  factor: 88.4 },
+  ucr:     { conventional: { unit: "mg/dL", placeholder: "80" },    si: { unit: "μmol/L", placeholder: "7072" }, factor: 88.4 },
+  bun:     { conventional: { unit: "mg/dL", placeholder: "20" },    si: { unit: "mmol/L", placeholder: "7.1" },  factor: 0.357 },
+  ca:      { conventional: { unit: "mg/dL", placeholder: "9.5" },   si: { unit: "mmol/L", placeholder: "2.38" }, factor: 0.25 },
+  phos:    { conventional: { unit: "mg/dL", placeholder: "3.5" },   si: { unit: "mmol/L", placeholder: "1.13" }, factor: 0.3229 },
+  mg:      { conventional: { unit: "mg/dL", placeholder: "2.0" },   si: { unit: "mmol/L", placeholder: "0.82" }, factor: 0.4114 },
+  alb:     { conventional: { unit: "g/dL", placeholder: "4.0" },    si: { unit: "g/L", placeholder: "40" },      factor: 10 },
+  glucose: { conventional: { unit: "mg/dL", placeholder: "100" },   si: { unit: "mmol/L", placeholder: "5.6" },  factor: 0.0555 },
+  hgb:     { conventional: { unit: "g/dL", placeholder: "12" },     si: { unit: "g/L", placeholder: "120" },     factor: 10 },
+};
+
+interface LabField {
+  id: string;
+  label: string;
+  unit: string;
+  placeholder: string;
+}
+
+function getLabFields(unitPref: "conventional" | "si"): LabField[] {
+  const base: Array<{ id: string; label: string; unit: string; placeholder: string }> = [
+    { id: "cr", label: "Cr", unit: "mg/dL", placeholder: "1.2" },
+    { id: "na", label: "Na", unit: "mEq/L", placeholder: "140" },
+    { id: "k", label: "K", unit: "mEq/L", placeholder: "4.0" },
+    { id: "bun", label: "BUN", unit: "mg/dL", placeholder: "20" },
+    { id: "hco3", label: "HCO\u2083", unit: "mEq/L", placeholder: "24" },
+    { id: "cl", label: "Cl", unit: "mEq/L", placeholder: "100" },
+    { id: "ca", label: "Ca", unit: "mg/dL", placeholder: "9.5" },
+    { id: "phos", label: "Phos", unit: "mg/dL", placeholder: "3.5" },
+    { id: "mg", label: "Mg", unit: "mg/dL", placeholder: "2.0" },
+    { id: "alb", label: "Alb", unit: "g/dL", placeholder: "4.0" },
+    { id: "glucose", label: "Gluc", unit: "mg/dL", placeholder: "100" },
+    { id: "hgb", label: "Hgb", unit: "g/dL", placeholder: "12" },
+    { id: "ph", label: "pH", unit: "", placeholder: "7.40" },
+    { id: "pco2", label: "pCO\u2082", unit: "mmHg", placeholder: "40" },
+    { id: "una", label: "UNa", unit: "mEq/L", placeholder: "40" },
+    { id: "ucr", label: "UCr", unit: "mg/dL", placeholder: "80" },
+    { id: "uosm", label: "UOsm", unit: "mOsm/kg", placeholder: "500" },
+    { id: "sosm", label: "SOsm", unit: "mOsm/kg", placeholder: "285" },
+  ];
+
+  return base.map((f) => {
+    const conv = UNIT_CONVERSIONS[f.id];
+    if (conv && unitPref === "si") {
+      return { ...f, unit: conv.si.unit, placeholder: conv.si.placeholder };
+    }
+    return f;
+  });
+}
+
+/** Get the display unit for a lab field given the unit system it was saved with */
+function getDisplayUnit(labId: string, unitSystem: "conventional" | "si"): string {
+  const conv = UNIT_CONVERSIONS[labId];
+  if (conv) {
+    return unitSystem === "si" ? conv.si.unit : conv.conventional.unit;
+  }
+  // Non-convertible labs — static units
+  const staticUnits: Record<string, string> = {
+    na: "mEq/L", k: "mEq/L", hco3: "mEq/L", cl: "mEq/L",
+    ph: "", pco2: "mmHg", una: "mEq/L", uosm: "mOsm/kg", sosm: "mOsm/kg",
+  };
+  return staticUnits[labId] ?? "";
+}
+
+/** Convert a value from SI to conventional units */
+function siToConventional(labId: string, siValue: number): number {
+  const conv = UNIT_CONVERSIONS[labId];
+  if (!conv) return siValue;
+  return siValue / conv.factor;
+}
 
 // Maps scratchpad lab IDs to all possible calculator input IDs
 const LAB_TO_CALCULATOR: Record<string, string[]> = {
@@ -91,11 +153,19 @@ function saveEntries(entries: ScratchpadEntry[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
-export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps) {
+const SHORT_LABELS: Record<string, string> = {
+  cr: "Cr", na: "Na", k: "K", bun: "BUN", hco3: "HCO\u2083", cl: "Cl",
+  ca: "Ca", phos: "Phos", mg: "Mg", alb: "Alb", glucose: "Gluc", hgb: "Hgb",
+  ph: "pH", pco2: "pCO\u2082", una: "UNa", ucr: "UCr", uosm: "UOsm", sosm: "SOsm",
+};
+
+export function PatientScratchpad({ onClose, onUseLabs, unitPreference }: PatientScratchpadProps) {
   const [entries, setEntries] = useState<ScratchpadEntry[]>(loadEntries);
   const [showForm, setShowForm] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newLabs, setNewLabs] = useState<Record<string, string>>({});
+
+  const labFields = getLabFields(unitPreference);
 
   // Persist whenever entries change
   useEffect(() => {
@@ -119,6 +189,7 @@ export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps
       id: crypto.randomUUID(),
       label: newLabel.trim(),
       labs: filledLabs,
+      unitSystem: unitPreference,
       createdAt: Date.now(),
     };
 
@@ -129,7 +200,7 @@ export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps
     setNewLabel("");
     setNewLabs({});
     setShowForm(false);
-  }, [newLabel, newLabs]);
+  }, [newLabel, newLabs, unitPreference]);
 
   const handleDelete = useCallback((id: string) => {
     setEntries((prev) => prev.filter((e) => e.id !== id));
@@ -144,11 +215,24 @@ export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps
       if (!onUseLabs) return;
       const mapped: Record<string, string> = {};
       for (const [labId, value] of Object.entries(entry.labs)) {
+        const numVal = Number(value);
         const calcIds = LAB_TO_CALCULATOR[labId];
-        if (calcIds) {
-          for (const calcId of calcIds) {
-            mapped[calcId] = value;
-          }
+        if (!calcIds) continue;
+
+        // If the entry was saved in SI but calculators expect conventional input,
+        // convert SI → conventional. Dashboard's getValue() will then convert
+        // conventional → SI if the user has SI units active.
+        // If entry was saved in conventional, pass as-is.
+        let outputValue: string;
+        if (entry.unitSystem === "si" && UNIT_CONVERSIONS[labId] && !isNaN(numVal)) {
+          const conventionalVal = siToConventional(labId, numVal);
+          outputValue = conventionalVal.toFixed(2).replace(/\.?0+$/, "");
+        } else {
+          outputValue = value;
+        }
+
+        for (const calcId of calcIds) {
+          mapped[calcId] = outputValue;
         }
       }
       onUseLabs(mapped);
@@ -188,16 +272,19 @@ export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps
             key={entry.id}
             className="rounded-lg border p-3 space-y-2"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">{entry.label}</span>
-                <span className="text-xs text-muted-foreground">{timeAgo(entry.createdAt)}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-medium text-sm truncate">{entry.label}</span>
+                <span className="text-xs text-muted-foreground flex-shrink-0">{timeAgo(entry.createdAt)}</span>
+                {entry.unitSystem === "si" && (
+                  <Badge variant="outline" className="text-[10px] flex-shrink-0">SI</Badge>
+                )}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 {onUseLabs && (
                   <Button variant="outline" size="sm" onClick={() => handleUseLabs(entry)} className="text-xs h-7">
                     <ClipboardPaste className="w-3 h-3 mr-1" />
-                    Use Labs
+                    Use
                   </Button>
                 )}
                 <Button variant="ghost" size="icon" onClick={() => handleDelete(entry.id)} className="h-7 w-7 text-destructive hover:text-destructive">
@@ -207,11 +294,11 @@ export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps
             </div>
             <div className="flex flex-wrap gap-1">
               {Object.entries(entry.labs).map(([labId, value]) => {
-                const field = LAB_FIELDS.find((f) => f.id === labId);
+                const displayUnit = getDisplayUnit(labId, entry.unitSystem ?? "conventional");
                 return (
                   <Badge key={labId} variant="secondary" className="text-xs font-normal">
-                    {field?.label ?? labId}: {value}
-                    {field?.unit ? ` ${field.unit}` : ""}
+                    {SHORT_LABELS[labId] ?? labId}: {value}
+                    {displayUnit ? ` ${displayUnit}` : ""}
                   </Badge>
                 );
               })}
@@ -236,9 +323,9 @@ export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps
               />
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {LAB_FIELDS.map((field) => (
+              {labFields.map((field) => (
                 <div key={field.id}>
-                  <Label className="text-xs text-muted-foreground">
+                  <Label className="text-xs text-muted-foreground truncate block">
                     {field.label}
                     {field.unit ? (
                       <span className="ml-1 opacity-60">{field.unit}</span>
@@ -259,6 +346,7 @@ export function PatientScratchpad({ onClose, onUseLabs }: PatientScratchpadProps
             <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
                 {filledCount} lab{filledCount !== 1 ? "s" : ""} filled
+                {unitPreference === "si" && " (SI units)"}
               </span>
               <div className="flex gap-2">
                 <Button

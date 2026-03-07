@@ -3942,7 +3942,7 @@ export default function Dashboard() {
 
               {showScratchpad && (
                 <div className="mt-4" ref={scratchpadRef}>
-                  <PatientScratchpad onClose={() => setShowScratchpad(false)} onUseLabs={handleUseScratchpadLabs} />
+                  <PatientScratchpad onClose={() => setShowScratchpad(false)} onUseLabs={handleUseScratchpadLabs} unitPreference={globalUnitPreference} />
                 </div>
               )}
 
