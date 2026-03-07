@@ -88,6 +88,7 @@ import { SmartResultActions } from "@/components/SmartResultActions";
 import { RTADifferentialCard, GNSerologicWorkupCard, DialysisIndicationsCard, TransplantScreeningCard } from "@/components/QuickReferenceCards";
 import { HyponatremiaWizard } from "@/components/HyponatremiaWizard";
 import { PatientScratchpad } from "@/components/PatientScratchpad";
+import { DryWeightTracker } from "@/components/DryWeightTracker";
 
 interface CalculatorState {
   [key: string]: string | number | boolean;
@@ -407,6 +408,7 @@ export default function Dashboard() {
   const [showTransplantCard, setShowTransplantCard] = useState(false);
   const [showHyponatremiaWizard, setShowHyponatremiaWizard] = useState(false);
   const [showScratchpad, setShowScratchpad] = useState(false);
+  const [showDryWeightTracker, setShowDryWeightTracker] = useState(false);
   const comparisonRef = useRef<HTMLDivElement>(null);
   const pePathwayRef = useRef<HTMLDivElement>(null);
   const conversionRef = useRef<HTMLDivElement>(null);
@@ -416,6 +418,7 @@ export default function Dashboard() {
   const transplantCardRef = useRef<HTMLDivElement>(null);
   const hyponatremiaRef = useRef<HTMLDivElement>(null);
   const scratchpadRef = useRef<HTMLDivElement>(null);
+  const dryWeightRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultCardRef = useRef<HTMLDivElement>(null);
   const inlineCalculateRef = useRef<HTMLButtonElement>(null);
@@ -618,6 +621,12 @@ export default function Dashboard() {
       setTimeout(() => scratchpadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     }
   }, [showScratchpad]);
+
+  useEffect(() => {
+    if (showDryWeightTracker) {
+      setTimeout(() => dryWeightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showDryWeightTracker]);
 
   // Auto-expand sidebar accordion to selected calculator's category
   useEffect(() => {
@@ -3728,6 +3737,15 @@ export default function Dashboard() {
                       {showScratchpad ? "Hide Patient Scratchpad" : "Patient Scratchpad"}
                     </Button>
                     <Button
+                      onClick={() => setShowDryWeightTracker(!showDryWeightTracker)}
+                      variant={showDryWeightTracker ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <Scale className="w-4 h-4 mr-2" />
+                      {showDryWeightTracker ? "Hide Dry Weight Tracker" : "Dry Weight Tracker"}
+                    </Button>
+                    <Button
                       onClick={() => setShowConversionCard(!showConversionCard)}
                       variant={showConversionCard ? "default" : "outline"}
                       className="w-full justify-start"
@@ -3925,6 +3943,12 @@ export default function Dashboard() {
               {showScratchpad && (
                 <div className="mt-4" ref={scratchpadRef}>
                   <PatientScratchpad onClose={() => setShowScratchpad(false)} onUseLabs={handleUseScratchpadLabs} />
+                </div>
+              )}
+
+              {showDryWeightTracker && (
+                <div className="mt-4" ref={dryWeightRef}>
+                  <DryWeightTracker onClose={() => setShowDryWeightTracker(false)} />
                 </div>
               )}
 
