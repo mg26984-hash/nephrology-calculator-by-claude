@@ -83,6 +83,7 @@ import { UnitConversionTooltip, hasUnitConversion } from "@/components/UnitConve
 import { isBinaryYesNoInput, getYesNoLabel, getYesNoValue, isYesValue } from "@/lib/inputHelpers";
 import ConversionReferenceCard from "@/components/ConversionReferenceCard";
 import { EKFCAgeCurve } from "@/components/EKFCAgeCurve";
+import { SmartResultActions } from "@/components/SmartResultActions";
 
 interface CalculatorState {
   [key: string]: string | number | boolean;
@@ -5434,6 +5435,13 @@ export default function Dashboard() {
                         )}
                       </div>
                     )}
+
+                    <SmartResultActions
+                      calculatorId={selectedCalculator.id}
+                      result={result as number | Record<string, unknown> | null}
+                      inputs={calculatorState as Record<string, unknown>}
+                      onNavigate={(calcId) => handleSelectCalculator(calcId)}
+                    />
                   </CardContent>
                 </Card>
               );
