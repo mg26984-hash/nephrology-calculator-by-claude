@@ -46,7 +46,8 @@ import {
   Copy,
   Check,
   ArrowLeftRight,
-  ChevronDown
+  ChevronDown,
+  ClipboardList
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { calculators, getCategories, getCalculatorById, CalculatorInput } from "@/lib/calculatorData";
@@ -86,6 +87,7 @@ import { EKFCAgeCurve } from "@/components/EKFCAgeCurve";
 import { SmartResultActions } from "@/components/SmartResultActions";
 import { RTADifferentialCard, GNSerologicWorkupCard, DialysisIndicationsCard, TransplantScreeningCard } from "@/components/QuickReferenceCards";
 import { HyponatremiaWizard } from "@/components/HyponatremiaWizard";
+import { PatientScratchpad } from "@/components/PatientScratchpad";
 
 interface CalculatorState {
   [key: string]: string | number | boolean;
@@ -404,6 +406,7 @@ export default function Dashboard() {
   const [showDialysisCard, setShowDialysisCard] = useState(false);
   const [showTransplantCard, setShowTransplantCard] = useState(false);
   const [showHyponatremiaWizard, setShowHyponatremiaWizard] = useState(false);
+  const [showScratchpad, setShowScratchpad] = useState(false);
   const comparisonRef = useRef<HTMLDivElement>(null);
   const pePathwayRef = useRef<HTMLDivElement>(null);
   const conversionRef = useRef<HTMLDivElement>(null);
@@ -412,6 +415,7 @@ export default function Dashboard() {
   const dialysisCardRef = useRef<HTMLDivElement>(null);
   const transplantCardRef = useRef<HTMLDivElement>(null);
   const hyponatremiaRef = useRef<HTMLDivElement>(null);
+  const scratchpadRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultCardRef = useRef<HTMLDivElement>(null);
   const inlineCalculateRef = useRef<HTMLButtonElement>(null);
@@ -609,7 +613,11 @@ export default function Dashboard() {
     }
   }, [showHyponatremiaWizard]);
 
-
+  useEffect(() => {
+    if (showScratchpad) {
+      setTimeout(() => scratchpadRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [showScratchpad]);
 
   // Auto-expand sidebar accordion to selected calculator's category
   useEffect(() => {
@@ -2954,6 +2962,16 @@ export default function Dashboard() {
     }, 100);
   }, [addToRecent, lastCalculatedEgfr, selectedCalculatorId, calculatorState, unitState, mehranResult, navigatedFromMehran, savedMehranState, savedMehranResult, savedMehranUnitState]);
 
+  const handleUseScratchpadLabs = useCallback((labs: Record<string, string>) => {
+    setCalculatorState(prev => {
+      const next = { ...prev };
+      for (const [key, value] of Object.entries(labs)) {
+        next[key] = value;
+      }
+      return next;
+    });
+  }, []);
+
   const clearSearch = useCallback(() => {
     setSearchQuery("");
     setSelectedCategory(null);
@@ -3701,6 +3719,15 @@ export default function Dashboard() {
                       {showHyponatremiaWizard ? "Hide Hyponatremia Wizard" : "Hyponatremia Workup"}
                     </Button>
                     <Button
+                      onClick={() => setShowScratchpad(!showScratchpad)}
+                      variant={showScratchpad ? "default" : "outline"}
+                      className="w-full justify-start"
+                      size="sm"
+                    >
+                      <ClipboardList className="w-4 h-4 mr-2" />
+                      {showScratchpad ? "Hide Patient Scratchpad" : "Patient Scratchpad"}
+                    </Button>
+                    <Button
                       onClick={() => setShowConversionCard(!showConversionCard)}
                       variant={showConversionCard ? "default" : "outline"}
                       className="w-full justify-start"
@@ -3892,6 +3919,12 @@ export default function Dashboard() {
               {showHyponatremiaWizard && (
                 <div className="mt-4" ref={hyponatremiaRef}>
                   <HyponatremiaWizard onClose={() => setShowHyponatremiaWizard(false)} onNavigateToCalculator={handleSelectCalculator} />
+                </div>
+              )}
+
+              {showScratchpad && (
+                <div className="mt-4" ref={scratchpadRef}>
+                  <PatientScratchpad onClose={() => setShowScratchpad(false)} onUseLabs={handleUseScratchpadLabs} />
                 </div>
               )}
 
