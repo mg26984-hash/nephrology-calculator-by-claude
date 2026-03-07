@@ -1,6 +1,6 @@
 // OTC Calculators - Service Worker for Offline Support
-const CACHE_NAME = 'otc-calculator-v36';
-const STATIC_CACHE_NAME = 'otc-static-v36';
+const CACHE_NAME = 'otc-calculator-v37';
+const STATIC_CACHE_NAME = 'otc-static-v37';
 const BASE_PATH = '/';
 
 // Assets to cache immediately on install
@@ -17,6 +17,31 @@ self.addEventListener('install', (event) => {
       .then((cache) => {
         console.log('[SW] Caching static assets');
         return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => {
+        // Precache app shell assets discovered from index.html
+        return fetch('index.html')
+          .then((response) => response.text())
+          .then((html) => {
+            const urlRegex = /(?:href|src)="([^"]*\.(?:js|css|woff2?)[^"]*)"/g;
+            const urls = [];
+            let match;
+            while ((match = urlRegex.exec(html)) !== null) {
+              urls.push(match[1]);
+            }
+            return caches.open(STATIC_CACHE_NAME).then((cache) => {
+              return Promise.allSettled(
+                urls.map((url) =>
+                  fetch(url).then((response) => {
+                    if (response.ok) {
+                      return cache.put(url, response);
+                    }
+                  })
+                )
+              );
+            });
+          })
+          .catch(() => {});
       })
       .then(() => self.skipWaiting())
   );
@@ -81,6 +106,27 @@ self.addEventListener('fetch', (event) => {
             });
           });
         })
+    );
+    return;
+  }
+
+  // For Vite hashed assets (immutable content-addressed files), use pure cache-first
+  if (/\/assets\/.*\.[a-f0-9]{8}\./.test(url.pathname)) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(STATIC_CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        });
+      })
     );
     return;
   }
@@ -167,4 +213,4 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-console.log('[SW] Service Worker loaded - OTC Calculators');
+console.log('[SW] Service Worker loaded - OTC Calculators v37');
